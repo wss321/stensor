@@ -25,7 +25,7 @@ namespace gflags = google;
   classname(const classname&);             \
   classname& operator=(const classname&)
 
-#define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented."
+#define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented"
 
 namespace stensor {
 enum Mode { CPU, GPU };
@@ -34,12 +34,12 @@ template<typename RepeatType, typename V>
 inline void RepeatTypeToVector(const RepeatType &proto_data, std::vector<V> &target) {
   target.resize(proto_data.size());
   for (int i = 0; i < proto_data.size(); ++i) {
-    target.push_back(static_cast<V>(proto_data[i]));
+    target[i]=static_cast<V>(proto_data[i]);
   }
 }
 uint32_t count(const std::vector<uint32_t> &shape);
 
-std::vector<uint32_t> broadcast(const std::vector<uint32_t> &shape1, const std::vector<uint32_t> &shape2);
+std::vector<uint32_t> broadcast(std::vector<uint32_t> &shape1, std::vector<uint32_t> &shape2);
 
 template<typename Dtype>
 std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector);

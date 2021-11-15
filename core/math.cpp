@@ -43,12 +43,34 @@ DEFINE_VSL_UNARY_FUNC(Sign, y[i] = a[i] > 0 ? 1 : -1)
     v##name<double>(n, a, b, y); \
   }
 
-class uniform_real;
 DEFINE_VSL_BINARY_FUNC(Add, y[i] = a[i] + b[i])
 DEFINE_VSL_BINARY_FUNC(Sub, y[i] = a[i] - b[i])
 DEFINE_VSL_BINARY_FUNC(Mul, y[i] = a[i] * b[i])
 DEFINE_VSL_BINARY_FUNC(Div, y[i] = a[i] / b[i])
 DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
+
+#define ADD_UNARY_FUNC_SP(name) \
+  template void name<uint32_t>(const uint32_t n, const uint32_t *a, uint32_t *y); \
+  template void name<int>(const uint32_t n, const int *a, int *y); \
+  template void name<float>(const uint32_t n, const float *a, float *y); \
+  template void name<double>(const uint32_t n, const double *a, double *y)
+
+#define ADD_UNARY_FUNC_PP(name) \
+  template void name<uint32_t>(const uint32_t n, const uint32_t val, uint32_t *y); \
+  template void name<int>(const uint32_t n, const int val, int *y); \
+  template void name<float>(const uint32_t n, const float val, float *y); \
+  template void name<double>(const uint32_t n, const double val, double *y)
+
+#define ADD_BINARY_FUNC_PSP(name) \
+  template void name<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t val, uint32_t *y); \
+  template void name<int>(const uint32_t n, const int *a, const int val, int *y); \
+  template void name<float>(const uint32_t n, const float *a, const float val, float *y); \
+  template void name<double>(const uint32_t n, const double *a, const double val, double *y)
+#define ADD_BINARY_FUNC_PPP(name) \
+  template void name<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y); \
+  template void name<int>(const uint32_t n, const int *a, const int *b, int *y); \
+  template void name<float>(const uint32_t n, const float *a, const float *b, float *y); \
+  template void name<double>(const uint32_t n, const double *a, const double *b, double *y)
 
 namespace stensor {
 /* self op start*/
@@ -57,35 +79,40 @@ void exp(const uint32_t n,
          const Dtype *a,
          Dtype *y) {
   vExp(n, a, y);
-};
+}
+ADD_UNARY_FUNC_SP(exp);
 
 template<typename Dtype>
 void log(const uint32_t n,
          const Dtype *a,
          Dtype *y) {
   vLog(n, a, y);
-};
+}
+ADD_UNARY_FUNC_SP(log);
 
 template<typename Dtype>
 void abs(const uint32_t n,
          const Dtype *a,
          Dtype *y) {
   vAbs(n, a, y);
-};
+}
+ADD_UNARY_FUNC_SP(abs);
 
 template<typename Dtype>
 void sqrt(const uint32_t n,
           const Dtype *a,
           Dtype *y) {
   vSqrt(n, a, y);
-};
+}
+ADD_UNARY_FUNC_SP(sqrt);
 
 template<typename Dtype>
 void square(const uint32_t n,
             const Dtype *a,
             Dtype *y) {
   vSqr(n, a, y);
-};
+}
+ADD_UNARY_FUNC_SP(square);
 
 template<typename Dtype>
 void sign(const uint32_t n,
@@ -93,6 +120,7 @@ void sign(const uint32_t n,
           Dtype *y) {
   vSign(n, a, y);
 }
+ADD_UNARY_FUNC_SP(sign);
 
 template<typename Dtype>
 void clamp(const uint32_t n,
@@ -107,8 +135,12 @@ void clamp(const uint32_t n,
     else if (a[i] < min) y[i] = min;
     else if (a[i] > max) y[i] = max;
   }
-
 }
+template void clamp<uint32_t>(const uint32_t n, const uint32_t min, const uint32_t max, const uint32_t *a, uint32_t *y);
+template void clamp<int>(const uint32_t n, const int min, const int max, const int *a, int *y);
+template void clamp<float>(const uint32_t n, const float min, const float max, const float *a, float *y);
+template void clamp<double>(const uint32_t n, const double min, const double max, const double *a, double *y);
+
 /* self op end*/
 
 /* vector scalar start*/
@@ -126,10 +158,7 @@ void set(const uint32_t n,
   }
 
 }
-template void set<uint32_t>(const uint32_t n, const uint32_t val, uint32_t *y);
-template void set<int>(const uint32_t n, const int val, int *y);
-template void set<float>(const uint32_t n, const float val, float *y);
-template void set<double>(const uint32_t n, const double val, double *y);
+ADD_UNARY_FUNC_PP(set);
 
 template<typename Dtype>
 void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
@@ -137,10 +166,7 @@ void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
   CHECK(Y);
   if (X != Y) std::memcpy(Y, X, sizeof(Dtype) * n);
 }
-template void cpu_copy<uint32_t>(const uint32_t n, const uint32_t *X, uint32_t *Y);
-template void cpu_copy<int>(const uint32_t n, const int *X, int *Y);
-template void cpu_copy<float>(const uint32_t n, const float *X, float *Y);
-template void cpu_copy<double>(const uint32_t n, const double *X, double *Y);
+ADD_UNARY_FUNC_SP(cpu_copy);
 
 template<typename Dtype>
 void add(const uint32_t n,
@@ -152,10 +178,7 @@ void add(const uint32_t n,
     y[i] = a[i] + val;
   }
 }
-template void add<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t val, uint32_t *y);
-template void add<int>(const uint32_t n, const int *a, const int val, int *y);
-template void add<float>(const uint32_t n, const float *a, const float val, float *y);
-template void add<double>(const uint32_t n, const double *a, const double val, double *y);
+ADD_BINARY_FUNC_PSP(add);
 
 template<typename Dtype>
 void sub(const uint32_t n,
@@ -167,10 +190,7 @@ void sub(const uint32_t n,
     y[i] = a[i] - val;
   }
 }
-template void sub<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t val, uint32_t *y);
-template void sub<int>(const uint32_t n, const int *a, const int val, int *y);
-template void sub<float>(const uint32_t n, const float *a, const float val, float *y);
-template void sub<double>(const uint32_t n, const double *a, const double val, double *y);
+ADD_BINARY_FUNC_PSP(sub);
 
 template<typename Dtype>
 void scale(const uint32_t n,
@@ -182,10 +202,7 @@ void scale(const uint32_t n,
     y[i] = a[i] * val;
   }
 }
-template void scale<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t val, uint32_t *y);
-template void scale<int>(const uint32_t n, const int *a, const int val, int *y);
-template void scale<float>(const uint32_t n, const float *a, const float val, float *y);
-template void scale<double>(const uint32_t n, const double *a, const double val, double *y);
+ADD_BINARY_FUNC_PSP(scale);
 
 template<typename Dtype>
 void pow(const uint32_t n,
@@ -197,11 +214,7 @@ void pow(const uint32_t n,
     y[i] = std::pow(a[i], val);
   }
 }
-template void pow<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t val, uint32_t *y);
-template void pow<int>(const uint32_t n, const int *a, const int val, int *y);
-template void pow<float>(const uint32_t n, const float *a, const float val, float *y);
-template void pow<double>(const uint32_t n, const double *a, const double val, double *y);
-
+ADD_BINARY_FUNC_PSP(pow);
 
 /* vector scalar end*/
 
@@ -212,11 +225,7 @@ void add(const uint32_t n,
          Dtype *y) {
   vAdd(n, a, b, y);
 }
-
-template void add<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y);
-template void add<int>(const uint32_t n, const int *a, const int *b, int *y);
-template void add<float>(const uint32_t n, const float *a, const float *b, float *y);
-template void add<double>(const uint32_t n, const double *a, const double *b, double *y);
+ADD_BINARY_FUNC_PPP(add);
 
 template<typename Dtype>
 void sub(const uint32_t n,
@@ -224,10 +233,7 @@ void sub(const uint32_t n,
          Dtype *y) {
   vSub(n, a, b, y);
 }
-template void sub<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y);
-template void sub<int>(const uint32_t n, const int *a, const int *b, int *y);
-template void sub<float>(const uint32_t n, const float *a, const float *b, float *y);
-template void sub<double>(const uint32_t n, const double *a, const double *b, double *y);
+ADD_BINARY_FUNC_PPP(sub);
 
 template<typename Dtype>
 void mul(const uint32_t n,
@@ -235,10 +241,7 @@ void mul(const uint32_t n,
          Dtype *y) {
   vMul(n, a, b, y);
 }
-template void mul<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y);
-template void mul<int>(const uint32_t n, const int *a, const int *b, int *y);
-template void mul<float>(const uint32_t n, const float *a, const float *b, float *y);
-template void mul<double>(const uint32_t n, const double *a, const double *b, double *y);
+ADD_BINARY_FUNC_PPP(mul);
 
 template<typename Dtype>
 void div(const uint32_t n,
@@ -246,10 +249,7 @@ void div(const uint32_t n,
          Dtype *y) {
   vDiv(n, a, b, y);
 }
-template void div<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y);
-template void div<int>(const uint32_t n, const int *a, const int *b, int *y);
-template void div<float>(const uint32_t n, const float *a, const float *b, float *y);
-template void div<double>(const uint32_t n, const double *a, const double *b, double *y);
+ADD_BINARY_FUNC_PPP(div);
 
 template<typename Dtype>
 void pow(const uint32_t n,
@@ -257,10 +257,7 @@ void pow(const uint32_t n,
          Dtype *y) {
   vPow(n, a, b, y);
 }
-template void pow<uint32_t>(const uint32_t n, const uint32_t *a, const uint32_t *b, uint32_t *y);
-template void pow<int>(const uint32_t n, const int *a, const int *b, int *y);
-template void pow<float>(const uint32_t n, const float *a, const float *b, float *y);
-template void pow<double>(const uint32_t n, const double *a, const double *b, double *y);
+ADD_BINARY_FUNC_PPP(pow);
 
 // Returns the sum of the absolute values of the elements of vector x
 template<>

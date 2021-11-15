@@ -108,6 +108,7 @@ void pow(const uint32_t n,
          const Dtype *a, const Dtype *b,
          Dtype *y);
 
+
 // Returns the sum of the absolute values of the elements of vector a
 template<typename Dtype>
 Dtype cpu_asum(uint32_t n, const Dtype *a);

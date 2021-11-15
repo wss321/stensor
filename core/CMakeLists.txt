@@ -5,20 +5,13 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_MODULE_PATH ../cmake)
 include(../cmake/utils.cmake)
 find_package(OpenBLAS REQUIRED)
-find_package(glog REQUIRED)
-find_package(gflags REQUIRED)
-find_package(Protobuf REQUIRED)
 find_package(GTest REQUIRED)
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 file(GLOB tmp *.cpp)
 set(CORE_SRCS ${CORE_SRCS} ${tmp})
 file(GLOB TEST_SRCS *_test.cpp)
-#foreach(EXCLUDE ${tmp})
-#    message(${EXCLUDE})
-#    list(REMOVE ${CORE_SRCS} "${EXCLUDE}")
-#endforeach()
-exclude(CORE_SRCS "${CORE_SRCS}" ${TEST_SRCS})
 
+exclude(CORE_SRCS "${CORE_SRCS}" ${TEST_SRCS})
 add_library(${PROJECT_NAME}
         ${CORE_SRCS}
         )
@@ -31,7 +24,7 @@ target_include_directories(${PROJECT_NAME}
         )
 target_link_libraries(${PROJECT_NAME}
         lib::proto
-        glog::glog
+        lib::public
         ${OpenBLAS_LIB}
         )
 
@@ -49,8 +42,6 @@ foreach(test_src ${TEST_SRCS})
     target_link_libraries(${test_target}
             lib::public
             lib::tensor
-            ${GTEST_LIBRARIES}
-            ${GTEST_MAIN_LIBRARIES}
             )
     gtest_discover_tests(${test_target})
 endforeach()

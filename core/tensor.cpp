@@ -1,5 +1,4 @@
 #include <public/synmem.hpp>
-#include <utility>
 #include "tensor.hpp"
 #include "proto/tensor.pb.h"
 #include "math.hpp"
@@ -127,12 +126,15 @@ void Tensor::ToProto(TensorProto *proto, bool write_grad) const {
     proto->add_operations(_operations[i]);
   }
 }
-void Tensor::ToProto(TensorProto &proto, bool write_grad) const{
+void Tensor::ToProto(TensorProto &proto, bool write_grad) const {
   ToProto(&proto, write_grad);
 }
 
 void Tensor::FromProto(const TensorProto *proto, bool reshape) {
   // 1. reshape
+  _size = proto->size();
+  _require_grad = proto->require_grad();
+  _name = proto->name();
   if (reshape) {
     Tensor::ShapeType new_shape;
     stensor::RepeatTypeToVector(proto->shape(), new_shape);
@@ -158,11 +160,7 @@ void Tensor::FromProto(const TensorProto *proto, bool reshape) {
       grad_vec[i] = proto->grad(i);
     }
   }
-  // 4. name
-  _size = proto->size();
-  _require_grad = proto->require_grad();
-  _name = proto->name();
-  // 5. neighbors & operations
+  // 4. neighbors & operations
   stensor::RepeatTypeToVector(proto->neighbors(), _neighbors);
   stensor::RepeatTypeToVector(proto->operations(), _operations);
 }
@@ -252,60 +250,75 @@ void set(Tensor *tensor, float val) {
   stensor::set(tensor->size(), val, data);
 }
 
-Tensor *add(Tensor &tensor, float val, bool inplace) {
+Tensor *add(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
-    float *data = tensor.mutable_cpu_data();
-    stensor::add(tensor.size(), data, val, data);
-    return &tensor;
+    float *data = tensor->mutable_cpu_data();
+    stensor::add(tensor->size(), data, val, data);
+    return tensor;
   } else {
-    const float *data = tensor.cpu_data();
-    Tensor *out_tensor = new Tensor(tensor, tensor.require_grad());
+    const float *data = tensor->cpu_data();
+    Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
     stensor::add(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
 
-Tensor *sub(Tensor &tensor, float val, bool inplace) {
+Tensor *sub(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
-    float *data = tensor.mutable_cpu_data();
-    stensor::sub(tensor.size(), data, val, data);
-    return &tensor;
+    float *data = tensor->mutable_cpu_data();
+    stensor::sub(tensor->size(), data, val, data);
+    return tensor;
   } else {
-    const float *data = tensor.cpu_data();
-    Tensor *out_tensor = new Tensor(tensor, tensor.require_grad());
+    const float *data = tensor->cpu_data();
+    Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
     stensor::sub(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
-Tensor *scale(Tensor &tensor, float val, bool inplace) {
+Tensor *scale(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
-    float *data = tensor.mutable_cpu_data();
-    stensor::scale(tensor.size(), data, val, data);
-    return &tensor;
+    float *data = tensor->mutable_cpu_data();
+    stensor::scale(tensor->size(), data, val, data);
+    return tensor;
   } else {
-    const float *data = tensor.cpu_data();
-    Tensor *out_tensor = new Tensor(tensor, tensor.require_grad());
+    const float *data = tensor->cpu_data();
+    Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
     stensor::scale(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
 
-Tensor *pow(Tensor &tensor, float val, bool inplace) {
+Tensor *pow(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
-    float *data = tensor.mutable_cpu_data();
-    stensor::pow(tensor.size(), data, val, data);
-    return &tensor;
+    float *data = tensor->mutable_cpu_data();
+    stensor::pow(tensor->size(), data, val, data);
+    return tensor;
   } else {
-    const float *data = tensor.cpu_data();
-    Tensor *out_tensor = new Tensor(tensor, tensor.require_grad());
+    const float *data = tensor->cpu_data();
+    Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
     stensor::pow(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
+
+Tensor *exp(Tensor *tensor, bool inplace) {
+  if (inplace) {
+    float *data = tensor->mutable_cpu_data();
+    stensor::exp(tensor->size(), data, data);
+    return tensor;
+  } else {
+    const float *data = tensor->cpu_data();
+    Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
+    float *out_data = out_tensor->mutable_cpu_data();
+    stensor::exp(out_tensor->size(), data, out_data);
+    return out_tensor;
+  }
+}
+
 //TODO:operater overload
 Tensor &Tensor::operator=(const Tensor &other) {
   CopyFrom(other, false, true, other.state());
@@ -316,29 +329,90 @@ Tensor &Tensor::operator=(const Tensor *other) {
   return (*this);
 }
 
+Tensor::Dtype Tensor::operator[](std::vector<int> indices) const {
+  CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
+  Tensor::ShapeType canonicalIndex(num_axes(), 0);
+  for (int i = 0; i < num_axes(); ++i) {
+    if (indices[i] < 0) {
+      CHECK_GE(indices[i], shape(i));
+      canonicalIndex[i] = indices[i] + shape(i);
+    } else canonicalIndex[i] = indices[i];
+  }
+
+  int out = 1;
+  for (int i = 0; i < indices.size(); ++i) {
+    out *= static_cast<int>(canonicalIndex[i] + 1);
+  }
+  return cpu_data()[out - 1];
+}
 
 // Tensor op Tensor
 // TODO:broadcast op
+bool broadcast(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out) {
 
-Tensor *add(const Tensor &a, const Tensor &b){
-  const Tensor::ShapeType out_shape = stensor::broadcast(a.shape(), b.shape());
-  bool require_grad = (a.require_grad()||b.require_grad());
-  Tensor *out_tensor = new Tensor(out_shape, require_grad);
-  NOT_IMPLEMENTED;
-  return out_tensor;
+  return true;
+}
 
+inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out, int index) {
+  std::vector<int> indices(shape_out.size(), 0);
+  indices[shape_out.size() - 1] = index % shape_out[shape_out.size() - 1];
+  int div = 1;
+  for (int i = shape_out.size() - 2; i >= 0; --i) {
+    div *= shape_out[i + 1];
+    indices[i] = index / div;
+  }
+  int out = 1;
+  for (int i = 0; i < indices.size(); ++i) {
+    out *= std::min(indices[i], static_cast<int>(shape_in[i]));
+  }
+  return out;
 }
-Tensor *sub(const Tensor &a, const Tensor &b){
-  NOT_IMPLEMENTED;
+
+Tensor *add(const Tensor *a, const Tensor *b) {
+  if (a->shape() == b->shape()) {
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(a->shape(), require_grad);
+    stensor::add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    return out_tensor;
+  } else {
+    Tensor::ShapeType shape_a(a->shape());
+    Tensor::ShapeType shape_b(b->shape());
+    const Tensor::ShapeType shape_out = stensor::broadcast(shape_a, shape_b);
+
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(shape_out, require_grad);
+    int index = broadcast_index(shape_b, shape_out, 8);
+    NOT_IMPLEMENTED;
+    return out_tensor;
+  }
 }
-Tensor *scale(const Tensor &a, const Tensor &b){
-  NOT_IMPLEMENTED;
+
+Tensor *sub(const Tensor *a, const Tensor *b) {
+  if (a->shape() == b->shape()) {
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(a->shape(), require_grad);
+    stensor::sub(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    return out_tensor;
+  } else
+    NOT_IMPLEMENTED;
 }
-Tensor *div(const Tensor &a, const Tensor &b){
-  NOT_IMPLEMENTED;
+Tensor *mul(const Tensor *a, const Tensor *b) {
+  if (a->shape() == b->shape()) {
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(a->shape(), require_grad);
+    stensor::mul(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    return out_tensor;
+  } else
+    NOT_IMPLEMENTED;
 }
-Tensor *exp(const Tensor &a, const Tensor &b){
-  NOT_IMPLEMENTED;
+Tensor *div(const Tensor *a, const Tensor *b) {
+  if (a->shape() == b->shape()) {
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(a->shape(), require_grad);
+    stensor::div(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    return out_tensor;
+  } else
+    NOT_IMPLEMENTED;
 }
 
 /* math of Tensor end */
@@ -350,6 +424,7 @@ Tensor *random(const Tensor::ShapeType &shape, bool require_grad, float a, float
   stensor::rng_uniform<Tensor::Dtype>(new_t->size(), Tensor::Dtype(a), Tensor::Dtype(b), new_t->mutable_cpu_data());
   return new_t;
 }
+
 Tensor *random(const Tensor::ShapeType &shape, bool require_grad) {
   return random(shape, require_grad, 0.0, 1.0);
 }
@@ -400,5 +475,22 @@ Tensor *ones_like(Tensor *other, bool require_grad) {
 }
 
 /* Tensor Generator end*/
-
+/* save and load*/
+void save(const Tensor *tensor, const std::string &path) {
+  TensorProto proto;
+  tensor->ToProto(proto);
+  std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+  bool success = proto.SerializeToOstream(&output);
+  CHECK(success)<<"Failed to save tensor to "<<path;
+}
+Tensor *load(const std::string &path) {
+  TensorProto proto;
+  std::fstream input(path, std::ios::in | std::ios::binary);
+  bool success = proto.ParseFromIstream(&input);
+  CHECK(success)<<"Failed to load tensor from "<<path;
+  Tensor* new_tensor= new Tensor();
+  new_tensor->FromProto(proto);
+  return new_tensor;
+}
+/* save and load end*/
 }//namespace stensor
