@@ -49,13 +49,13 @@ DEFINE_VSL_BINARY_FUNC(Mul, y[i] = a[i] * b[i])
 DEFINE_VSL_BINARY_FUNC(Div, y[i] = a[i] / b[i])
 DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
 
-#define ADD_UNARY_FUNC_SP(name) \
+#define ADD_UNARY_FUNC_PP(name) \
   template void name<uint32_t>(const uint32_t n, const uint32_t *a, uint32_t *y); \
   template void name<int>(const uint32_t n, const int *a, int *y); \
   template void name<float>(const uint32_t n, const float *a, float *y); \
   template void name<double>(const uint32_t n, const double *a, double *y)
 
-#define ADD_UNARY_FUNC_PP(name) \
+#define ADD_UNARY_FUNC_SP(name) \
   template void name<uint32_t>(const uint32_t n, const uint32_t val, uint32_t *y); \
   template void name<int>(const uint32_t n, const int val, int *y); \
   template void name<float>(const uint32_t n, const float val, float *y); \
@@ -80,7 +80,7 @@ void exp(const uint32_t n,
          Dtype *y) {
   vExp(n, a, y);
 }
-ADD_UNARY_FUNC_SP(exp);
+ADD_UNARY_FUNC_PP(exp);
 
 template<typename Dtype>
 void log(const uint32_t n,
@@ -88,7 +88,7 @@ void log(const uint32_t n,
          Dtype *y) {
   vLog(n, a, y);
 }
-ADD_UNARY_FUNC_SP(log);
+ADD_UNARY_FUNC_PP(log);
 
 template<typename Dtype>
 void abs(const uint32_t n,
@@ -96,7 +96,7 @@ void abs(const uint32_t n,
          Dtype *y) {
   vAbs(n, a, y);
 }
-ADD_UNARY_FUNC_SP(abs);
+ADD_UNARY_FUNC_PP(abs);
 
 template<typename Dtype>
 void sqrt(const uint32_t n,
@@ -104,7 +104,7 @@ void sqrt(const uint32_t n,
           Dtype *y) {
   vSqrt(n, a, y);
 }
-ADD_UNARY_FUNC_SP(sqrt);
+ADD_UNARY_FUNC_PP(sqrt);
 
 template<typename Dtype>
 void square(const uint32_t n,
@@ -112,7 +112,7 @@ void square(const uint32_t n,
             Dtype *y) {
   vSqr(n, a, y);
 }
-ADD_UNARY_FUNC_SP(square);
+ADD_UNARY_FUNC_PP(square);
 
 template<typename Dtype>
 void sign(const uint32_t n,
@@ -120,7 +120,7 @@ void sign(const uint32_t n,
           Dtype *y) {
   vSign(n, a, y);
 }
-ADD_UNARY_FUNC_SP(sign);
+ADD_UNARY_FUNC_PP(sign);
 
 template<typename Dtype>
 void clamp(const uint32_t n,
@@ -158,15 +158,33 @@ void set(const uint32_t n,
   }
 
 }
-ADD_UNARY_FUNC_PP(set);
-
+ADD_UNARY_FUNC_SP(set);
 template<typename Dtype>
 void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
   CHECK(X);
   CHECK(Y);
   if (X != Y) std::memcpy(Y, X, sizeof(Dtype) * n);
+    //cblas_ccopy(static_cast<int>(n), X, 1, Y, 1);
 }
-ADD_UNARY_FUNC_SP(cpu_copy);
+ADD_UNARY_FUNC_PP(cpu_copy);
+//template void cpu_copy<uint32_t>(const uint32_t n, const uint32_t *X, uint32_t *Y);
+//
+//template void cpu_copy<int>(const uint32_t n, const int *X, int *Y);
+//
+//template<>
+//void cpu_copy<double>(const uint32_t n, const double *X, double *Y) {
+//  CHECK(X);
+//  CHECK(Y);
+//  if (X != Y) //std::memcpy(Y, X, sizeof(Dtype) * n);
+//    cblas_dcopy(static_cast<int>(n), X, 1, Y, 1);
+//}
+//template<>
+//void cpu_copy<float>(const uint32_t n, const float *X, float *Y) {
+//  CHECK(X);
+//  CHECK(Y);
+//  if (X != Y) //std::memcpy(Y, X, sizeof(Dtype) * n);
+//    cblas_scopy(static_cast<int>(n), X, 1, Y, 1);
+//}
 
 template<typename Dtype>
 void add(const uint32_t n,

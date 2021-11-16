@@ -59,8 +59,8 @@ class Tensor {
     }
     if (!_shape.empty())
       stream << _shape[_shape.size() - 1];
-    stream << ")";
-    stream << "(total:" << _size << ")";
+    else stream << "0";
+    stream << "=" << _size << ")";
     return stream.str();
   }
   inline const ShapeType &shape() const { return _shape; }
@@ -87,18 +87,20 @@ class Tensor {
   bool ShapeEquals(const TensorProto &other);
 
   inline uint32_t num_axes() const { return _shape.size(); }
-  inline Dtype data_at(int index) {
+  inline Dtype data_at(int index) const{
     if (index < 0) {
       CHECK_GE(size() + index, 0);
-      return cpu_data()[size() + index];
+      index = static_cast<int>(size()) + index;
     }
+    CHECK_LE(index + 1, _size)<<"index out of range";
     return cpu_data()[index];
   };
-  inline Dtype grad_at(int index) {
+  inline Dtype grad_at(int index) const{
     if (index < 0) {
       CHECK_GE(size() + index, 0);
-      return cpu_grad()[size() + index];
+      index = static_cast<int>(size()) + index;
     }
+    CHECK_LT(index, _size)<<"index out of range";
     return cpu_grad()[index];
   };
 

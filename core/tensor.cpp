@@ -147,18 +147,20 @@ void Tensor::FromProto(const TensorProto *proto, bool reshape) {
   Dtype *data_vec = mutable_cpu_data();
   if (proto->data_size() > 0) {
     CHECK_EQ(_size, proto->data_size()) << "data size mismatch.";
-    for (int i = 0; i < _size; ++i) {
-      data_vec[i] = proto->data(i);
-    }
+//    for (int i = 0; i < _size; ++i) {
+//      data_vec[i] = proto->data(i);
+//    }
+    stensor::cpu_copy(_size, proto->data().data(), data_vec);
   }
   // 3. grad
   // copy grad
   if (proto->grad_size() > 0) {
     CHECK_EQ(_size, proto->grad_size()) << "gradiant size mismatch.";
     Dtype *grad_vec = mutable_cpu_grad();
-    for (int i = 0; i < _size; ++i) {
-      grad_vec[i] = proto->grad(i);
-    }
+//    for (int i = 0; i < _size; ++i) {
+//      grad_vec[i] = proto->grad(i);
+//    }
+//    stensor::cpu_copy(_size, proto->grad().data(), grad_vec);
   }
   // 4. neighbors & operations
   stensor::RepeatTypeToVector(proto->neighbors(), _neighbors);
@@ -179,16 +181,25 @@ std::string Tensor::data_string() const {
     out << "[";
   }
   for (int i = 0; i < count; ++i) {
-    out << data[i] << " ";
+    out << *data++ << " ";
+    int n_bracket = 0;
+    int acc = 1;
     for (int j = dim - 1; j >= 0; --j) {
-      if (((i + 1) % shape[j]) == 0) {
+      acc *= static_cast<int>(shape[j]);
+      if (((i + 1) % acc) == 0) {
         out << "]";
-        if ((i + 2) < count) out << "\n[";
+        n_bracket++;
       } else break;
     }
-
+    if (n_bracket>=1)
+      out << "\n";
+    if ((i + 2) <= count){
+      for (int j = 0; j < n_bracket; ++j) {
+        out << "[";
+      }
+    }
   }
-  out << "\nshape=" << this->shape_string() << std::endl;
+  out << "{shape " << this->shape_string() << "}"<<std::endl;
   return out.str();
 }
 
@@ -347,27 +358,26 @@ Tensor::Dtype Tensor::operator[](std::vector<int> indices) const {
 }
 
 // Tensor op Tensor
-// TODO:broadcast op
-bool broadcast(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out) {
-
-  return true;
-}
-
+// TODO: op on GPU
 inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out, int index) {
-  std::vector<int> indices(shape_out.size(), 0);
-  indices[shape_out.size() - 1] = index % shape_out[shape_out.size() - 1];
+  std::vector<int> indices_in_result(shape_out.size(), 0);
+  indices_in_result[shape_out.size() - 1] = index % static_cast<int>(shape_out[shape_out.size() - 1]);
   int div = 1;
   for (int i = shape_out.size() - 2; i >= 0; --i) {
-    div *= shape_out[i + 1];
-    indices[i] = index / div;
+    div *=  static_cast<int>(shape_out[i + 1]);
+    indices_in_result[i] = (index / div)% static_cast<int>(shape_out[i]);
   }
-  int out = 1;
-  for (int i = 0; i < indices.size(); ++i) {
-    out *= std::min(indices[i], static_cast<int>(shape_in[i]));
+
+  int out = 0;
+  for (int i = 0; i < indices_in_result.size(); ++i) {
+    int m = std::min(indices_in_result[i], static_cast<int>(shape_in[i]));
+    out *= static_cast<int>(shape_in[i]);
+    if (shape_in[i]!=1)
+      out += m;
   }
   return out;
 }
-
+// TODO: op on GPU
 Tensor *add(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
@@ -381,38 +391,88 @@ Tensor *add(const Tensor *a, const Tensor *b) {
 
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(shape_out, require_grad);
-    int index = broadcast_index(shape_b, shape_out, 8);
-    NOT_IMPLEMENTED;
+    Tensor::Dtype *out_data = out_tensor->mutable_cpu_data();
+    for (int i = 0; i < out_tensor->size(); ++i) {
+      int index_a = broadcast_index(shape_a, shape_out, i);
+      int index_b = broadcast_index(shape_b, shape_out, i);
+      *out_data = a->data_at(index_a) + b->data_at(index_b);
+      out_data ++ ;
+    }
     return out_tensor;
   }
 }
-
+// TODO: op on GPU
 Tensor *sub(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::sub(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
-  } else
-    NOT_IMPLEMENTED;
+  } else {
+    Tensor::ShapeType shape_a(a->shape());
+    Tensor::ShapeType shape_b(b->shape());
+    const Tensor::ShapeType shape_out = stensor::broadcast(shape_a, shape_b);
+
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(shape_out, require_grad);
+    Tensor::Dtype *out_data = out_tensor->mutable_cpu_data();
+    for (int i = 0; i < out_tensor->size(); ++i) {
+      int index_a = broadcast_index(shape_a, shape_out, i);
+      int index_b = broadcast_index(shape_b, shape_out, i);
+      *out_data = a->data_at(index_a) - b->data_at(index_b);
+      out_data ++ ;
+    }
+    return out_tensor;
+  }
 }
+// TODO: op on GPU
 Tensor *mul(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::mul(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
-  } else
-    NOT_IMPLEMENTED;
+  } else {
+    Tensor::ShapeType shape_a(a->shape());
+    Tensor::ShapeType shape_b(b->shape());
+    const Tensor::ShapeType shape_out = stensor::broadcast(shape_a, shape_b);
+
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(shape_out, require_grad);
+    Tensor::Dtype *out_data = out_tensor->mutable_cpu_data();
+    for (int i = 0; i < out_tensor->size(); ++i) {
+      int index_a = broadcast_index(shape_a, shape_out, i);
+      int index_b = broadcast_index(shape_b, shape_out, i);
+      *out_data = a->data_at(index_a) * b->data_at(index_b);
+      out_data ++ ;
+    }
+    return out_tensor;
+  }
 }
+
+// TODO: op on GPU
 Tensor *div(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::div(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
-  } else
-    NOT_IMPLEMENTED;
+  } else {
+    Tensor::ShapeType shape_a(a->shape());
+    Tensor::ShapeType shape_b(b->shape());
+    const Tensor::ShapeType shape_out = stensor::broadcast(shape_a, shape_b);
+
+    bool require_grad = (a->require_grad() || b->require_grad());
+    Tensor *out_tensor = new Tensor(shape_out, require_grad);
+    Tensor::Dtype *out_data = out_tensor->mutable_cpu_data();
+    for (int i = 0; i < out_tensor->size(); ++i) {
+      int index_a = broadcast_index(shape_a, shape_out, i);
+      int index_b = broadcast_index(shape_b, shape_out, i);
+      *out_data = a->data_at(index_a) / (b->data_at(index_b)+1e-8);
+      out_data ++ ;
+    }
+    return out_tensor;
+  }
 }
 
 /* math of Tensor end */
@@ -447,6 +507,7 @@ Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad) {
 Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma) {
   return random_gaussian(shape, false, mu, sigma);
 }
+
 Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, bool require_grad) {
   stensor::Tensor *new_t = new Tensor(shape, require_grad);
   stensor::set(new_t, val);

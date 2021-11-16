@@ -76,7 +76,27 @@ TEST_F(TensorTest, Math) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) / b->data_at(i));
   }
 }
+TEST_F(TensorTest, MathBroadCast) {
+  Tensor::ShapeType shape1{3, 4, 5};
+  Tensor::ShapeType shape2{3, 1, 1};
+//  Tensor a0(Tensor::ShapeType{3, 4});
+//  Tensor b0(Tensor::ShapeType{3, 4});
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::random(shape2);
+//  Tensor *a = stensor::ones(shape1);
+//  Tensor *b = stensor::constants(shape2, 2);
 
+  std::cout << "\ta:\n" << a;
+  std::cout << "\tb:\n" << b;
+  auto c = stensor::add(a, b);
+  std::cout << "\ta+b:\n" << c;
+  c = stensor::sub(a, b);
+  std::cout << "\ta-b:\n" << c;
+  c = stensor::mul(a, b);
+  std::cout << "\ta*b:\n" << c;
+  c = stensor::div(a, b);
+  std::cout << "\ta/b:\n" << c;
+}
 TEST_F(TensorTest, Index) {
   Tensor a(Tensor::ShapeType{3, 4});
   a.CopyFrom(stensor::random(a.shape()));
@@ -85,16 +105,16 @@ TEST_F(TensorTest, Index) {
 }
 
 TEST_F(TensorTest, SaveAndLoad) {
-  Tensor a(Tensor::ShapeType{3, 4});
-  a.CopyFrom(stensor::random(a.shape()));
-  std::string path = "a.pt3";
+  Tensor a(Tensor::ShapeType{3000, 400});
+  a.CopyFrom(stensor::zeros(a.shape()));
+  std::string path = "/home/wss/CLionProjects/stensor/output/a.pt3";
   stensor::save(a, path);
   Tensor *b = stensor::load(path);
   for (int i = 0; i < a.size(); ++i) {
     EXPECT_EQ(a.data_at(i), b->data_at(i));
   }
-  std::cout << "a:" << b;
-  std::cout << "b:" << b;
+  std::cout << "a:\n" << b;
+  std::cout << "b:\n" << b;
 }
 
 }
