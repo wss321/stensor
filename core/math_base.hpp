@@ -2,8 +2,8 @@
 * Copyright 2021 wss
 * Created by wss on 11月,15, 2021
 */
-#ifndef STENSOR_CORE_MATH_HPP_
-#define STENSOR_CORE_MATH_HPP_
+#ifndef STENSOR_CORE_MATH_BASE_HPP_
+#define STENSOR_CORE_MATH_BASE_HPP_
 #include <cblas.h>
 #include <cmath>
 #include <random>
@@ -171,4 +171,4 @@ void rng_bernoulli(uint32_t n,
 
 
 }
-#endif //STENSOR_CORE_MATH_HPP_
+#endif //STENSOR_CORE_MATH_BASE_HPP_

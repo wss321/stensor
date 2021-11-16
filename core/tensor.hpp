@@ -87,20 +87,20 @@ class Tensor {
   bool ShapeEquals(const TensorProto &other);
 
   inline uint32_t num_axes() const { return _shape.size(); }
-  inline Dtype data_at(int index) const{
+  inline Dtype data_at(int index) const {
     if (index < 0) {
       CHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
-    CHECK_LE(index + 1, _size)<<"index out of range";
+    CHECK_LE(index + 1, _size) << "index out of range";
     return cpu_data()[index];
   };
-  inline Dtype grad_at(int index) const{
+  inline Dtype grad_at(int index) const {
     if (index < 0) {
       CHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
-    CHECK_LT(index, _size)<<"index out of range";
+    CHECK_LT(index, _size) << "index out of range";
     return cpu_grad()[index];
   };
 
@@ -184,60 +184,6 @@ class Tensor {
 
 std::ostream &operator<<(std::ostream &out, const Tensor &tensor);
 std::ostream &operator<<(std::ostream &out, const Tensor *tensor);
-
-/* math of Tensor */
-void set(Tensor &tensor, const float val);
-void set(Tensor *tensor, const float val);
-
-Tensor *add(Tensor *tensor, const float val, bool inplace = false);
-Tensor *sub(Tensor *tensor, const float val, bool inplace = false);
-Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
-Tensor *pow(Tensor *tensor, const float val, bool inplace = false);
-Tensor *exp(Tensor *tensor, bool inplace = false);
-
-inline Tensor *add(Tensor &tensor, const float val, bool inplace = false) {
-  return add(&tensor, val, inplace);
-}
-inline Tensor *sub(Tensor &tensor, const float val, bool inplace = false) {
-  return sub(&tensor, val, inplace);
-}
-inline Tensor *scale(Tensor &tensor, const float val, bool inplace = false) {
-  return scale(&tensor, val, inplace);
-}
-inline Tensor *pow(Tensor &tensor, const float val, bool inplace = false) {
-  return pow(&tensor, val, inplace);
-}
-inline Tensor *exp(Tensor &tensor, bool inplace = false) {
-  return exp(&tensor, inplace);
-}
-
-Tensor *add(const Tensor *a, const Tensor *b);
-Tensor *sub(const Tensor *a, const Tensor *b);
-Tensor *mul(const Tensor *a, const Tensor *b);
-Tensor *div(const Tensor *a, const Tensor *b);
-
-inline Tensor *add(const Tensor &a, const Tensor &b) { return add(&a, &b); }
-inline Tensor *sub(const Tensor &a, const Tensor &b) { return sub(&a, &b); }
-inline Tensor *mul(const Tensor &a, const Tensor &b) { return mul(&a, &b); }
-inline Tensor *div(const Tensor &a, const Tensor &b) { return div(&a, &b); }
-/* math of Tensor end */
-
-/* Tensor Generator*/
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad, float a, float b);
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *random(const Tensor::ShapeType &shape, float a, float b);
-
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad, float mu, float sigma);
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma);
-
-Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, bool require_grad = false);
-Tensor *zeros(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *ones(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *zeros_like(Tensor *other, bool require_grad = false);
-Tensor *ones_like(Tensor *other, bool require_grad = false);
-Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad = false);
-/* Tensor Generator end*/
 
 /* save and load*/
 void save(const Tensor *tensor, const std::string &path);

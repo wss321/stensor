@@ -2,7 +2,7 @@
 * Copyright 2021 wss
 * Created by wss on 11月,15, 2021
 */
-#include "math.hpp"
+#include "math_base.hpp"
 
 #define SCINT static_cast<int>
 
@@ -164,7 +164,7 @@ void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
   CHECK(X);
   CHECK(Y);
   if (X != Y) std::memcpy(Y, X, sizeof(Dtype) * n);
-    //cblas_ccopy(static_cast<int>(n), X, 1, Y, 1);
+  //cblas_ccopy(static_cast<int>(n), X, 1, Y, 1);
 }
 ADD_UNARY_FUNC_PP(cpu_copy);
 //template void cpu_copy<uint32_t>(const uint32_t n, const uint32_t *X, uint32_t *Y);
