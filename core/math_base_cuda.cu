@@ -91,7 +91,7 @@ void gpu_axpy<double>(const int N, const double alpha, const double *X,
   CUBLAS_CHECK(cublasDaxpy(Config::cublas_handle(), N, &alpha, X, 1, Y, 1));
 }
 
-void gpu_memcpy(const size_t N, const void *X, void *Y) {
+void gpu_copy(const size_t N, const void *X, void *Y) {
   if (X != Y) {
     CUDA_CHECK(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(stensor/alt_fn)
   }

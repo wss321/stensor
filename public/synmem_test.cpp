@@ -70,4 +70,22 @@ TEST_F(SynMemTest, TestGPUWrite) {
   }
 }
 
+TEST_F(SynMemTest, TestCPU2GPU) {
+  SynMem mem(10);
+  void *cpu_data = mem.mutable_cpu_data();
+  EXPECT_EQ(mem.state(), SynMem::AT_CPU);
+  stensor::cpu_memset(mem.size(), 1, cpu_data);
+  for (uint32_t i = 0; i < mem.size(); ++i) {
+    EXPECT_EQ((static_cast<char *>(cpu_data))[i], 1);
+  }
+  mem.to_gpu();
+  // do another round
+  cpu_data = mem.mutable_cpu_data();
+  EXPECT_EQ(mem.state(), SynMem::AT_CPU);
+  stensor::cpu_memset(mem.size(), 2, cpu_data);
+  for (uint32_t i = 0; i < mem.size(); ++i) {
+    EXPECT_EQ((static_cast<char *>(cpu_data))[i], 2);
+  }
+}
+
 }

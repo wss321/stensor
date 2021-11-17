@@ -4,6 +4,7 @@
 #include "proto/tensor.pb.h"
 #include "public/common.hpp"
 #include "public/synmem.hpp"
+#include "math_base_cuda.hpp"
 
 using namespace boost;
 namespace stensor {
@@ -27,19 +28,23 @@ class Tensor {
   bool _require_grad;
   std::string _name;
   uint32_t _capacity;
+  void Reset(const ShapeType &shape, int device_id=-1);//device_id = -1 represent cpu
  public:
   Tensor() : _data(),
              _grad(), _size(0ul),
              _capacity(0ul), _name(),
              _require_grad(false) {};
-  explicit Tensor(const ShapeType &shape, bool require_grad = false);
+  explicit Tensor(const ShapeType &shape, bool require_grad = false, int device_id=-1);
   Tensor(const Tensor &other, bool require_grad = false);
   Tensor(const Tensor *other, bool require_grad = false);
   Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
-
   Mode state() const {
     if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNED) return GPU;
     return CPU;
+  }
+  inline int device() const { return _data->device(); }
+  inline bool has_grad() const {
+    return _grad->has_cpu_data() || _grad->has_gpu_data();
   }
 
   inline void set_require_grad(bool require_grad) { _require_grad = require_grad; }
@@ -49,11 +54,11 @@ class Tensor {
   void Reshape(const ShapeType &shape);
   void ReshapeLike(const Tensor &other);
   void ReshapeLike(const Tensor *other);
-
   void flatten();
+
   inline std::string shape_string() const {
     std::ostringstream stream;
-    stream << "(";
+    stream << "{shape:(";
     for (uint32_t i = 0; i < _shape.size() - 1; ++i) {
       stream << _shape[i] << "x";
     }
@@ -61,8 +66,16 @@ class Tensor {
       stream << _shape[_shape.size() - 1];
     else stream << "0";
     stream << "=" << _size << ")";
+    if (state() == CPU) stream << ",device:CPU";
+    else if (state() == GPU) stream << ",device:GPU" << device();
+    stream << ",dtype:"
+           << abi::__cxa_demangle(typeid(Dtype).name(), nullptr, nullptr, nullptr)
+           << "}" << std::endl;
     return stream.str();
   }
+  std::string data_string() const;
+  std::string grad_string() const;
+
   inline const ShapeType &shape() const { return _shape; }
   inline uint32_t CanonicalAxisIndex(int32_t axis_index) const {
     int32_t num_axes_t = static_cast<int32_t>(num_axes());
@@ -81,6 +94,10 @@ class Tensor {
   inline uint32_t shape(int32_t index) const {
     return _shape[CanonicalAxisIndex(index)];
   }
+
+  void to_cpu();
+  void to_gpu();
+
   bool ShapeEquals(const Tensor *other);
   bool ShapeEquals(const Tensor &other);
   bool ShapeEquals(const TensorProto *other);
@@ -93,14 +110,17 @@ class Tensor {
       index = static_cast<int>(size()) + index;
     }
     CHECK_LE(index + 1, _size) << "index out of range";
+    if (state() == GPU) return gpu_data()[index];
     return cpu_data()[index];
   };
+
   inline Dtype grad_at(int index) const {
     if (index < 0) {
       CHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
     CHECK_LT(index, _size) << "index out of range";
+    if (state() == GPU) return gpu_grad()[index];
     return cpu_grad()[index];
   };
 
@@ -136,9 +156,9 @@ class Tensor {
   }
 
   void CopyFrom(const Tensor &source, bool copy_grad = false,
-                bool reshape = false, Mode mode = stensor::CPU);
+                bool reset = false);
   void CopyFrom(const Tensor *source, bool copy_grad = false,
-                bool reshape = false, Mode mode = stensor::CPU);
+                bool reset = false);
 
   inline const Dtype *cpu_data() const {
     CHECK(_data) << "Data is None.";
@@ -160,15 +180,33 @@ class Tensor {
     return static_cast<Dtype * >(_grad->mutable_cpu_data());
   };
 
+  inline const Dtype *gpu_data() const {
+    CHECK(_data) << "Data is None.";
+    return (const Dtype *) _data->gpu_data();
+  };
+
+  inline const Dtype *gpu_grad() const {
+    CHECK(_grad) << "Grad is None.";
+    return (const Dtype *) _grad->gpu_data();
+  };
+
+  inline Dtype *mutable_gpu_data() {
+    CHECK(_data) << "Data is None.";
+    return static_cast<Dtype * >(_data->mutable_gpu_data());
+  };
+
+  inline Dtype *mutable_gpu_grad() {
+    CHECK(_grad) << "Grad is None.";
+    return static_cast<Dtype * >(_grad->mutable_gpu_data());
+  };
+
   inline bool require_grad() const {
     return _require_grad;
   }
 
-  std::string data_string() const;
-
 //  const std::pair<Tensor *, std::string> neighbors() const;
   void FromProto(const TensorProto &proto, bool reshape = true);
-  void FromProto(const TensorProto *proto, bool reshape = true);
+  void FromProto(const TensorProto *proto, bool reset = true);
   void ToProto(TensorProto &proto, bool write_grad = false) const;
   void ToProto(TensorProto *proto, bool write_grad = false) const;
 

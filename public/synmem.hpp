@@ -27,6 +27,8 @@ class SynMem {
   inline uint32_t size() const { return size_; }
   inline SynState state() const { return state_; }
   inline int device() const { return gpu_device_; }
+  inline bool has_gpu_data() const{return own_gpu_data_;}
+  inline bool has_cpu_data() const{return own_cpu_data_;}
   void to_cpu();
   void to_gpu();
   void syn();

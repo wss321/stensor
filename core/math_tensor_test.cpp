@@ -9,8 +9,8 @@
 #include "math_tesnsor.hpp"
 
 namespace stensor {
-class MathTensorTest : public ::testing::Test {};
-TEST_F(MathTensorTest, Gennerator) {
+class TensorTest : public ::testing::Test {};
+TEST_F(TensorTest, Gennerator) {
   Tensor tensor(Tensor::ShapeType{3, 4});
   std::cout << stensor::zeros_like(&tensor) << std::endl;
   std::cout << stensor::ones_like(&tensor) << std::endl;
@@ -21,7 +21,7 @@ TEST_F(MathTensorTest, Gennerator) {
   std::cout << stensor::random_gaussian(std::vector<uint32_t>{1, 3}) << std::endl;
 }
 
-TEST_F(MathTensorTest, MathUnary) {
+TEST_F(TensorTest, MathUnary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
@@ -52,7 +52,7 @@ TEST_F(MathTensorTest, MathUnary) {
   std::cout << "\tdiv:\n" << d;
 }
 
-TEST_F(MathTensorTest, MathBinary) {
+TEST_F(TensorTest, MathBinary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
@@ -81,7 +81,7 @@ TEST_F(MathTensorTest, MathBinary) {
 
 }
 
-TEST_F(MathTensorTest, MathBroadCast) {
+TEST_F(TensorTest, MathBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{3, 1, 1};
   Tensor::ShapeType shape3{3, 4, 5};

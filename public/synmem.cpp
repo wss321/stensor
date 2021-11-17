@@ -69,8 +69,7 @@ void SynMem::to_gpu() {
       break;
     case AT_CPU:
       if (gpu_ptr_ == nullptr) {
-        MallocGPU(&gpu_ptr_, size_);
-        CUDA_CHECK(cudaGetDevice(&gpu_device_));
+        MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
         own_gpu_data_ = true;
       }
       stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);

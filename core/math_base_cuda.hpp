@@ -38,6 +38,8 @@ template<typename Dtype>
 void gpu_axpby(const int N, const Dtype alpha, const Dtype *X,
                const Dtype beta, Dtype *Y);
 
+void gpu_copy(const size_t N, const void *X, void *Y);
+
 template <typename Dtype>
 void gpu_set(const int N, const Dtype alpha, Dtype *X);
 
