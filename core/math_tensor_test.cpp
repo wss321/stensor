@@ -140,4 +140,38 @@ TEST_F(TensorTest, MathGPUBroadCast) {
 
 }
 
+TEST_F(TensorTest, MathGPUBroadCastSpeed) {
+  Tensor::ShapeType shape1{128, 224, 224};
+  Tensor::ShapeType shape2{224, 224};
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::random(shape2);
+  long long start = systemtime_ms();
+  Tensor *c1 = stensor::add(a, b);
+  Tensor *d1 = stensor::sub(a, b);
+  Tensor *e1 = stensor::mul(a, b);
+  Tensor *f1 = stensor::div(a, b);
+  LOG(INFO) << "CPU broadcast operation time:" << systemtime_ms() - start << "ms";
+
+  a->to_gpu();
+  b->to_gpu();
+  EXPECT_EQ(a->device(), 0);
+  start = systemtime_ms();
+  Tensor *c = stensor::add(a, b);
+  Tensor *d = stensor::sub(a, b);
+  Tensor *e = stensor::mul(a, b);
+  Tensor *f = stensor::div(a, b);
+  LOG(INFO) << "GPU broadcast operation time:" << systemtime_ms() - start << "ms";
+
+  delete a;
+  delete b;
+  delete c;
+  delete d;
+  delete e;
+  delete f;
+  delete c1;
+  delete d1;
+  delete e1;
+  delete f1;
+
+}
 }

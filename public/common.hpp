@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>  // pair
 #include <vector>
+#include<sys/timeb.h>
 
 // cuda
 #include <cublas_v2.h>
@@ -89,6 +90,12 @@ class Config {
 
 inline rng_t* stensor_rng() {
   return static_cast<stensor::rng_t*>(Config::rng_stream().generator());
+}
+
+inline long long systemtime_ms() {
+  timeb t;
+  ftime(&t);
+  return t.time * 1000 + t.millitm;
 }
 
 /* borrow from caffe /end*/

@@ -155,7 +155,6 @@ Tensor *exp(Tensor *tensor, bool inplace) {
 }
 
 // Tensor op Tensor
-// TODO: op on GPU
 inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out, int index) {
   std::vector<int> indices_in_result(shape_out.size(), 0);
   indices_in_result[shape_out.size() - 1] = index % static_cast<int>(shape_out[shape_out.size() - 1]);

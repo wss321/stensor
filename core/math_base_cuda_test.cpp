@@ -7,7 +7,6 @@
 #include "common.hpp"
 #include "memory_op.hpp"
 #include "math_base_cpu.hpp"
-#include<sys/timeb.h>
 
 namespace stensor {
 class GPUMathTest : public ::testing::Test {};
@@ -35,11 +34,6 @@ TEST_F(GPUMathTest, MemTest) {
 
   EXPECT_EQ(data.device(), 0);
 
-}
-long long systemtime() {
-  timeb t;
-  ftime(&t);
-  return t.time * 1000 + t.millitm;
 }
 
 TEST_F(GPUMathTest, MMTest) {
@@ -115,44 +109,44 @@ TEST_F(GPUMathTest, SpeedTest) {
   float *c1 = (float *) A.mutable_cpu_data();
   float *c2 = (float *) B.mutable_cpu_data();
   float *c3 = (float *) C.mutable_cpu_data();
-  long long start = systemtime();
+  long long start = systemtime_ms();
   stensor::gpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
   stensor::gpu_rng_uniform<float>(size2, -1.0, 1.0, g2);
-  LOG(INFO) << "GPU RNG time:" << systemtime() - start << "ms";
+  LOG(INFO) << "GPU RNG time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::cpu_rng_uniform<float>(size1, -1, 1, c1);
   stensor::cpu_rng_uniform<float>(size2, -1, 1, c2);
-  LOG(INFO) << "CPU RNG time:" << systemtime() - start << "ms";
+  LOG(INFO) << "CPU RNG time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::gpu_dot(size1, g1, g2, g3);
-  LOG(INFO) << "GPU dot time:" << systemtime() - start << "ms";
+  LOG(INFO) << "GPU dot time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::cpu_dot(size1, c1, c2);
-  LOG(INFO) << "CPU dot time:" << systemtime() - start << "ms";
+  LOG(INFO) << "CPU dot time:" << systemtime_ms() - start << "ms";
 
   // add
-  start = systemtime();
+  start = systemtime_ms();
   stensor::gpu_add(size1, g1, g2, g3);
-  LOG(INFO) << "GPU add time:" << systemtime() - start << "ms";
+  LOG(INFO) << "GPU add time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::cpu_add(size1, c1, c2, c3);
-  LOG(INFO) << "CPU add time:" << systemtime() - start << "ms";
+  LOG(INFO) << "CPU add time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::gpu_gemm<float>(CblasNoTrans, CblasNoTrans,
                            N, N, N,
                            1, g1, g2, 0, g3);
-  LOG(INFO) << "GPU matmul time:" << systemtime() - start << "ms";
+  LOG(INFO) << "GPU matmul time:" << systemtime_ms() - start << "ms";
 
-  start = systemtime();
+  start = systemtime_ms();
   stensor::cpu_gemm<float>(CblasNoTrans, CblasNoTrans,
                            N, N, N,
                            1, c1, c2, 0, c3);
-  LOG(INFO) << "CPU matmul time:" << systemtime() - start << "ms";
+  LOG(INFO) << "CPU matmul time:" << systemtime_ms() - start << "ms";
 //  for (int i = 0; i < 100; ++i) {
 //    EXPECT_EQ(c3[i], g3[i]);
 //  }
