@@ -6,17 +6,30 @@
 
 namespace stensor {
 
+#define MALLOC_GPU_DEVICE(gpu_ptr, size, gpu_device) \
+  MallocGPU(&gpu_ptr, size);\
+  int global_device;\
+  CUDA_CHECK(cudaGetDevice(&global_device));\
+  if (gpu_device==-1){ \
+    CUDA_CHECK(cudaSetDevice(global_device));\
+    gpu_device = global_device;\
+  }else{ \
+  CUDA_CHECK(cudaSetDevice(gpu_device)); \
+  } \
+  CUDA_CHECK(cudaGetDevice(&gpu_device)); \
+  CUDA_CHECK(cudaSetDevice(global_device))
+
 SynMem::SynMem() :
     cpu_ptr_(nullptr), gpu_ptr_(nullptr),
     size_(0ul), state_(NONE),
     own_cpu_data_(false), own_gpu_data_(false),
     gpu_device_(-1) {}
 
-SynMem::SynMem(uint32_t size) :
+SynMem::SynMem(uint32_t size, int device_id) :
     cpu_ptr_(nullptr), gpu_ptr_(nullptr),
     size_(size), state_(NONE),
     own_cpu_data_(false), own_gpu_data_(false),
-    gpu_device_(-1) {}
+    gpu_device_(device_id) {}
 
 SynMem::~SynMem() {
   if (cpu_ptr_ && own_cpu_data_)
@@ -27,7 +40,8 @@ SynMem::~SynMem() {
 
 void SynMem::to_cpu() {
   switch (state_) {
-    case NONE:MallocCPU(&cpu_ptr_, size_);
+    case NONE:
+      MallocCPU(&cpu_ptr_, size_);
       std::memset(cpu_ptr_, 0, size_);
       state_ = AT_CPU;
       own_cpu_data_ = true;
@@ -47,9 +61,9 @@ void SynMem::to_cpu() {
 
 void SynMem::to_gpu() {
   switch (state_) {
-    case NONE:MallocGPU(&gpu_ptr_, size_);
+    case NONE:
+      MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
       CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
-      CUDA_CHECK(cudaGetDevice(&gpu_device_));
       own_gpu_data_ = true;
       state_ = AT_GPU;
       break;
@@ -69,9 +83,9 @@ void SynMem::to_gpu() {
 
 void SynMem::syn() {
   switch (state_) {
-    case NONE:MallocGPU(&gpu_ptr_, size_);
+    case NONE:
+      MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
       CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
-      CUDA_CHECK(cudaGetDevice(&gpu_device_));
       own_gpu_data_ = true;
       if (cpu_ptr_ == nullptr) {
         MallocCPU(&cpu_ptr_, size_);
@@ -82,8 +96,7 @@ void SynMem::syn() {
       break;
     case AT_CPU:
       if (gpu_ptr_ == nullptr) {
-        MallocGPU(&gpu_ptr_, size_);
-        CUDA_CHECK(cudaGetDevice(&gpu_device_));
+        MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
         own_gpu_data_ = true;
       }
       stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);

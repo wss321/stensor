@@ -13,7 +13,8 @@ namespace stensor {
 class SynMem {
  public:
   SynMem();
-  explicit SynMem(uint32_t size);
+//  explicit SynMem(uint32_t size);
+  explicit SynMem(uint32_t size, int device_id=-1);
   ~SynMem();
   const void *cpu_data();
   const void *gpu_data();
