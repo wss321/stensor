@@ -2,7 +2,7 @@
 * Copyright 2021 wss
 * Created by wss on 11月,15, 2021
 */
-#include "math_base.hpp"
+#include "math_base_cpu.hpp"
 
 #define SCINT static_cast<int>
 
@@ -75,58 +75,58 @@ DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
 namespace stensor {
 /* self op start*/
 template<typename Dtype>
-void exp(const uint32_t n,
-         const Dtype *a,
-         Dtype *y) {
+void cpu_exp(const uint32_t n,
+             const Dtype *a,
+             Dtype *y) {
   vExp(n, a, y);
 }
-ADD_UNARY_FUNC_PP(exp);
+ADD_UNARY_FUNC_PP(cpu_exp);
 
 template<typename Dtype>
-void log(const uint32_t n,
-         const Dtype *a,
-         Dtype *y) {
+void cpu_log(const uint32_t n,
+             const Dtype *a,
+             Dtype *y) {
   vLog(n, a, y);
 }
-ADD_UNARY_FUNC_PP(log);
+ADD_UNARY_FUNC_PP(cpu_log);
 
 template<typename Dtype>
-void abs(const uint32_t n,
-         const Dtype *a,
-         Dtype *y) {
+void cpu_abs(const uint32_t n,
+             const Dtype *a,
+             Dtype *y) {
   vAbs(n, a, y);
 }
-ADD_UNARY_FUNC_PP(abs);
+ADD_UNARY_FUNC_PP(cpu_abs);
 
 template<typename Dtype>
-void sqrt(const uint32_t n,
-          const Dtype *a,
-          Dtype *y) {
+void cpu_sqrt(const uint32_t n,
+              const Dtype *a,
+              Dtype *y) {
   vSqrt(n, a, y);
 }
-ADD_UNARY_FUNC_PP(sqrt);
+ADD_UNARY_FUNC_PP(cpu_sqrt);
 
 template<typename Dtype>
-void square(const uint32_t n,
-            const Dtype *a,
-            Dtype *y) {
+void cpu_square(const uint32_t n,
+                const Dtype *a,
+                Dtype *y) {
   vSqr(n, a, y);
 }
-ADD_UNARY_FUNC_PP(square);
+ADD_UNARY_FUNC_PP(cpu_square);
 
 template<typename Dtype>
-void sign(const uint32_t n,
-          const Dtype *a,
-          Dtype *y) {
+void cpu_sign(const uint32_t n,
+              const Dtype *a,
+              Dtype *y) {
   vSign(n, a, y);
 }
-ADD_UNARY_FUNC_PP(sign);
+ADD_UNARY_FUNC_PP(cpu_sign);
 
 template<typename Dtype>
-void clamp(const uint32_t n,
-           const Dtype min, const Dtype max,
-           const Dtype *a,
-           Dtype *y) {
+void cpu_clamp(const uint32_t n,
+               const Dtype min, const Dtype max,
+               const Dtype *a,
+               Dtype *y) {
   CHECK_GT(max, min);
   CHECK(a);
   CHECK(y);
@@ -136,18 +136,22 @@ void clamp(const uint32_t n,
     else if (a[i] > max) y[i] = max;
   }
 }
-template void clamp<uint32_t>(const uint32_t n, const uint32_t min, const uint32_t max, const uint32_t *a, uint32_t *y);
-template void clamp<int>(const uint32_t n, const int min, const int max, const int *a, int *y);
-template void clamp<float>(const uint32_t n, const float min, const float max, const float *a, float *y);
-template void clamp<double>(const uint32_t n, const double min, const double max, const double *a, double *y);
+template void cpu_clamp<uint32_t>(const uint32_t n,
+                                  const uint32_t min,
+                                  const uint32_t max,
+                                  const uint32_t *a,
+                                  uint32_t *y);
+template void cpu_clamp<int>(const uint32_t n, const int min, const int max, const int *a, int *y);
+template void cpu_clamp<float>(const uint32_t n, const float min, const float max, const float *a, float *y);
+template void cpu_clamp<double>(const uint32_t n, const double min, const double max, const double *a, double *y);
 
 /* self op end*/
 
 /* vector scalar start*/
 template<typename Dtype>
-void set(const uint32_t n,
-         const Dtype val,
-         Dtype *y) {
+void cpu_set(const uint32_t n,
+             const Dtype val,
+             Dtype *y) {
   CHECK(y);
   if (val == 0) {
     std::memset(y, 0, sizeof(Dtype) * n);
@@ -158,7 +162,7 @@ void set(const uint32_t n,
   }
 
 }
-ADD_UNARY_FUNC_SP(set);
+ADD_UNARY_FUNC_SP(cpu_set);
 template<typename Dtype>
 void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
   CHECK(X);
@@ -167,115 +171,97 @@ void cpu_copy(const uint32_t n, const Dtype *X, Dtype *Y) {
   //cblas_ccopy(static_cast<int>(n), X, 1, Y, 1);
 }
 ADD_UNARY_FUNC_PP(cpu_copy);
-//template void cpu_copy<uint32_t>(const uint32_t n, const uint32_t *X, uint32_t *Y);
-//
-//template void cpu_copy<int>(const uint32_t n, const int *X, int *Y);
-//
-//template<>
-//void cpu_copy<double>(const uint32_t n, const double *X, double *Y) {
-//  CHECK(X);
-//  CHECK(Y);
-//  if (X != Y) //std::memcpy(Y, X, sizeof(Dtype) * n);
-//    cblas_dcopy(static_cast<int>(n), X, 1, Y, 1);
-//}
-//template<>
-//void cpu_copy<float>(const uint32_t n, const float *X, float *Y) {
-//  CHECK(X);
-//  CHECK(Y);
-//  if (X != Y) //std::memcpy(Y, X, sizeof(Dtype) * n);
-//    cblas_scopy(static_cast<int>(n), X, 1, Y, 1);
-//}
 
 template<typename Dtype>
-void add(const uint32_t n,
-         const Dtype *a, const Dtype val,
-         Dtype *y) {
+void cpu_add_scalar(const uint32_t n,
+                    const Dtype *a, const Dtype val,
+                    Dtype *y) {
   CHECK(a);
   CHECK(y);
   for (int i = 0; i < n; ++i) {
     y[i] = a[i] + val;
   }
 }
-ADD_BINARY_FUNC_PSP(add);
+ADD_BINARY_FUNC_PSP(cpu_add_scalar);
 
 template<typename Dtype>
-void sub(const uint32_t n,
-         const Dtype *a, const Dtype val,
-         Dtype *y) {
+void cpu_sub_scalar(const uint32_t n,
+                    const Dtype *a, const Dtype val,
+                    Dtype *y) {
   CHECK(a);
   CHECK(y);
   for (int i = 0; i < n; ++i) {
     y[i] = a[i] - val;
   }
 }
-ADD_BINARY_FUNC_PSP(sub);
+ADD_BINARY_FUNC_PSP(cpu_sub_scalar);
 
 template<typename Dtype>
-void scale(const uint32_t n,
-           const Dtype *a, const Dtype val,
-           Dtype *y) {
+void cpu_scale(const uint32_t n,
+               const Dtype *a, const Dtype val,
+               Dtype *y) {
   CHECK(a);
   CHECK(y);
   for (int i = 0; i < n; ++i) {
     y[i] = a[i] * val;
   }
 }
-ADD_BINARY_FUNC_PSP(scale);
+ADD_BINARY_FUNC_PSP(cpu_scale);
 
 template<typename Dtype>
-void pow(const uint32_t n,
-         const Dtype *a, const Dtype val,
-         Dtype *y) {
+void cpu_pow_scalar(const uint32_t n,
+                    const Dtype *a, const Dtype val,
+                    Dtype *y) {
   CHECK(a);
   CHECK(y);
   for (int i = 0; i < n; ++i) {
     y[i] = std::pow(a[i], val);
   }
 }
-ADD_BINARY_FUNC_PSP(pow);
+ADD_BINARY_FUNC_PSP(cpu_pow_scalar);
 
 /* vector scalar end*/
 
 /* vector vector start*/
 template<typename Dtype>
-void add(const uint32_t n,
-         const Dtype *a, const Dtype *b,
-         Dtype *y) {
+void cpu_add(const uint32_t n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y) {
   vAdd(n, a, b, y);
 }
-ADD_BINARY_FUNC_PPP(add);
+ADD_BINARY_FUNC_PPP(cpu_add);
 
 template<typename Dtype>
-void sub(const uint32_t n,
-         const Dtype *a, const Dtype *b,
-         Dtype *y) {
+void cpu_sub(const uint32_t n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y) {
   vSub(n, a, b, y);
 }
-ADD_BINARY_FUNC_PPP(sub);
+ADD_BINARY_FUNC_PPP(cpu_sub);
 
 template<typename Dtype>
-void mul(const uint32_t n,
-         const Dtype *a, const Dtype *b,
-         Dtype *y) {
+void cpu_mul(const uint32_t n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y) {
   vMul(n, a, b, y);
 }
-ADD_BINARY_FUNC_PPP(mul);
+ADD_BINARY_FUNC_PPP(cpu_mul);
 
 template<typename Dtype>
-void div(const uint32_t n,
-         const Dtype *a, const Dtype *b,
-         Dtype *y) {
+void cpu_div(const uint32_t n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y) {
   vDiv(n, a, b, y);
 }
-ADD_BINARY_FUNC_PPP(div);
+ADD_BINARY_FUNC_PPP(cpu_div);
 
 template<typename Dtype>
-void pow(const uint32_t n,
-         const Dtype *a, const Dtype *b,
-         Dtype *y) {
+void cpu_pow(const uint32_t n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y) {
   vPow(n, a, b, y);
 }
-ADD_BINARY_FUNC_PPP(pow);
+ADD_BINARY_FUNC_PPP(cpu_pow);
 
 // Returns the sum of the absolute values of the elements of vector x
 template<>
@@ -285,7 +271,7 @@ float cpu_asum<float>(uint32_t n, const float *x) {
 
 template<>
 float cpu_dot<float>(uint32_t n, const float *x, const float *y) {
-  return cblas_sasum(SCINT(n), x, 1);
+  return cblas_sdot(SCINT(n), x, 1, y, 1);
 }
 
 template<>
@@ -370,69 +356,112 @@ void cpu_axpby<double>(const uint32_t N,
 
 /* matrix matrix end*/
 
-/* generator start*/
+/* random generator start*/
+//template<typename Dtype>
+//void cpu_rng_uniform(uint32_t n,
+//                     Dtype a, Dtype b,
+//                     Dtype *r) {
+//  CHECK_LE(n, INT32_MAX);
+//  CHECK(r);
+//  CHECK_LE(a, b);
+//
+//  std::random_device rd;
+//  std::mt19937 gen{rd()};
+//
+//  // values near the mean are the most likely
+//  // standard deviation affects the dispersion of generated values from the mean
+//  std::uniform_real_distribution<Dtype> dis(a, b);
+//  for (uint32_t i = 0; i < n; ++i) {
+//    r[i] = dis(gen);
+//  }
+//}
+
 template<typename Dtype>
-void rng_uniform(uint32_t n,
-                 Dtype a, Dtype b,
-                 Dtype *r) {
-  CHECK_LE(n, INT32_MAX);
+void cpu_rng_uniform(uint32_t n,
+                     Dtype a, Dtype b,
+                     Dtype *r) {
+  CHECK_GE(n, 0);
   CHECK(r);
   CHECK_LE(a, b);
-
-  std::random_device rd;
-  std::mt19937 gen{rd()};
-
-  // values near the mean are the most likely
-  // standard deviation affects the dispersion of generated values from the mean
-  std::uniform_real_distribution<Dtype> dis(a, b);
-  for (uint32_t i = 0; i < n; ++i) {
-    r[i] = dis(gen);
+  boost::uniform_real<Dtype> random_distribution(a, std::nextafter<Dtype>(
+      b, std::numeric_limits<Dtype>::max()));
+  boost::variate_generator<stensor::rng_t *, boost::uniform_real<Dtype> >
+      variate_generator(stensor_rng(), random_distribution);
+  for (int i = 0; i < n; ++i) {
+    r[i] = variate_generator();
   }
 }
-template void rng_uniform<float>(uint32_t n, float a, float b, float *r);
-template void rng_uniform<double>(uint32_t n, double a, double b, double *r);
+
+template void cpu_rng_uniform<float>(uint32_t n, float a, float b, float *r);
+template void cpu_rng_uniform<double>(uint32_t n, double a, double b, double *r);
+
+//template<typename Dtype>
+//void cpu_rng_gaussian(uint32_t n,
+//                      Dtype mu, Dtype sigma,
+//                      Dtype *r) {
+//  CHECK_LE(n, INT32_MAX);
+//  CHECK_LE(sigma, INT32_MAX);
+//  CHECK(r);
+//  std::normal_distribution<Dtype> random_distribution(mu, sigma);
+//
+//  std::random_device rd{};
+//  std::mt19937 gen{rd()};
+//  for (uint32_t i = 0; i < n; ++i) {
+//    r[i] = random_distribution(gen);
+//  }
+//}
 
 template<typename Dtype>
-void rng_gaussian(uint32_t n,
-                  Dtype mu, Dtype sigma,
-                  Dtype *r) {
-  CHECK_LE(n, INT32_MAX);
-  CHECK_LE(sigma, INT32_MAX);
+void cpu_rng_gaussian(uint32_t n,
+                      Dtype mu, Dtype sigma,
+                      Dtype *r) {
+  CHECK_GE(n, 0);
   CHECK(r);
-  std::normal_distribution<Dtype> random_distribution(mu, sigma);
-
-  std::random_device rd{};
-  std::mt19937 gen{rd()};
-  for (uint32_t i = 0; i < n; ++i) {
-    r[i] = random_distribution(gen);
+  CHECK_GT(sigma, 0);
+  boost::normal_distribution<Dtype> random_distribution(mu, sigma);
+  boost::variate_generator<stensor::rng_t *, boost::normal_distribution<Dtype> >
+      variate_generator(stensor_rng(), random_distribution);
+  for (int i = 0; i < n; ++i) {
+    r[i] = variate_generator();
   }
 }
-template void rng_gaussian<float>(uint32_t n, float mu, float sigma, float *r);
-template void rng_gaussian<double>(uint32_t n, double mu, double sigma, double *r);
+
+template void cpu_rng_gaussian<float>(uint32_t n, float mu, float sigma, float *r);
+template void cpu_rng_gaussian<double>(uint32_t n, double mu, double sigma, double *r);
+
+//template<typename Dtype>
+//void cpu_rng_bernoulli(uint32_t n,
+//                       Dtype p,
+//                       uint32_t *r) {
+//  CHECK_LE(n, INT32_MAX);
+//  CHECK(r);
+//  CHECK_LE(p, 1);
+//  std::bernoulli_distribution random_distribution(p);
+//
+//  std::random_device rd{};
+//  std::mt19937 gen{rd()};
+//  for (uint32_t i = 0; i < n; ++i) {
+//    r[i] = random_distribution(gen);
+//  }
+//}
 
 template<typename Dtype>
-void rng_bernoulli(uint32_t n,
-                   Dtype p,
-                   uint32_t *r) {
-  CHECK_LE(n, INT32_MAX);
+void cpu_rng_bernoulli(uint32_t n, Dtype p, uint32_t *r) {
+  CHECK_GE(n, 0);
   CHECK(r);
+  CHECK_GE(p, 0);
   CHECK_LE(p, 1);
-  std::bernoulli_distribution random_distribution(p);
-
-  std::random_device rd{};
-  std::mt19937 gen{rd()};
-  for (uint32_t i = 0; i < n; ++i) {
-    r[i] = random_distribution(gen);
+  boost::bernoulli_distribution<Dtype> random_distribution(p);
+  boost::variate_generator<stensor::rng_t *, boost::bernoulli_distribution<Dtype> >
+      variate_generator(stensor_rng(), random_distribution);
+  for (int i = 0; i < n; ++i) {
+    r[i] = variate_generator();
   }
 }
-template void rng_bernoulli<float>(uint32_t n, float a, uint32_t *r);
-template void rng_bernoulli<double>(uint32_t n, double a, uint32_t *r);
+
+template void cpu_rng_bernoulli<float>(uint32_t n, float a, uint32_t *r);
+template void cpu_rng_bernoulli<double>(uint32_t n, double a, uint32_t *r);
 
 /* generator end*/
-
-
-/* math of Tensor */
-
-/* math of Tensor end */
 
 }//namespace stensor

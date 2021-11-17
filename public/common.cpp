@@ -69,4 +69,58 @@ template std::ostream &operator<< <uint32_t>(std::ostream &out, std::vector<uint
 template std::ostream &operator<< <bool>(std::ostream &out, std::vector<bool> vector);
 template std::ostream &operator<< <std::string>(std::ostream &out, std::vector<std::string> vector);
 
+
+static boost::thread_specific_ptr<Config> thread_instance_;
+Config &Config::GetInstance() {
+  if (!thread_instance_.get()) {
+    thread_instance_.reset(new Config());
+  }
+  return *(thread_instance_.get());
+}
+
+Config::Config()
+    : cublas_handle_(nullptr),
+      curand_generator_(nullptr),
+      random_generator_(),
+      multiprocess_(false){
+  // Try to create a cublas handler, and report an error if failed (but we will
+  // keep the program running as one might just want to run CPU code).
+  if (cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
+    LOG(ERROR) << "Cannot create Cublas handle. Cublas won't be available.";
+  }
+  // Try to create a curand handler.
+  if (curandCreateGenerator(&curand_generator_, CURAND_RNG_PSEUDO_DEFAULT)
+      != CURAND_STATUS_SUCCESS ||
+      curandSetPseudoRandomGeneratorSeed(curand_generator_, cluster_seed_gen())
+          != CURAND_STATUS_SUCCESS) {
+    LOG(ERROR) << "Cannot create Curand generator. Curand won't be available.";
+  }
+}
+
+
+Config::~Config() {
+  if (cublas_handle_) CUBLAS_CHECK(cublasDestroy(cublas_handle_));
+  if (curand_generator_) {
+    CURAND_CHECK(curandDestroyGenerator(curand_generator_));
+  }
+}
+
+void Config::set_random_seed(const unsigned int seed) {
+  // curand seed
+  static bool g_curand_availability_logged = false;
+  if (GetInstance().curand_generator_) {
+    CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curand_generator(),
+                                                    seed));
+    CURAND_CHECK(curandSetGeneratorOffset(curand_generator(), 0));
+  } else {
+    if (!g_curand_availability_logged) {
+      LOG(ERROR) <<
+                 "Curand not available. Skipping setting the curand seed.";
+      g_curand_availability_logged = true;
+    }
+  }
+  // RNG seed
+  GetInstance().random_generator_.reset(new RNG(seed));
+}
+
 }//namespace stensor

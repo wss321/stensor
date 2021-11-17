@@ -2,7 +2,7 @@
 * Copyright 2021 wss
 * Created by wss on 11月,15, 2021
 */
-#include "math_base.hpp"
+#include "math_base_cpu.hpp"
 #include "public/common.hpp"
 #include <memory>
 #include "tensor.hpp"
@@ -20,20 +20,22 @@ TEST_F(MathTest, SelfOp) {
 
   Tensor t3(Tensor::ShapeType{3, 3});
   Tensor::Dtype *d3 = t3.mutable_cpu_data();
+  Tensor t4(Tensor::ShapeType{3, 4});
+  Tensor::Dtype *d4 = t4.mutable_cpu_data();
   // 1. set
-  stensor::set(t1.size(), 1.0f, d1);
-  stensor::set(t2.size(), 3.0f, d2);
-  stensor::set(t3.size(), 0.0f, d3);
+  stensor::cpu_set(t1.size(), 1.0f, d1);
+  stensor::cpu_set(t2.size(), 3.0f, d2);
+  stensor::cpu_set(t3.size(), 0.0f, d3);
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(d1[i], 1.0f);
   }
 
-  stensor::scale(t1.size(), d1, 10.0f, d1);
+  stensor::cpu_scale(t1.size(), d1, 10.0f, d1);
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(d1[i], 10.0f);
   }
 
-  stensor::add(t1.size(), d1, 1.0f, d1);
+  stensor::cpu_add_scalar(t1.size(), d1, 1.0f, d1);
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(d1[i], 11.0f);
   }
@@ -45,12 +47,14 @@ TEST_F(MathTest, SelfOp) {
   for (int i = 0; i < t3.size(); ++i) {
     EXPECT_EQ(d3[i], 132);
   }
+  stensor::Config::set_random_seed(1);
 
-  stensor::mul(t1.size(), d1, d2, d3);
+  stensor::cpu_mul(t1.size(), d1, d2, d4);
   for (int i = 0; i < t3.size(); ++i) {
-    EXPECT_EQ(d3[i], 33);
+    EXPECT_EQ(d4[i], 33);
   }
-  stensor::rng_gaussian(t3.size(), 0.0f, 1.0f, d3);
+
+  stensor::cpu_rng_uniform(t3.size(), 0.0f, 1.0f, d3);
   for (int i = 0; i < t3.size(); ++i) {
     std::cout << d3[i] << " ";
   }

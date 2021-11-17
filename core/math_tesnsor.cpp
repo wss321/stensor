@@ -3,30 +3,30 @@
 * Created by wss on 11月,16, 2021
 */
 #include "math_tesnsor.hpp"
-#include "math_base.hpp"
+#include "math_base_cpu.hpp"
 namespace stensor {
 /* math of Tensor */
 //TODO:GPU Mode
 void set(Tensor &tensor, float val) {
   float *data = tensor.mutable_cpu_data();
-  stensor::set(tensor.size(), val, data);
+  stensor::cpu_set(tensor.size(), val, data);
 }
 
 void set(Tensor *tensor, float val) {
   float *data = tensor->mutable_cpu_data();
-  stensor::set(tensor->size(), val, data);
+  stensor::cpu_set(tensor->size(), val, data);
 }
 
 Tensor *add(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
     float *data = tensor->mutable_cpu_data();
-    stensor::add(tensor->size(), data, val, data);
+    stensor::cpu_add_scalar(tensor->size(), data, val, data);
     return tensor;
   } else {
     const float *data = tensor->cpu_data();
     Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
-    stensor::add(out_tensor->size(), data, val, out_data);
+    stensor::cpu_add_scalar(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
@@ -34,26 +34,26 @@ Tensor *add(Tensor *tensor, float val, bool inplace) {
 Tensor *sub(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
     float *data = tensor->mutable_cpu_data();
-    stensor::sub(tensor->size(), data, val, data);
+    stensor::cpu_sub_scalar(tensor->size(), data, val, data);
     return tensor;
   } else {
     const float *data = tensor->cpu_data();
     Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
-    stensor::sub(out_tensor->size(), data, val, out_data);
+    stensor::cpu_sub_scalar(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
 Tensor *scale(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
     float *data = tensor->mutable_cpu_data();
-    stensor::scale(tensor->size(), data, val, data);
+    stensor::cpu_scale(tensor->size(), data, val, data);
     return tensor;
   } else {
     const float *data = tensor->cpu_data();
     Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
-    stensor::scale(out_tensor->size(), data, val, out_data);
+    stensor::cpu_scale(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
@@ -61,13 +61,13 @@ Tensor *scale(Tensor *tensor, float val, bool inplace) {
 Tensor *pow(Tensor *tensor, float val, bool inplace) {
   if (inplace) {
     float *data = tensor->mutable_cpu_data();
-    stensor::pow(tensor->size(), data, val, data);
+    stensor::cpu_pow_scalar(tensor->size(), data, val, data);
     return tensor;
   } else {
     const float *data = tensor->cpu_data();
     Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
-    stensor::pow(out_tensor->size(), data, val, out_data);
+    stensor::cpu_pow_scalar(out_tensor->size(), data, val, out_data);
     return out_tensor;
   }
 }
@@ -75,13 +75,13 @@ Tensor *pow(Tensor *tensor, float val, bool inplace) {
 Tensor *exp(Tensor *tensor, bool inplace) {
   if (inplace) {
     float *data = tensor->mutable_cpu_data();
-    stensor::exp(tensor->size(), data, data);
+    stensor::cpu_exp(tensor->size(), data, data);
     return tensor;
   } else {
     const float *data = tensor->cpu_data();
     Tensor *out_tensor = new Tensor(tensor, tensor->require_grad());
     float *out_data = out_tensor->mutable_cpu_data();
-    stensor::exp(out_tensor->size(), data, out_data);
+    stensor::cpu_exp(out_tensor->size(), data, out_data);
     return out_tensor;
   }
 }
@@ -111,7 +111,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
   } else {
     Tensor::ShapeType shape_a(a->shape());
@@ -135,7 +135,7 @@ Tensor *sub(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::sub(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::cpu_sub(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
   } else {
     Tensor::ShapeType shape_a(a->shape());
@@ -159,7 +159,7 @@ Tensor *mul(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::mul(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::cpu_mul(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
   } else {
     Tensor::ShapeType shape_a(a->shape());
@@ -184,7 +184,7 @@ Tensor *div(const Tensor *a, const Tensor *b) {
   if (a->shape() == b->shape()) {
     bool require_grad = (a->require_grad() || b->require_grad());
     Tensor *out_tensor = new Tensor(a->shape(), require_grad);
-    stensor::div(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+    stensor::cpu_div(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
     return out_tensor;
   } else {
     Tensor::ShapeType shape_a(a->shape());
@@ -210,7 +210,7 @@ Tensor *div(const Tensor *a, const Tensor *b) {
 
 Tensor *random(const Tensor::ShapeType &shape, bool require_grad, float a, float b) {
   Tensor *new_t = new Tensor(shape, require_grad);
-  stensor::rng_uniform<Tensor::Dtype>(new_t->size(), Tensor::Dtype(a), Tensor::Dtype(b), new_t->mutable_cpu_data());
+  stensor::cpu_rng_uniform<Tensor::Dtype>(new_t->size(), Tensor::Dtype(a), Tensor::Dtype(b), new_t->mutable_cpu_data());
   return new_t;
 }
 
@@ -223,10 +223,10 @@ Tensor *random(const Tensor::ShapeType &shape, float a, float b) {
 
 Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad, float mu, float sigma) {
   Tensor *new_t = new Tensor(shape, require_grad);
-  stensor::rng_gaussian<Tensor::Dtype>(new_t->size(),
-                                       Tensor::Dtype(mu),
-                                       Tensor::Dtype(sigma),
-                                       new_t->mutable_cpu_data());
+  stensor::cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
+                                           Tensor::Dtype(mu),
+                                           Tensor::Dtype(sigma),
+                                           new_t->mutable_cpu_data());
   return new_t;
 }
 

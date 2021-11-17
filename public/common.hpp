@@ -16,6 +16,15 @@
 #include <utility>  // pair
 #include <vector>
 
+// cuda
+#include <cublas_v2.h>
+#include <cuda.h>
+#include <curand.h>
+
+#include "stensor_random.hpp"
+#include "memory_op.hpp"
+#include <boost/thread.hpp>
+
 #ifndef GFLAGS_GFLAGS_H_
 namespace gflags = google;
 #endif  // GFLAGS_GFLAGS_H_
@@ -28,6 +37,7 @@ namespace gflags = google;
 #define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented"
 
 namespace stensor {
+
 enum Mode { CPU, GPU };
 
 template<typename RepeatType, typename V>
@@ -44,5 +54,43 @@ std::vector<uint32_t> broadcast(std::vector<uint32_t> &shape1, std::vector<uint3
 template<typename Dtype>
 std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector);
 
+/* borrow from caffe */
+
+class Config {
+ public:
+  ~Config();
+  static Config &GetInstance();
+  inline static bool multiprocess() { return GetInstance().multiprocess_; }
+  inline static cublasHandle_t cublas_handle() { return GetInstance().cublas_handle_; }
+  inline static curandGenerator_t curand_generator() {
+    return GetInstance().curand_generator_;
+  }
+  inline static void set_multiprocess(bool val) { GetInstance().multiprocess_ = val; }
+  static void set_random_seed(const unsigned int seed);
+  inline static RNG& rng_stream() {
+    if (!GetInstance().random_generator_) {
+      GetInstance().random_generator_.reset(new RNG());
+    }
+    return *(GetInstance().random_generator_);
+  }
+
+ protected:
+  cublasHandle_t cublas_handle_;
+  curandGenerator_t curand_generator_;
+  std::shared_ptr<RNG> random_generator_;
+  bool multiprocess_;
+
+ private:
+  // The private constructor to avoid duplicate instantiation.
+  Config();
+
+ DISABLE_COPY_AND_ASSIGN(Config);
+};
+
+inline rng_t* stensor_rng() {
+  return static_cast<stensor::rng_t*>(Config::rng_stream().generator());
+}
+
+/* borrow from caffe /end*/
 }// namespace stensor
 #endif //STENSOR_COMMON_HPP

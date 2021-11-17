@@ -85,8 +85,6 @@ TEST_F(MathTensorTest, MathBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{3, 1, 1};
   Tensor::ShapeType shape3{3, 4, 5};
-//  Tensor a0(Tensor::ShapeType{3, 4});
-//  Tensor b0(Tensor::ShapeType{3, 4});
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape2);
 //  Tensor *a = stensor::ones(shape1);

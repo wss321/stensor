@@ -5,16 +5,10 @@
 #define STENSOR_INCLUDE_SYNMEM_HPP_
 #include <cstdlib>
 #include "common.hpp"
+#include "memory_op.hpp"
+#include <time.h>
 
 namespace stensor {
-
-inline void MallocCPU(void **ptr, uint32_t size) {
-  *ptr = std::malloc(size);
-  CHECK(*ptr) << "[CPU] Allocate Failed:" << size << "Byte.";
-}
-inline void FreeCPU(void *ptr) {
-  std::free(ptr);
-}
 
 class SynMem {
  public:
@@ -22,23 +16,28 @@ class SynMem {
   explicit SynMem(uint32_t size);
   ~SynMem();
   const void *cpu_data();
-//  const void * gpu_data();
+  const void *gpu_data();
   void set_cpu_data(void *data_ptr);
-//  void set_gpu_data(void* data);
+  void set_gpu_data(void *data_ptr);
   void *mutable_cpu_data();
-//  void* mutable_gpu_data();
+  void *mutable_gpu_data();
 
-  enum SynState { NONE, AT_CPU, AT_GPU, SYNCED };
-  uint32_t size() const { return size_; }
-  SynState state() const { return state_; }
+  enum SynState { NONE, AT_CPU, AT_GPU, SYNED };
+  inline uint32_t size() const { return size_; }
+  inline SynState state() const { return state_; }
+  inline int device() const { return gpu_device_; }
+  void to_cpu();
+  void to_gpu();
+  void syn();
 
  private:
-  void to_cpu();
-  void syn();
   void *cpu_ptr_;
+  void *gpu_ptr_;
   uint32_t size_;
   SynState state_;
   bool own_cpu_data_;
+  bool own_gpu_data_;
+  int gpu_device_;
 
  DISABLE_COPY_AND_ASSIGN(SynMem);
 };

@@ -1,7 +1,7 @@
 #include <public/synmem.hpp>
 #include "tensor.hpp"
 #include "proto/tensor.pb.h"
-#include "math_base.hpp"
+#include "math_base_cpu.hpp"
 
 namespace stensor {
 
@@ -191,15 +191,17 @@ std::string Tensor::data_string() const {
         n_bracket++;
       } else break;
     }
-    if (n_bracket>=1)
+    if (n_bracket >= 1)
       out << "\n";
-    if ((i + 2) <= count){
+    if ((i + 2) <= count) {
       for (int j = 0; j < n_bracket; ++j) {
         out << "[";
       }
     }
   }
-  out << "{shape " << this->shape_string() << "}"<<std::endl;
+  out << "{shape:" << this->shape_string() << ", dtype:"
+      << abi::__cxa_demangle(typeid(Dtype).name(), nullptr, nullptr, nullptr)
+      << "}" << std::endl;
   return out.str();
 }
 
@@ -282,14 +284,14 @@ void save(const Tensor *tensor, const std::string &path) {
   tensor->ToProto(proto);
   std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
   bool success = proto.SerializeToOstream(&output);
-  CHECK(success)<<"Failed to save tensor to "<<path;
+  CHECK(success) << "Failed to save tensor to " << path;
 }
 Tensor *load(const std::string &path) {
   TensorProto proto;
   std::fstream input(path, std::ios::in | std::ios::binary);
   bool success = proto.ParseFromIstream(&input);
-  CHECK(success)<<"Failed to load tensor from "<<path;
-  Tensor* new_tensor= new Tensor();
+  CHECK(success) << "Failed to load tensor from " << path;
+  Tensor *new_tensor = new Tensor();
   new_tensor->FromProto(proto);
   return new_tensor;
 }

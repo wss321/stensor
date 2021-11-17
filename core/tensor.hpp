@@ -38,7 +38,7 @@ class Tensor {
   Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
 
   Mode state() const {
-    if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNCED) return GPU;
+    if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNED) return GPU;
     return CPU;
   }
 
