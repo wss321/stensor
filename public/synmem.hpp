@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include "common.hpp"
 #include "memory_op.hpp"
-#include <time.h>
+#include <ctime>
 
 namespace stensor {
 

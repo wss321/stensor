@@ -108,12 +108,12 @@ TEST_F(TensorTest, MathCPUBroadCast) {
 
 TEST_F(TensorTest, MathGPUBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
-  Tensor::ShapeType shape2{1, 1};
+  Tensor::ShapeType shape2{4, 1};
   Tensor::ShapeType shape3{3, 4, 5};
 //  Tensor *a = stensor::random(shape1);
 //  Tensor *b = stensor::random(shape2);
   Tensor *a = stensor::ones(shape1);
-  Tensor *b = stensor::constants(shape2, 2);
+  Tensor *b = stensor::constants(shape2, 2.5);
   a->to_gpu();
   b->to_gpu();
   EXPECT_EQ(a->device(), 0);
@@ -121,24 +121,22 @@ TEST_F(TensorTest, MathGPUBroadCast) {
   std::cout << "\tb:\n" << b;
   Tensor *c = stensor::add(a, b);
   std::cout << "\tgpu:c=a+b:\n" << c;
-  //TODO:fix std::cout <<c->cpu_data()[10]; stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
-//  EXPECT_EQ(c->device(), 0);
-//  EXPECT_EQ(c->shape(), shape3);
-//  delete a;
-//  //TODO:Fix bug -- delete error after gpu add
-//  delete b;
-//  delete c;
-//  a->to_cpu();
-//  b->to_cpu();
-//  EXPECT_EQ(b->device(), -1);
-//  EXPECT_EQ(b->state(), stensor::CPU);
-//  auto d = stensor::add(a, b);
-//  std::cout << "\tgpu:d=a+b:\n" << c;
-//  EXPECT_EQ(d->device(), -1);
-//  for (int i = 0; i < c->size(); ++i) {
-//    EXPECT_EQ(c->data_at(i), d->data_at(i));
-//  }
+  Tensor *d = stensor::sub(a, b);
+  std::cout << "\tgpu:c=a-b:\n" << d;
+  Tensor *e = stensor::mul(a, b);
+  std::cout << "\tgpu:c=a*b:\n" << e;
+  Tensor *f = stensor::div(a, b);
+  std::cout << "\tgpu:c=a/b:\n" << f;
+  delete a;
+  delete b;
+  delete c;
+  delete d;
+  delete e;
+  delete f;
 
+  //TODO:fix std::cout <<c->cpu_data()[10]; stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
+
+  //TODO:Fix bug -- delete error after gpu add
 
 }
 

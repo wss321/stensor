@@ -535,55 +535,59 @@ void gpu_rng_gaussian(const int n, const double mu, const double sigma,
     if (shape_b[i]!=1)  index_b += mb; \
   }
 
-template<typename Dtype>
-__global__ void add_broadcast_kernel(const int n, const int sy,
-                                     const Dtype *a, const Dtype *b,
-                                     const int *shape_a, const int *shape_b,
-                                     const int *shape_y, Dtype *y) {
-
-  CUDA_KERNEL_LOOP(index, n) {
-    BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y);
-    y[index] = a[index_a] + b[index_b];
-  }
+#define IMPLEMENT_BROADCAST_OP_KERNEL(name, op)\
+template<typename Dtype>\
+__global__ void name##_broadcast_kernel(const int n, const int sy,\
+                                     const Dtype *a, const Dtype *b,\
+                                     const int *shape_a, const int *shape_b,\
+                                     const int *shape_y, Dtype *y) {\
+  CUDA_KERNEL_LOOP(index, n) {\
+    BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y);\
+    y[index] = a[index_a] op b[index_b];\
+  }\
 }
 
-template<>
-void gpu_add_broadcast<float>(const float *a, const float *b,
-                              std::vector<uint32_t> &shape_a,
-                              std::vector<uint32_t> &shape_b,
-                              float *y) {
-  std::vector<uint32_t> shape_y = stensor::broadcast(shape_a, shape_b);
-  int sy = shape_y.size();
-  int shape_a_arr[sy];
-  int shape_b_arr[sy];
-  int shape_y_arr[sy];
-  int n = 1;
-  for (int i = 0; i < sy; ++i) n *= static_cast<int>(shape_y[i]);
-  for (int i = 0; i < sy; ++i) shape_a_arr[i] = static_cast<int>(shape_a[i]);
-  for (int i = 0; i < sy; ++i) shape_b_arr[i] = static_cast<int>(shape_b[i]);
-  for (int i = 0; i < sy; ++i) shape_y_arr[i] = static_cast<int>(shape_y[i]);
+IMPLEMENT_BROADCAST_OP_KERNEL(add, +);
+IMPLEMENT_BROADCAST_OP_KERNEL(sub, -);
+IMPLEMENT_BROADCAST_OP_KERNEL(mul, *);
+IMPLEMENT_BROADCAST_OP_KERNEL(div, /);
 
-  add_broadcast_kernel < float ><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>(
-      n, sy, a, b, shape_a_arr, shape_b_arr, shape_y_arr, y);
+#define IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(name, type) \
+template<>\
+void gpu_##name##_broadcast<type>(const type *a, const type *b,\
+                              std::vector<uint32_t> &shape_a,\
+                              std::vector<uint32_t> &shape_b,\
+                              type *y) {\
+  std::vector<uint32_t> shape_y = stensor::broadcast(shape_a, shape_b);\
+  int sy = shape_y.size();\
+  int *shape_a_gpu;\
+  int *shape_b_gpu;\
+  int *shape_y_gpu;\
+  MallocGPU((void **) &shape_a_gpu, sy * sizeof(int));\
+  MallocGPU((void **) &shape_b_gpu, sy * sizeof(int));\
+  MallocGPU((void **) &shape_y_gpu, sy * sizeof(int));\
+  int n = 1;\
+  for (int i = 0; i < sy; ++i) n *= static_cast<int>(shape_y[i]);\
+  for (int i = 0; i < sy; ++i) shape_a_gpu[i] = static_cast<int>(shape_a[i]);\
+  for (int i = 0; i < sy; ++i) shape_b_gpu[i] = static_cast<int>(shape_b[i]);\
+  for (int i = 0; i < sy; ++i) shape_y_gpu[i] = static_cast<int>(shape_y[i]);\
+  name##_broadcast_kernel < type ><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>(\
+      n, sy, a, b, shape_a_gpu, shape_b_gpu, shape_y_gpu, y);\
+  FreeGPU(shape_a_gpu);\
+  FreeGPU(shape_b_gpu);\
+  FreeGPU(shape_y_gpu);\
 }
 
-template<>
-void gpu_add_broadcast<double>(const double *a, const double *b,
-                               std::vector<uint32_t> &shape_a,
-                               std::vector<uint32_t> &shape_b,
-                               double *y) {
-  std::vector<uint32_t> shape_y = stensor::broadcast(shape_a, shape_b);
-  int Naxes = shape_y.size();
-  int shape_a_arr[Naxes];
-  int shape_b_arr[Naxes];
-  int shape_y_arr[Naxes];
-  int size = 1;
-  for (int i = 0; i < Naxes; ++i) size *= static_cast<int>(shape_y[i]);
-  for (int i = 0; i < Naxes; i++) shape_a_arr[i] = static_cast<int>(shape_a[i]);
-  for (int i = 0; i < Naxes; i++) shape_b_arr[i] = static_cast<int>(shape_b[i]);
-  for (int i = 0; i < Naxes; i++) shape_y_arr[i] = static_cast<int>(shape_y[i]);
-  add_broadcast_kernel < double ><<<GET_BLOCKS(size), CUDA_NUM_THREADS>>>(
-      size, Naxes, a, b, shape_a_arr, shape_b_arr, shape_y_arr, y);
-}
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(add, float);
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(add, double);
+
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(sub, float);
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(sub, double);
+
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(mul, float);
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(mul, double);
+
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(div, float);
+IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(div, double);
 
 }
