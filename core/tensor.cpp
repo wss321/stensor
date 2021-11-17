@@ -73,14 +73,12 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
   if (_capacity == _size) return;
   _capacity = _size;
   _data.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
-  if (device_id>-1)  gpu_data();else cpu_data();
+  if (device_id > -1) gpu_data(); else cpu_data();
 
-  if (_require_grad){
+  if (_require_grad) {
     _grad.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
-    if (device_id>-1)  gpu_grad();else cpu_grad();
+    if (device_id > -1) gpu_grad(); else cpu_grad();
   }
-
-
 
 }
 
@@ -233,11 +231,25 @@ void Tensor::FromProto(const TensorProto &proto, bool reshape) {
   FromProto(&proto, reshape);
 }
 
+//template<typename Dtype>
+//std::string memoryTostringSimplified(const Dtype *data,
+//                           const Tensor::ShapeType shape){
+//  std::ostringstream out;
+//  int dim = shape.size();
+//  int count = 1;
+//  for (int i = 0; i < shape.size(); ++i) count *= shape[i];
+//
+//  for (int i = 0; i < dim; ++i) {
+//    out << "[";
+//  }
+//
+//}
 template<typename Dtype>
 std::string memoryTostring(const Dtype *data,
                            const Tensor::ShapeType shape,
                            bool simplified = true);
 
+//TODO:simplified print
 template<typename Dtype>
 std::string memoryTostring(const Dtype *data,
                            const Tensor::ShapeType shape,
@@ -273,6 +285,7 @@ std::string memoryTostring(const Dtype *data,
 }
 
 std::string Tensor::data_string() const {
+  check_data();
   std::ostringstream out;
   const Tensor::ShapeType shape = this->shape();
   const Tensor::Dtype *data = state() == CPU ? this->cpu_data() : this->gpu_data();
@@ -378,5 +391,27 @@ Tensor *load(const std::string &path) {
   new_tensor->FromProto(proto);
   return new_tensor;
 }
+
+void Tensor::zero_data() {
+  switch (state()) {
+    case CPU:stensor::cpu_set<Tensor::Dtype>(_size, 0, mutable_cpu_data());
+      break;
+    case GPU:stensor::gpu_set<Tensor::Dtype>(_size, 0, mutable_gpu_data());
+      break;
+  }
+}
+void Tensor::zero_grad(){
+  switch (state()) {
+    case CPU:stensor::cpu_set<Tensor::Dtype>(_size, 0, mutable_cpu_grad());
+      break;
+    case GPU:stensor::gpu_set<Tensor::Dtype>(_size, 0, mutable_gpu_grad());
+      break;
+  }
+}
+//TODO: Slice
+//Tensor* Tensor::operator[](std::vector<std::pair<int, int>> start_end_indices) const {
+//
+//}
+
 /* save and load end*/
 }//namespace stensor

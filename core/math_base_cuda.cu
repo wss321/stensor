@@ -107,6 +107,33 @@ void gpu_scale<double>(const int N, const double alpha, double *X) {
   CUBLAS_CHECK(cublasDscal(Config::cublas_handle(), N, &alpha, X, 1));
 }
 
+template<typename Dtype>
+__global__ void scale_kernel(const int n, const Dtype *x, const Dtype alpha, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = x[index] * alpha;
+  }
+}
+
+template<>
+void gpu_scale(const int N, const float *X, const float alpha, float *Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  if (X == Y)
+    gpu_scale<float>(N, alpha, Y);
+  else
+    scale_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+      N, X, alpha, Y);
+}
+
+template<>
+void gpu_scale(const int N, const double *X, const double alpha, double *Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  if (X == Y)
+    gpu_scale<double>(N, alpha, Y);
+  else
+    scale_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+      N, X, alpha, Y);
+}
+
 template<>
 void gpu_scale<float>(const int N, const float alpha, float *X,
                       cudaStream_t str) {
@@ -163,19 +190,19 @@ void gpu_asum<double>(const int n, const double *x, double *y) {
   CUBLAS_CHECK(cublasDasum(Config::cublas_handle(), n, x, 1, y));
 }
 
-template<>
-void gpu_scale<float>(const int n, const float alpha, const float *x,
-                      float *y) {
-  CUBLAS_CHECK(cublasScopy(Config::cublas_handle(), n, x, 1, y, 1));
-  CUBLAS_CHECK(cublasSscal(Config::cublas_handle(), n, &alpha, y, 1));
-}
-
-template<>
-void gpu_scale<double>(const int n, const double alpha, const double *x,
-                       double *y) {
-  CUBLAS_CHECK(cublasDcopy(Config::cublas_handle(), n, x, 1, y, 1));
-  CUBLAS_CHECK(cublasDscal(Config::cublas_handle(), n, &alpha, y, 1));
-}
+//template<>
+//void gpu_scale<float>(const int n, const float alpha, const float *x,
+//                      float *y) {
+//  CUBLAS_CHECK(cublasScopy(Config::cublas_handle(), n, x, 1, y, 1));
+//  CUBLAS_CHECK(cublasSscal(Config::cublas_handle(), n, &alpha, y, 1));
+//}
+//
+//template<>
+//void gpu_scale<double>(const int n, const double alpha, const double *x,
+//                       double *y) {
+//  CUBLAS_CHECK(cublasDcopy(Config::cublas_handle(), n, x, 1, y, 1));
+//  CUBLAS_CHECK(cublasDscal(Config::cublas_handle(), n, &alpha, y, 1));
+//}
 
 template<typename Dtype>
 __global__ void set_kernel(const int n, const Dtype alpha, Dtype *y) {
@@ -200,24 +227,37 @@ template void gpu_set<float>(const int N, const float alpha, float *Y);
 template void gpu_set<double>(const int N, const double alpha, double *Y);
 
 template<typename Dtype>
-__global__ void add_scalar_kernel(const int n, const Dtype alpha, Dtype *y) {
+__global__ void add_scalar_kernel(const int n, const Dtype *x, const Dtype alpha, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = x[index] + alpha;
+  }
+}
+
+template<typename Dtype>
+__global__ void add_scalar_kernel_(const int n, const Dtype alpha, Dtype *y) {
   CUDA_KERNEL_LOOP(index, n) {
     y[index] += alpha;
   }
 }
 
 template<>
-void gpu_add_scalar(const int N, const float alpha, float *Y) {
+void gpu_add_scalar(const int N, const float *X, const float alpha, float *Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  add_scalar_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+  if (X == Y)
+    add_scalar_kernel_ < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, alpha, Y);
+  else add_scalar_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+      N, X, alpha, Y);
 }
 
 template<>
-void gpu_add_scalar(const int N, const double alpha, double *Y) {
+void gpu_add_scalar(const int N, const double *X, const double alpha, double *Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  add_scalar_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+  if (X == Y)
+    add_scalar_kernel_ < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, alpha, Y);
+  else add_scalar_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+      N, X, alpha, Y);
 }
 
 template<typename Dtype>
@@ -380,26 +420,26 @@ void gpu_log<double>(const int N, const double *a, double *y) {
 }
 
 template<typename Dtype>
-__global__ void powx_kernel(const int n, const Dtype *a,
-                            const Dtype alpha, Dtype *y) {
+__global__ void pow_scalar_kernel(const int n, const Dtype *a,
+                                  const Dtype alpha, Dtype *y) {
   CUDA_KERNEL_LOOP(index, n) {
     y[index] = pow(a[index], alpha);
   }
 }
 
 template<>
-void gpu_powx<float>(const int N, const float *a,
-                     const float alpha, float *y) {
+void gpu_pow_scalar<float>(const int N, const float *a,
+                           const float alpha, float *y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  powx_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+  pow_scalar_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
 }
 
 template<>
-void gpu_powx<double>(const int N, const double *a,
-                      const double alpha, double *y) {
+void gpu_pow_scalar<double>(const int N, const double *a,
+                            const double alpha, double *y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  powx_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+  pow_scalar_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
 }
 
@@ -441,7 +481,7 @@ void gpu_rng_uniform<float>(const int n, const float a, const float b,
     gpu_scale(n, range, r);
   }
   if (a != static_cast<float>(0)) {
-    gpu_add_scalar(n, a, r);
+    gpu_add_scalar(n, r, a, r);
   }
 }
 
@@ -454,7 +494,7 @@ void gpu_rng_uniform<double>(const int n, const double a, const double b,
     gpu_scale(n, range, r);
   }
   if (a != static_cast<double>(0)) {
-    gpu_add_scalar(n, a, r);
+    gpu_add_scalar(n, r, a, r);
   }
 }
 
@@ -471,4 +511,79 @@ void gpu_rng_gaussian(const int n, const double mu, const double sigma,
   CURAND_CHECK(
       curandGenerateNormalDouble(Config::curand_generator(), r, n, mu, sigma));
 }
+#define MIN(a, b, c) c = a>b ? b: a
+#define MAXAXES 32
+
+#define BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y) \
+  int indices_in_result[MAXAXES]{0};\
+  indices_in_result[sy - 1] = index % shape_y[sy - 1]; \
+  int div = 1; \
+  for (int i = sy - 2; i >= 0; --i) { \
+    div *=  shape_y[i + 1]; \
+    indices_in_result[i] = (index / div)% shape_y[i]; \
+  } \
+  int index_a = 0; \
+  int index_b = 0; \
+  for (int i = 0; i < sy; ++i) { \
+    int ma;           \
+    MIN(indices_in_result[i], shape_a[i], ma); \
+    int mb;        \
+    MIN(indices_in_result[i], shape_b[i], mb);  \
+    index_a *= shape_a[i]; \
+    index_b *= shape_b[i]; \
+    if (shape_a[i]!=1)  index_a += ma; \
+    if (shape_b[i]!=1)  index_b += mb; \
+  }
+
+template<typename Dtype>
+__global__ void add_broadcast_kernel(const int n, const int sy,
+                                     const Dtype *a, const Dtype *b,
+                                     const int *shape_a, const int *shape_b,
+                                     const int *shape_y, Dtype *y) {
+
+  CUDA_KERNEL_LOOP(index, n) {
+    BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y);
+    y[index] = a[index_a] + b[index_b];
+  }
+}
+
+template<>
+void gpu_add_broadcast<float>(const float *a, const float *b,
+                              std::vector<uint32_t> &shape_a,
+                              std::vector<uint32_t> &shape_b,
+                              float *y) {
+  std::vector<uint32_t> shape_y = stensor::broadcast(shape_a, shape_b);
+  int sy = shape_y.size();
+  int shape_a_arr[sy];
+  int shape_b_arr[sy];
+  int shape_y_arr[sy];
+  int n = 1;
+  for (int i = 0; i < sy; ++i) n *= static_cast<int>(shape_y[i]);
+  for (int i = 0; i < sy; ++i) shape_a_arr[i] = static_cast<int>(shape_a[i]);
+  for (int i = 0; i < sy; ++i) shape_b_arr[i] = static_cast<int>(shape_b[i]);
+  for (int i = 0; i < sy; ++i) shape_y_arr[i] = static_cast<int>(shape_y[i]);
+
+  add_broadcast_kernel < float ><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>(
+      n, sy, a, b, shape_a_arr, shape_b_arr, shape_y_arr, y);
+}
+
+template<>
+void gpu_add_broadcast<double>(const double *a, const double *b,
+                               std::vector<uint32_t> &shape_a,
+                               std::vector<uint32_t> &shape_b,
+                               double *y) {
+  std::vector<uint32_t> shape_y = stensor::broadcast(shape_a, shape_b);
+  int Naxes = shape_y.size();
+  int shape_a_arr[Naxes];
+  int shape_b_arr[Naxes];
+  int shape_y_arr[Naxes];
+  int size = 1;
+  for (int i = 0; i < Naxes; ++i) size *= static_cast<int>(shape_y[i]);
+  for (int i = 0; i < Naxes; i++) shape_a_arr[i] = static_cast<int>(shape_a[i]);
+  for (int i = 0; i < Naxes; i++) shape_b_arr[i] = static_cast<int>(shape_b[i]);
+  for (int i = 0; i < Naxes; i++) shape_y_arr[i] = static_cast<int>(shape_y[i]);
+  add_broadcast_kernel < double ><<<GET_BLOCKS(size), CUDA_NUM_THREADS>>>(
+      size, Naxes, a, b, shape_a_arr, shape_b_arr, shape_y_arr, y);
+}
+
 }

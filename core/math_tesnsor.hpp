@@ -14,7 +14,6 @@ void set(Tensor &tensor, const float val);
 void set(Tensor *tensor, const float val);
 
 Tensor *add(Tensor *tensor, const float val, bool inplace = false);
-Tensor *sub(Tensor *tensor, const float val, bool inplace = false);
 Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
 Tensor *pow(Tensor *tensor, const float val, bool inplace = false);
 Tensor *exp(Tensor *tensor, bool inplace = false);
@@ -22,9 +21,7 @@ Tensor *exp(Tensor *tensor, bool inplace = false);
 inline Tensor *add(Tensor &tensor, const float val, bool inplace = false) {
   return add(&tensor, val, inplace);
 }
-inline Tensor *sub(Tensor &tensor, const float val, bool inplace = false) {
-  return sub(&tensor, val, inplace);
-}
+
 inline Tensor *scale(Tensor &tensor, const float val, bool inplace = false) {
   return scale(&tensor, val, inplace);
 }

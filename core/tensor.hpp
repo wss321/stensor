@@ -28,22 +28,39 @@ class Tensor {
   bool _require_grad;
   std::string _name;
   uint32_t _capacity;
-  void Reset(const ShapeType &shape, int device_id=-1);//device_id = -1 represent cpu
+  void Reset(const ShapeType &shape, int device_id = -1);//device_id = -1 represent cpu
  public:
   Tensor() : _data(),
              _grad(), _size(0ul),
              _capacity(0ul), _name(),
              _require_grad(false) {};
-  explicit Tensor(const ShapeType &shape, bool require_grad = false, int device_id=-1);
+  ~Tensor() {
+    _data.reset();
+    _grad.reset();
+    _size = 0;
+    _capacity = 0;
+    _name = "";
+    _require_grad = false;
+    _neighbors.clear();
+    _operations.clear();
+    _shape.clear();
+  }
+  explicit Tensor(const ShapeType &shape, bool require_grad = false, int device_id = -1);
   Tensor(const Tensor &other, bool require_grad = false);
   Tensor(const Tensor *other, bool require_grad = false);
   Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
   Mode state() const {
+    check_data();
     if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNED) return GPU;
     return CPU;
   }
-  inline int device() const { return _data->device(); }
+  inline void check_data() const { CHECK(_data)<<"Data is None";}
+  inline void check_grad() const { CHECK(_require_grad &&_grad)<<"Gradient is None";}
+  inline int device() const {
+    check_data();
+    return _data->device(); }
   inline bool has_grad() const {
+    check_grad();
     return _grad->has_cpu_data() || _grad->has_gpu_data();
   }
 
@@ -161,42 +178,42 @@ class Tensor {
                 bool reset = false);
 
   inline const Dtype *cpu_data() const {
-    CHECK(_data) << "Data is None.";
+    check_data();
     return (const Dtype *) _data->cpu_data();
   };
 
   inline const Dtype *cpu_grad() const {
-    CHECK(_grad) << "Grad is None.";
+    check_grad();
     return (const Dtype *) _grad->cpu_data();
   };
 
   inline Dtype *mutable_cpu_data() {
-    CHECK(_data) << "Data is None.";
+    check_data();
     return static_cast<Dtype * >(_data->mutable_cpu_data());
   };
 
   inline Dtype *mutable_cpu_grad() {
-    CHECK(_grad) << "Grad is None.";
+    check_grad();
     return static_cast<Dtype * >(_grad->mutable_cpu_data());
   };
 
   inline const Dtype *gpu_data() const {
-    CHECK(_data) << "Data is None.";
+    check_data();
     return (const Dtype *) _data->gpu_data();
   };
 
   inline const Dtype *gpu_grad() const {
-    CHECK(_grad) << "Grad is None.";
+    check_grad();
     return (const Dtype *) _grad->gpu_data();
   };
 
   inline Dtype *mutable_gpu_data() {
-    CHECK(_data) << "Data is None.";
+    check_data();
     return static_cast<Dtype * >(_data->mutable_gpu_data());
   };
 
   inline Dtype *mutable_gpu_grad() {
-    CHECK(_grad) << "Grad is None.";
+    check_grad();
     return static_cast<Dtype * >(_grad->mutable_gpu_data());
   };
 
@@ -214,7 +231,9 @@ class Tensor {
   Tensor &operator=(const Tensor *other);
 
   Dtype operator[](std::vector<int> indices) const; // get data
-
+  void zero_data();
+  void zero_grad();
+  Tensor *operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
 // DISABLE_COPY_AND_ASSIGN(Tensor);
  private:
   void register_op(OpType);

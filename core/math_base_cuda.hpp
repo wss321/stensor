@@ -40,15 +40,17 @@ void gpu_axpby(const int N, const Dtype alpha, const Dtype *X,
 
 void gpu_copy(const size_t N, const void *X, void *Y);
 
-template <typename Dtype>
+template<typename Dtype>
 void gpu_set(const int N, const Dtype alpha, Dtype *X);
 
-
 template<typename Dtype>
-void gpu_add_scalar(const int N, const Dtype alpha, Dtype *X);
+void gpu_add_scalar(const int N, const Dtype *X, const Dtype alpha, Dtype *Y);
 
 template<typename Dtype>
 void gpu_scale(const int N, const Dtype alpha, Dtype *X);
+
+template<typename Dtype>
+void gpu_scale(const int N, const Dtype *X, const Dtype alpha, Dtype *Y);
 
 #ifndef CPU_ONLY
 template<typename Dtype>
@@ -58,14 +60,37 @@ void gpu_scale(const int N, const Dtype alpha, Dtype *X, cudaStream_t str);
 template<typename Dtype>
 void gpu_add(const int N, const Dtype *a, const Dtype *b, Dtype *y);
 
+//TODO:Broadcast add
+template<typename Dtype>
+void gpu_add_broadcast(const Dtype *a, const Dtype *b,
+                       std::vector<uint32_t>& shape_a,
+                       std::vector<uint32_t>& shape_b,
+                       Dtype *y);
+
 template<typename Dtype>
 void gpu_sub(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+//TODO:Broadcast sub
+template<typename Dtype>
+void gpu_sub_broadcast(const Dtype *a, const Dtype *b,
+                       const std::vector<uint32_t> shape_a, const std::vector<uint32_t> shape_b,
+                       Dtype *y);
 
 template<typename Dtype>
 void gpu_mul(const int N, const Dtype *a, const Dtype *b, Dtype *y);
 
+//TODO:Broadcast mul
+template<typename Dtype>
+void gpu_mul_broadcast(const Dtype *a, const Dtype *b,
+                       const std::vector<uint32_t> shape_a, const std::vector<uint32_t> shape_b,
+                       Dtype *y);
+
 template<typename Dtype>
 void gpu_div(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+//TODO:Broadcast div
+template<typename Dtype>
+void gpu_div_broadcast(const Dtype *a, const Dtype *b,
+                       const std::vector<uint32_t> shape_a, const std::vector<uint32_t> shape_b,
+                       Dtype *y);
 
 template<typename Dtype>
 void gpu_abs(const int n, const Dtype *a, Dtype *y);
@@ -77,7 +102,7 @@ template<typename Dtype>
 void gpu_log(const int n, const Dtype *a, Dtype *y);
 
 template<typename Dtype>
-void gpu_powx(const int n, const Dtype *a, const Dtype b, Dtype *y);
+void gpu_pow_scalar(const int n, const Dtype *a, const Dtype b, Dtype *y);
 
 template<typename Dtype>
 void gpu_sqrt(const int n, const Dtype *a, Dtype *y);
@@ -111,8 +136,8 @@ void gpu_sgnbit(const int n, const Dtype *x, Dtype *y);
 template<typename Dtype>
 void gpu_fabs(const int n, const Dtype *x, Dtype *y);
 
-template<typename Dtype>
-void gpu_scale(const int n, const Dtype alpha, const Dtype *x, Dtype *y);
+//template<typename Dtype>
+//void gpu_scale(const int n, const Dtype alpha, const Dtype *x, Dtype *y);
 
 }
 #endif //STENSOR_CORE_MATH_BASE_CUDA_HPP_

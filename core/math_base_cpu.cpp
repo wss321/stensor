@@ -185,18 +185,6 @@ void cpu_add_scalar(const uint32_t n,
 ADD_BINARY_FUNC_PSP(cpu_add_scalar);
 
 template<typename Dtype>
-void cpu_sub_scalar(const uint32_t n,
-                    const Dtype *a, const Dtype val,
-                    Dtype *y) {
-  CHECK(a);
-  CHECK(y);
-  for (int i = 0; i < n; ++i) {
-    y[i] = a[i] - val;
-  }
-}
-ADD_BINARY_FUNC_PSP(cpu_sub_scalar);
-
-template<typename Dtype>
 void cpu_scale(const uint32_t n,
                const Dtype *a, const Dtype val,
                Dtype *y) {
@@ -304,13 +292,13 @@ void cpu_gemv<double>(const CBLAS_TRANSPOSE TransA,
 
 /* matrix matrix start*/
 template<>
-void axpy<float>(const uint32_t N,
+void cpu_axpy<float>(const uint32_t N,
                  const float alpha, const float *a,
                  float *y) {
   cblas_saxpy(SCINT(N), alpha, a, 1, y, 1);
 }
 template<>
-void axpy<double>(const uint32_t N,
+void cpu_axpy<double>(const uint32_t N,
                   const double alpha, const double *a,
                   double *y) {
   cblas_daxpy(SCINT(N), alpha, a, 1, y, 1);

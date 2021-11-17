@@ -66,11 +66,6 @@ void cpu_add_scalar(const uint32_t n,
                     Dtype *y);
 
 template<typename Dtype>
-void cpu_sub_scalar(const uint32_t n,
-                    const Dtype *a, const Dtype val,
-                    Dtype *y);
-
-template<typename Dtype>
 void cpu_scale(const uint32_t n,
                const Dtype *a, const Dtype val,
                Dtype *y);
@@ -132,9 +127,9 @@ void cpu_gemv(const CBLAS_TRANSPOSE TransA,
 
 /* matrix matrix start*/
 template<typename Dtype>
-void axpy(const uint32_t N,
-          const Dtype alpha, const Dtype *a,
-          Dtype *y);
+void cpu_axpy(const uint32_t N,
+              const Dtype alpha, const Dtype *a,
+              Dtype *y);
 
 template<typename Dtype>
 void cpu_gemm(const CBLAS_TRANSPOSE TransA,

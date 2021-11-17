@@ -90,7 +90,7 @@ TEST_F(GPUMathTest, MMTest) {
     EXPECT_EQ(g1c[i] - g2c[i], g3c[i]);
 //    LOG(INFO) << g1c[i] - g2c[i] << " " << g3c[i];
   }
-  stensor::gpu_add_scalar<float>(size1, 3, g1);
+  stensor::gpu_add_scalar<float>(size1, g1c, 3, g1);
   stensor::gpu_set<float>(size1, 3.0, g1);
   for (int i = 0; i < size1; ++i) {
     EXPECT_EQ(g1c[i] - g2c[i], g3c[i]);

@@ -58,5 +58,27 @@ TEST_F(TensorTest, SaveAndLoad) {
   delete b;
 }
 
+TEST_F(TensorTest, ZeroDataGrad) {
+  stensor::Config::set_random_seed(1024);
+  Tensor* a = stensor::random({3, 4}, true, 0, 1);
+  std::cout<<a;
+  a->zero_data();
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(a->data_at(i), 0);
+  }
+  a->zero_grad();
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(a->grad_at(i), 0);
+  }
+  delete a;
+}
+
+TEST_F(TensorTest, FreeTest) {
+  stensor::Config::set_random_seed(1024);
+  Tensor* a = stensor::random({3, 4}, true, 0, 1);
+  a->to_gpu();
+  delete a;
+}
+
 }
 
