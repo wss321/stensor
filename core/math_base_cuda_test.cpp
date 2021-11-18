@@ -7,6 +7,7 @@
 #include "common.hpp"
 #include "memory_op.hpp"
 #include "math_base_cpu.hpp"
+#include "tensor.hpp"
 
 namespace stensor {
 class GPUMathTest : public ::testing::Test {};
@@ -150,6 +151,39 @@ TEST_F(GPUMathTest, SpeedTest) {
 //  for (int i = 0; i < 100; ++i) {
 //    EXPECT_EQ(c3[i], g3[i]);
 //  }
+
+}
+
+
+TEST_F(GPUMathTest, ActivateFUNC) {
+  Tensor t1(Tensor::ShapeType{3, 40});
+  Tensor::Dtype *d1 = t1.mutable_gpu_data();
+  // 1. sigmoid
+  stensor::gpu_set(t1.size(), 1.0f, d1);
+  stensor::gpu_sigmoid(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_LE(d1[i]-1.0f / (1.0f + exp(-1.0f)), 1e-6);
+  }
+
+  // 2. sign
+  stensor::gpu_set(t1.size(), 1.0f, d1);
+  stensor::gpu_sign(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], 1.0f);
+  }
+  // 3. tanh
+  stensor::gpu_set(t1.size(), 1.0f, d1);
+  stensor::gpu_tanh(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], std::tanh(1.0f));
+  }
+
+  // 4. relu
+  stensor::gpu_set(t1.size(), -1.0f, d1);
+  stensor::gpu_relu(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], 0.0f);
+  }
 
 }
 

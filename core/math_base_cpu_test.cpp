@@ -60,4 +60,38 @@ TEST_F(MathTest, SelfOp) {
   }
   std::cout << std::endl;
 }
+
+
+TEST_F(MathTest, ActivateFUNC) {
+  Tensor t1(Tensor::ShapeType{3, 4});
+  Tensor::Dtype *d1 = t1.mutable_cpu_data();
+  // 1. sigmoid
+  stensor::cpu_set(t1.size(), 1.0f, d1);
+  stensor::cpu_sigmoid(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_LE(d1[i]-1.0 / (1.0 + exp(-1.0)), 1e-6);
+  }
+
+  // 2. sign
+  stensor::cpu_set(t1.size(), 1.0f, d1);
+  stensor::cpu_sign(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], 1);
+  }
+  // 3. tanh
+  stensor::cpu_set(t1.size(), 1.0f, d1);
+  stensor::cpu_tanh(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], std::tanh(1.0f));
+  }
+
+  // 4. relu
+  stensor::cpu_set(t1.size(), -1.0f, d1);
+  stensor::cpu_relu(t1.size(), d1, d1);
+  for (int i = 0; i < t1.size(); ++i) {
+    EXPECT_EQ(d1[i], 0);
+  }
+
+}
+
 }
