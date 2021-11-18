@@ -11,47 +11,50 @@ uint32_t count(const std::vector<uint32_t> &shape) {
   return num;
 }
 
-std::vector<uint32_t> broadcast(std::vector<uint32_t> &shape1, std::vector<uint32_t> &shape2) {
+template<typename Dshape>
+std::vector<Dshape> broadcast(std::vector<Dshape> &shape1, std::vector<Dshape> &shape2) {
   bool GT = shape1.size() > shape2.size();
-  const std::vector<uint32_t>* p1= &shape1;
-  const std::vector<uint32_t>* p2= &shape2;
+  const std::vector<Dshape> *p1 = &shape1;
+  const std::vector<Dshape> *p2 = &shape2;
   if (!GT) {
     p1 = &shape2;
     p2 = &shape1;
   }
-  std::vector<uint32_t> out_shape(p1->size());
+  std::vector<Dshape> out_shape(p1->size());
   int diff = std::abs(p1->size() - p2->size());
   for (int i = 0; i < diff; ++i) {
     out_shape[i] = (*p1)[i];
   }
   for (int i1 = diff, i2 = 0; i1 < p1->size(); ++i1, ++i2) {
-    uint32_t s1 = (*p1)[i1];
-    uint32_t s2 = (*p2)[i2];
+    Dshape s1 = (*p1)[i1];
+    Dshape s2 = (*p2)[i2];
     if (s1 != s2)
       CHECK(s1 == 1 || s2 == 1)
-      <<"Cannot broadcast between tensors with shape "<<shape1<<" and "<<shape2;
+              << "Cannot broadcast between tensors with shape " << shape1 << " and " << shape2;
     out_shape[i1] = std::max(s1, s2);
   }
   // change shape
-  if (!GT){
-    std::vector<uint32_t> temp(out_shape.size());
+  if (!GT) {
+    std::vector<Dshape> temp(out_shape.size());
     for (int i = 0; i < diff; ++i)
-          temp[i]=1;
-    for (int i = diff, j=0; i < temp.size()&&j<shape1.size(); ++i,++j) {
+      temp[i] = 1;
+    for (int i = diff, j = 0; i < temp.size() && j < shape1.size(); ++i, ++j) {
       temp[i] = shape1[j];
     }
     shape1 = temp;
-  } else{
-    std::vector<uint32_t> temp(out_shape.size());
+  } else {
+    std::vector<Dshape> temp(out_shape.size());
     for (int i = 0; i < diff; ++i)
-      temp[i]=1;
-    for (int i = diff, j=0; i < temp.size()&&j<shape1.size(); ++i,++j) {
+      temp[i] = 1;
+    for (int i = diff, j = 0; i < temp.size() && j < shape1.size(); ++i, ++j) {
       temp[i] = shape2[j];
     }
     shape2 = temp;
   }
   return out_shape;
 }
+template std::vector<int> broadcast(std::vector<int> &shape1, std::vector<int> &shape2);
+template std::vector<uint32_t> broadcast(std::vector<uint32_t> &shape1, std::vector<uint32_t> &shape2);
 
 template<typename Dtype>
 std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector) {
@@ -62,13 +65,12 @@ std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector) {
   out << "]";
   return out;
 }
-template std::ostream &operator<< <int>(std::ostream &out, std::vector<int> vector);
-template std::ostream &operator<< <float>(std::ostream &out, std::vector<float> vector);
-template std::ostream &operator<< <double>(std::ostream &out, std::vector<double> vector);
-template std::ostream &operator<< <uint32_t>(std::ostream &out, std::vector<uint32_t> vector);
-template std::ostream &operator<< <bool>(std::ostream &out, std::vector<bool> vector);
-template std::ostream &operator<< <std::string>(std::ostream &out, std::vector<std::string> vector);
-
+template std::ostream &operator<<<int>(std::ostream &out, std::vector<int> vector);
+template std::ostream &operator<<<float>(std::ostream &out, std::vector<float> vector);
+template std::ostream &operator<<<double>(std::ostream &out, std::vector<double> vector);
+template std::ostream &operator<<<uint32_t>(std::ostream &out, std::vector<uint32_t> vector);
+template std::ostream &operator<<<bool>(std::ostream &out, std::vector<bool> vector);
+template std::ostream &operator<<<std::string>(std::ostream &out, std::vector<std::string> vector);
 
 static boost::thread_specific_ptr<Config> thread_instance_;
 Config &Config::GetInstance() {
@@ -82,7 +84,7 @@ Config::Config()
     : cublas_handle_(nullptr),
       curand_generator_(nullptr),
       random_generator_(),
-      multiprocess_(false){
+      multiprocess_(false) {
   // Try to create a cublas handler, and report an error if failed (but we will
   // keep the program running as one might just want to run CPU code).
   if (cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
@@ -96,7 +98,6 @@ Config::Config()
     LOG(ERROR) << "Cannot create Curand generator. Curand won't be available.";
   }
 }
-
 
 Config::~Config() {
   if (cublas_handle_) CUBLAS_CHECK(cublasDestroy(cublas_handle_));

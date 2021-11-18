@@ -52,6 +52,18 @@ TEST_F(TensorTest, MathUnary) {
   std::cout << "\tdiv:\n" << d;
 }
 
+TEST_F(TensorTest, MathRandomTest) {
+  Tensor::ShapeType shape1{3, 4, 5};
+  Tensor::ShapeType shape2{3, 1, 1};
+  stensor::Config::set_random_seed(123);
+  Tensor *a = stensor::random(shape1);
+  stensor::Config::set_random_seed(123);
+  Tensor *b = stensor::random(shape1);
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(a->data_at(i), b->data_at(i));
+  }
+}
+
 TEST_F(TensorTest, MathBinary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
@@ -85,10 +97,10 @@ TEST_F(TensorTest, MathCPUBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{3, 1, 1};
   Tensor::ShapeType shape3{3, 4, 5};
-  Tensor *a = stensor::random(shape1);
-  Tensor *b = stensor::random(shape2);
-//  Tensor *a = stensor::ones(shape1);
-//  Tensor *b = stensor::constants(shape2, 2);
+//  Tensor *a = stensor::random(shape1);
+//  Tensor *b = stensor::random(shape2);
+  Tensor *a = stensor::ones(shape1);
+  Tensor *b = stensor::constants(shape2, 2);
 
   std::cout << "\ta:\n" << a;
   std::cout << "\tb:\n" << b;

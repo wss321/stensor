@@ -6,7 +6,7 @@
 #include "math_base_cpu.hpp"
 namespace stensor {
 /* math of Tensor */
-//TODO:GPU Mode
+
 void set(Tensor &tensor, float val) {
   Tensor::Dtype *data;
   switch (tensor.state()) {
@@ -17,7 +17,6 @@ void set(Tensor &tensor, float val) {
       stensor::gpu_set(tensor.size(), val, data);
       break;
   }
-
 }
 
 void set(Tensor *tensor, float val) {
@@ -154,7 +153,7 @@ Tensor *exp(Tensor *tensor, bool inplace) {
   }
 }
 
-// Tensor op Tensor
+// Tensor - Tensor
 inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out, int index) {
   std::vector<int> indices_in_result(shape_out.size(), 0);
   indices_in_result[shape_out.size() - 1] = index % static_cast<int>(shape_out[shape_out.size() - 1]);
@@ -173,9 +172,9 @@ inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::Shap
   }
   return out;
 }
-#define MIN(a, b, c) c = a>b ? b: a
+#define MIN_FUNC(a, b, c) c = a>b ? b: a
 #define BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y, index_a, index_b) \
-  int indices_in_result[32]{0};\
+  int indices_in_result[MAX_AXES]{0};\
   indices_in_result[sy - 1] = index % static_cast<int>(shape_y[sy - 1]); \
   int div = 1; \
   for (int i = sy - 2; i >= 0; --i) { \
@@ -186,16 +185,29 @@ inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::Shap
   int index_b = 0; \
   for (int i = 0; i < sy; ++i) { \
     int ma;           \
-    MIN(indices_in_result[i], static_cast<int>(shape_a[i]), ma); \
+    MIN_FUNC(indices_in_result[i], static_cast<int>(shape_a[i]), ma); \
     int mb;        \
-    MIN(indices_in_result[i], static_cast<int>(shape_b[i]), mb);  \
+    MIN_FUNC(indices_in_result[i], static_cast<int>(shape_b[i]), mb);  \
     index_a *= static_cast<int>(shape_a[i]); \
     index_b *= static_cast<int>(shape_b[i]); \
     if (shape_a[i]!=1)  index_a += ma; \
     if (shape_b[i]!=1)  index_b += mb; \
   }
 
-#define IMPLEMENT_BINARY_FUNC_PP(name, op) \
+inline void VecUint32ToVecInt(const std::vector<uint32_t> &shape_u, std::vector<int> &shape_i) {
+  shape_i.resize(shape_u.size());
+  for (int i = 0; i < shape_u.size(); ++i)
+    shape_i[i] = static_cast<int>(shape_u[i]);
+}
+inline void VecIntToUint32(const std::vector<int> &shape_i, std::vector<uint32_t> &shape_u ) {
+  shape_u.resize(shape_i.size());
+  for (int i = 0; i < shape_u.size(); ++i) {
+    CHECK_GE(shape_i[i], 0);
+    shape_u[i] = static_cast<uint32_t>(shape_i[i]);
+  }
+}
+
+#define IMPLEMENT_BINARY_FUNC_PP(name) \
 Tensor* name(const Tensor *a, const Tensor *b) { \
   CHECK_EQ(a->state(), b->state()) << "tensors must be at same device";\
   switch (a->state()) {\
@@ -206,17 +218,16 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
         stensor::cpu_##name(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());\
         return out_tensor;\
       } else { \
-        Tensor::ShapeType shape_a(a->shape());\
-        Tensor::ShapeType shape_b(b->shape());\
-        const Tensor::ShapeType shape_out = stensor::broadcast(shape_a, shape_b);\
+        std::vector<int> shape_a;          \
+        VecUint32ToVecInt(a->shape(), shape_a);\
+        std::vector<int> shape_b;          \
+        VecUint32ToVecInt(b->shape(), shape_b);  \
+        const std::vector<int> shape_out = stensor::broadcast(shape_a, shape_b);\
+        std::vector<uint32_t> shape_out_u;        \
+        VecIntToUint32(shape_out, shape_out_u);  \
         bool require_grad = (a->require_grad() || b->require_grad());\
-        Tensor *out_tensor = new Tensor(shape_out, require_grad);\
-        Tensor::Dtype *out_data = out_tensor->mutable_cpu_data();\
-        for (int i = 0; i < out_tensor->size(); ++i) {\
-          BROADCAST_INDEX(i, out_tensor.size(), shape_out.size(), shape_a, shape_b, shape_out, index_a, index_b);\
-          *out_data = a->data_at(index_a) op b->data_at(index_b);\
-          out_data++;\
-        }\
+        Tensor *out_tensor = new Tensor(shape_out_u, require_grad);\
+        stensor::cpu_##name##_broadcast(a->cpu_data(), b->cpu_data(), shape_a, shape_b, out_tensor->mutable_cpu_data());\
         return out_tensor;\
       }\
       break;\
@@ -227,21 +238,78 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
         stensor::gpu_##name(a->size(), a->gpu_data(), b->gpu_data(), out_tensor->mutable_gpu_data());\
         return out_tensor;\
       } else {\
-        Tensor::ShapeType shape_a(a->shape());\
-        Tensor::ShapeType shape_b(b->shape());\
+        std::vector<int> shape_a;          \
+        VecUint32ToVecInt(a->shape(), shape_a);\
+        std::vector<int> shape_b;          \
+        VecUint32ToVecInt(b->shape(), shape_b);  \
+        const std::vector<int> shape_out = stensor::broadcast(shape_a, shape_b);\
+        std::vector<uint32_t> shape_out_u;        \
+        VecIntToUint32(shape_out, shape_out_u);  \
         bool require_grad = (a->require_grad() || b->require_grad());\
-        Tensor *out_tensor = new Tensor(a->shape(), require_grad, a->device());\
+        Tensor *out_tensor = new Tensor(shape_out_u, require_grad, a->device());\
         gpu_##name##_broadcast<float>(a->gpu_data(), b->gpu_data(), shape_a, shape_b, out_tensor->mutable_gpu_data());\
         return out_tensor;\
       }\
       break;\
   }\
 }
-IMPLEMENT_BINARY_FUNC_PP(add, +);
-IMPLEMENT_BINARY_FUNC_PP(sub, -);
-IMPLEMENT_BINARY_FUNC_PP(mul, *);
-IMPLEMENT_BINARY_FUNC_PP(div, /);
 
+//IMPLEMENT_BINARY_FUNC_PP(add);
+IMPLEMENT_BINARY_FUNC_PP(sub);
+IMPLEMENT_BINARY_FUNC_PP(mul);
+IMPLEMENT_BINARY_FUNC_PP(div);
+IMPLEMENT_BINARY_FUNC_PP(pow);
+Tensor *add(const Tensor *a, const Tensor *b) {
+  while (google::_Check_string *_result = google::Check_EQImpl(google::GetReferenceableValue(a->state()),
+                                                               google::GetReferenceableValue(b->state()),
+                                                               "a->state()" " " "==" " " "b->state()"))
+    google::LogMessageFatal("_file_name_", 257, google::CheckOpString(_result)).stream()
+        << "tensors must be at same device";
+  switch (a->state()) {
+    case stensor::CPU:
+      if (a->shape() == b->shape()) {
+        bool require_grad = (a->require_grad() || b->require_grad());
+        Tensor *out_tensor = new Tensor(a->shape(), require_grad);
+        stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+        return out_tensor;
+      }
+      else {
+        std::vector<int> shape_a;
+        VecUint32ToVecInt(a->shape(), shape_a);
+        std::vector<int> shape_b;
+        VecUint32ToVecInt(b->shape(), shape_b);
+        const std::vector<int> shape_out = stensor::broadcast(shape_a, shape_b);
+        std::vector<uint32_t> shape_out_u;
+        VecIntToUint32(shape_out, shape_out_u);
+        bool require_grad = (a->require_grad() || b->require_grad());
+        Tensor *out_tensor = new Tensor(shape_out_u, require_grad);
+        stensor::cpu_add_broadcast(a->cpu_data(), b->cpu_data(), shape_a, shape_b, out_tensor->mutable_cpu_data());
+        return out_tensor;
+      }
+      break;
+    case stensor::GPU:
+      if (a->shape() == b->shape()) {
+        bool require_grad = (a->require_grad() || b->require_grad());
+        Tensor *out_tensor = new Tensor(a->shape(), require_grad, a->device());
+        stensor::gpu_add(a->size(), a->gpu_data(), b->gpu_data(), out_tensor->mutable_gpu_data());
+        return out_tensor;
+      }
+      else {
+        std::vector<int> shape_a;
+        VecUint32ToVecInt(a->shape(), shape_a);
+        std::vector<int> shape_b;
+        VecUint32ToVecInt(b->shape(), shape_b);
+        const std::vector<int> shape_out = stensor::broadcast(shape_a, shape_b);
+        std::vector<uint32_t> shape_out_u;
+        VecIntToUint32(shape_out, shape_out_u);
+        bool require_grad = (a->require_grad() || b->require_grad());
+        Tensor *out_tensor = new Tensor(shape_out_u, require_grad, a->device());
+        gpu_add_broadcast<float>(a->gpu_data(), b->gpu_data(), shape_a, shape_b, out_tensor->mutable_gpu_data());
+        return out_tensor;
+      }
+      break;
+  }
+}
 /* math of Tensor end */
 
 /* Tensor Generator*/

@@ -30,6 +30,11 @@
 namespace gflags = google;
 #endif  // GFLAGS_GFLAGS_H_
 
+namespace stensor {
+#define MAX_AXES 32
+
+#define SCINT static_cast<int>
+
 #define DISABLE_COPY_AND_ASSIGN(classname) \
  private:                                  \
   classname(const classname&);             \
@@ -37,20 +42,19 @@ namespace gflags = google;
 
 #define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented"
 
-namespace stensor {
-
 enum Mode { CPU, GPU };
 
 template<typename RepeatType, typename V>
 inline void RepeatTypeToVector(const RepeatType &proto_data, std::vector<V> &target) {
   target.resize(proto_data.size());
   for (int i = 0; i < proto_data.size(); ++i) {
-    target[i]=static_cast<V>(proto_data[i]);
+    target[i] = static_cast<V>(proto_data[i]);
   }
 }
 uint32_t count(const std::vector<uint32_t> &shape);
 
-std::vector<uint32_t> broadcast(std::vector<uint32_t> &shape1, std::vector<uint32_t> &shape2);
+template<typename Dshape>
+std::vector<Dshape> broadcast(std::vector<Dshape> &shape1, std::vector<Dshape> &shape2);
 
 template<typename Dtype>
 std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector);
@@ -68,7 +72,7 @@ class Config {
   }
   inline static void set_multiprocess(bool val) { GetInstance().multiprocess_ = val; }
   static void set_random_seed(const unsigned int seed);
-  inline static RNG& rng_stream() {
+  inline static RNG &rng_stream() {
     if (!GetInstance().random_generator_) {
       GetInstance().random_generator_.reset(new RNG());
     }
@@ -88,8 +92,8 @@ class Config {
  DISABLE_COPY_AND_ASSIGN(Config);
 };
 
-inline rng_t* stensor_rng() {
-  return static_cast<stensor::rng_t*>(Config::rng_stream().generator());
+inline rng_t *stensor_rng() {
+  return static_cast<stensor::rng_t *>(Config::rng_stream().generator());
 }
 
 inline long long systemtime_ms() {

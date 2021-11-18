@@ -9,7 +9,7 @@
 using namespace boost;
 namespace stensor {
 
-const uint32_t kMaxTensorAxes = 32;
+const uint32_t kMaxTensorAxes = MAX_AXES;
 
 class Tensor {
  public:
@@ -49,7 +49,7 @@ class Tensor {
   Tensor(const Tensor &other, bool require_grad = false);
   Tensor(const Tensor *other, bool require_grad = false);
   Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
-  Mode state() const {
+  inline Mode state() const {
     check_data();
     if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNED) return GPU;
     return CPU;
