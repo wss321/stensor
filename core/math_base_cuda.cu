@@ -9,6 +9,7 @@ namespace stensor {
 #define MIN_FUNC(a, b, c) c = a>b ? b: a
 
 /* self-op start*/
+
 #define IMPLEMENT_GPU_UNARY_FUNC(name, op_expression) \
 template<typename Dtype> \
 __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
@@ -32,6 +33,14 @@ IMPLEMENT_GPU_UNARY_FUNC(log, y[index] = log(x[index]));
 IMPLEMENT_GPU_UNARY_FUNC(abs, y[index] = abs(x[index]));
 IMPLEMENT_GPU_UNARY_FUNC(sqrt, y[index] = sqrt(x[index]));
 IMPLEMENT_GPU_UNARY_FUNC(square, y[index] = x[index] * x[index]);
+IMPLEMENT_GPU_UNARY_FUNC(sign, y[index] = x[index]> 0 ? 1 : -1);
+IMPLEMENT_GPU_UNARY_FUNC(sigmoid, y[index] =  1.0 / (1.0 + exp(-x[index])))
+IMPLEMENT_GPU_UNARY_FUNC(tanh, Dtype e_2x = exp(2 * x[index]);y[index] = (e_2x-1)/(e_2x+1));
+IMPLEMENT_GPU_UNARY_FUNC(relu, y[index] = x[index]> 0 ? x[index] : 0);
+IMPLEMENT_GPU_UNARY_FUNC(elu, y[index] = x[index]> 0 ? x[index] : exp(x[index])-1);
+IMPLEMENT_GPU_UNARY_FUNC(gelu, y[index] = 0.5*x[index]*(1.0+erf(x[index]/sqrt(2.0))));
+IMPLEMENT_GPU_UNARY_FUNC(leakyrelu, y[index] = x[index]> 0 ? x[index] : 0.2*x[index]);
+IMPLEMENT_GPU_UNARY_FUNC(sgnbit, y[index] = signbit(x[index]));
 
 template<>
 void gpu_asum<float>(const int n, const float *x, float *y) {
@@ -42,10 +51,6 @@ template<>
 void gpu_asum<double>(const int n, const double *x, double *y) {
   CUBLAS_CHECK(cublasDasum(Config::cublas_handle(), n, x, 1, y));
 }
-
-IMPLEMENT_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
-    - (x[index] < Dtype(0)));
-IMPLEMENT_GPU_UNARY_FUNC(sgnbit, y[index] = signbit(x[index]));
 
 template<typename Dtype>
 __global__ void clamp_kernel(const int n,

@@ -20,19 +20,19 @@
 namespace stensor {
 /* self-op start*/
 template<typename Dtype>
-void gpu_exp(const int n, const Dtype *a, Dtype *y);
+void gpu_exp(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void gpu_log(const int n, const Dtype *a, Dtype *y);
+void gpu_log(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void gpu_abs(const int n, const Dtype *a, Dtype *y);
+void gpu_abs(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void gpu_sqrt(const int n, const Dtype *a, Dtype *y);
+void gpu_sqrt(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void gpu_square(const int n, const Dtype *a, Dtype *y);
+void gpu_square(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
 void gpu_asum(const int n, const Dtype *x, Dtype *y);
@@ -48,25 +48,43 @@ void gpu_clamp(const int n,
                const Dtype min, const Dtype max,
                const Dtype *x,
                Dtype *y);
+template<typename Dtype>
+void gpu_sigmoid(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void gpu_tanh(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void gpu_relu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void gpu_elu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void gpu_gelu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void gpu_leakyrelu(const int n, const Dtype *x, Dtype *y);
+
 /* self-op end*/
 
 /* vector-scalar start*/
 
 template<typename Dtype>
-void gpu_set(const int N, const Dtype alpha, Dtype *X);
+void gpu_set(const int n, const Dtype alpha, Dtype *x);
 
 template<typename Dtype>
-void gpu_add_scalar(const int N, const Dtype *X, const Dtype alpha, Dtype *Y);
+void gpu_add_scalar(const int n, const Dtype *x, const Dtype alpha, Dtype *y);
 
 template<typename Dtype>
-void gpu_scale(const int N, const Dtype alpha, Dtype *X);
+void gpu_scale(const int n, const Dtype alpha, Dtype *y);
 
 template<typename Dtype>
-void gpu_scale(const int N, const Dtype *X, const Dtype alpha, Dtype *Y);
+void gpu_scale(const int n, const Dtype *x, const Dtype alpha, Dtype *y);
 
-#ifndef CPU_ONLY
+#ifndef gpu_ONLY
 template<typename Dtype>
-void gpu_scale(const int N, const Dtype alpha, Dtype *X, cudaStream_t str);
+void gpu_scale(const int n, const Dtype alpha, Dtype *x, cudaStream_t str);
 #endif
 
 template<typename Dtype>
@@ -76,22 +94,22 @@ void gpu_pow_scalar(const int n, const Dtype *a, const Dtype b, Dtype *y);
 
 
 /* vector-vector start*/
-void gpu_copy(const size_t N, const void *X, void *Y);
+void gpu_copy(const size_t n, const void *x, void *y);
 
 template<typename Dtype>
-void gpu_add(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+void gpu_add(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
-void gpu_sub(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+void gpu_sub(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
-void gpu_mul(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+void gpu_mul(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
-void gpu_div(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+void gpu_div(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
-void gpu_pow(const int N, const Dtype *a, const Dtype *b, Dtype *y);
+void gpu_pow(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
 void gpu_add_broadcast(const Dtype *a, const Dtype *b,
@@ -145,12 +163,12 @@ void gpu_gemm(const CBLAS_TRANSPOSE TransA,
               const Dtype alpha, const Dtype *A, const Dtype *B, const Dtype beta,
               Dtype *C);
 template<typename Dtype>
-void gpu_axpy(const int N, const Dtype alpha, const Dtype *X,
-              Dtype *Y);
+void gpu_axpy(const int n, const Dtype alpha, const Dtype *x,
+              Dtype *y);
 
 template<typename Dtype>
-void gpu_axpby(const int N, const Dtype alpha, const Dtype *X,
-               const Dtype beta, Dtype *Y);
+void gpu_axpby(const int n, const Dtype alpha, const Dtype *x,
+               const Dtype beta, Dtype *y);
 /* matrix-matrix end*/
 
 /* random generator start*/

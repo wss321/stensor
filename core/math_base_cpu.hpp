@@ -14,42 +14,50 @@ namespace stensor {
 
 /* self op start*/
 template<typename Dtype>
-void cpu_exp(const int n,
-             const Dtype *a,
-             Dtype *y);
+void cpu_exp(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void cpu_log(const int n,
-             const Dtype *a,
-             Dtype *y);
+void cpu_log(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void cpu_abs(const int n,
-             const Dtype *a,
-             Dtype *y);
+void cpu_abs(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void cpu_sqrt(const int n,
-              const Dtype *a,
-              Dtype *y);
+void cpu_sqrt(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-Dtype cpu_asum(int n, const Dtype *a);
+Dtype cpu_asum(int n, const Dtype *x);
+template<typename Dtype>
+Dtype cpu_sum(int n, const Dtype *x);
 
 template<typename Dtype>
-void cpu_square(const int n,
-                const Dtype *a,
-                Dtype *y);
+void cpu_square(const int n, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
-void cpu_sign(const int n,
-              const Dtype *a,
-              Dtype *y);
+void cpu_sign(const int n, const Dtype *x, Dtype *y);
 template<typename Dtype>
 void cpu_clamp(const int n,
                const Dtype min, const Dtype max,
-               const Dtype *a,
+               const Dtype *x,
                Dtype *y);
+template<typename Dtype>
+void cpu_sigmoid(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void cpu_tanh(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void cpu_relu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void cpu_elu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void cpu_gelu(const int n, const Dtype *x, Dtype *y);
+
+template<typename Dtype>
+void cpu_leakyrelu(const int n, const Dtype *x, Dtype *y);
+
 /* self op end*/
 
 /* vector scalar start*/
@@ -59,23 +67,18 @@ void cpu_set(const int n,
              Dtype *y);
 
 template<typename Dtype>
-void cpu_copy(const int n,
-              const Dtype *a,
-              Dtype *y);
-
-template<typename Dtype>
 void cpu_add_scalar(const int n,
-                    const Dtype *a, const Dtype val,
+                    const Dtype *x, const Dtype val,
                     Dtype *y);
 
 template<typename Dtype>
 void cpu_sub_scalar(const int n,
-                    const Dtype *a, const Dtype val,
+                    const Dtype *x, const Dtype val,
                     Dtype *y);
 
 template<typename Dtype>
 void cpu_scale(const int n,
-               const Dtype *a, const Dtype val,
+               const Dtype *x, const Dtype val,
                Dtype *y);
 
 template<typename Dtype>
@@ -86,6 +89,11 @@ void cpu_pow_scalar(const int n,
 /* vector scalar end*/
 
 /* vector vector start*/
+template<typename Dtype>
+void cpu_copy(const int n,
+              const Dtype *a,
+              Dtype *y);
+
 template<typename Dtype>
 void cpu_add(const int n,
              const Dtype *a, const Dtype *b,
@@ -98,7 +106,7 @@ void cpu_sub(const int n,
 
 template<typename Dtype>
 void cpu_mul(const int n,
-             const Dtype *a, const Dtype *b,
+             const Dtype *x, const Dtype *b,
              Dtype *y);
 
 template<typename Dtype>
@@ -111,32 +119,32 @@ void cpu_pow(const int n,
              Dtype *y);
 template<typename Dtype>
 void cpu_add_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void cpu_sub_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void cpu_mul_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void cpu_div_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void cpu_pow_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 // Returns the sum of the absolute values of the elements of vector a
@@ -162,11 +170,6 @@ void cpu_gemv(const CBLAS_TRANSPOSE TransA,
 
 /* matrix-matrix start*/
 template<typename Dtype>
-void cpu_axpy(const int N,
-              const Dtype alpha, const Dtype *a,
-              Dtype *y);
-
-template<typename Dtype>
 void cpu_gemm(const CBLAS_TRANSPOSE TransA,
               const CBLAS_TRANSPOSE TransB,
               const int M, const int N, const int K,
@@ -174,7 +177,12 @@ void cpu_gemm(const CBLAS_TRANSPOSE TransA,
               const Dtype beta, Dtype *C);
 
 template<typename Dtype>
-void cpu_axpby(const int N,
+void cpu_axpy(const int n,
+              const Dtype alpha, const Dtype *a,
+              Dtype *y);
+
+template<typename Dtype>
+void cpu_axpby(const int n,
                const Dtype alpha, const Dtype *a,
                const Dtype beta, Dtype *y);
 

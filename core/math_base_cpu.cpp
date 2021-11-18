@@ -3,6 +3,7 @@
 * Created by wss on 11月,15, 2021
 */
 #include "math_base_cpu.hpp"
+namespace stensor {
 
 #define DEFINE_VSL_UNARY_FUNC(name, operation) \
   template<typename Dtype> \
@@ -21,7 +22,7 @@
 
 DEFINE_VSL_UNARY_FUNC(Sqr, y[i] = a[i] * a[i])
 DEFINE_VSL_UNARY_FUNC(Sqrt, y[i] = sqrt(a[i]))
-DEFINE_VSL_UNARY_FUNC(Exp, y[i] = exp(a[i]))
+//DEFINE_VSL_UNARY_FUNC(Exp, y[i] = exp(a[i]))
 DEFINE_VSL_UNARY_FUNC(Log, y[i] = log(a[i]))
 DEFINE_VSL_UNARY_FUNC(Abs, y[i] = fabs(a[i]))
 DEFINE_VSL_UNARY_FUNC(Sign, y[i] = a[i] > 0 ? 1 : -1)
@@ -53,71 +54,59 @@ DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
 #define INITIAL_UNARY_FUNC_PP(name) \
   template void name<int>(const int n, const int *a, int *y); \
   template void name<float>(const int n, const float *a, float *y); \
-  template void name<double>(const int n, const double *a, double *y)
+  template void name<double>(const int n, const double *a, double *y);
 
 #define INITIAL_UNARY_FUNC_SP(name) \
   template void name<int>(const int n, const int val, int *y); \
   template void name<float>(const int n, const float val, float *y); \
-  template void name<double>(const int n, const double val, double *y)
+  template void name<double>(const int n, const double val, double *y);
 
 #define INITIAL_BINARY_FUNC_PSP(name) \
   template void name<int>(const int n, const int *a, const int val, int *y); \
   template void name<float>(const int n, const float *a, const float val, float *y); \
-  template void name<double>(const int n, const double *a, const double val, double *y)
+  template void name<double>(const int n, const double *a, const double val, double *y);
 #define INITIAL_BINARY_FUNC_PPP(name) \
   template void name<int>(const int n, const int *a, const int *b, int *y); \
   template void name<float>(const int n, const float *a, const float *b, float *y); \
-  template void name<double>(const int n, const double *a, const double *b, double *y)
+  template void name<double>(const int n, const double *a, const double *b, double *y);
 
-namespace stensor {
 /* self op start*/
-template<typename Dtype>
-void cpu_exp(const int n,
-             const Dtype *a,
-             Dtype *y) {
-  vExp(n, a, y);
-}
-INITIAL_UNARY_FUNC_PP(cpu_exp);
 
 template<typename Dtype>
-void cpu_log(const int n,
-             const Dtype *a,
-             Dtype *y) {
-  vLog(n, a, y);
+void vExp(const int n, const Dtype *a, Dtype *y) {
+  static_cast<void>(0), !((__builtin_expect(!(a), 0))) ? (void) 0 : google::LogMessageVoidify()
+      & google::LogMessageFatal("_file_name_",
+                                25).stream() << "Check failed: " "a" " ";
+  static_cast<void>(0), !((__builtin_expect(!(y), 0))) ? (void) 0 : google::LogMessageVoidify()
+      & google::LogMessageFatal("_file_name_", 25).stream() << "Check failed: " "y" " ";
+  for (int i = 0; i < n; ++i) { y[i] = exp(a[i]); }
 }
-INITIAL_UNARY_FUNC_PP(cpu_log);
+inline void vsExp(const int n, const float *a, float *y) { vExp<float>(n, a, y); }
+inline void vdExp(const int n, const double *a, double *y) { vExp<double>(n, a, y); }
 
-template<typename Dtype>
-void cpu_abs(const int n,
-             const Dtype *a,
-             Dtype *y) {
-  vAbs(n, a, y);
-}
-INITIAL_UNARY_FUNC_PP(cpu_abs);
+#define IMPLEMENT_CPU_UNARY_FUNC(name, op_expression)\
+template<typename Dtype>\
+void cpu_##name(const int n,\
+             const Dtype *x,\
+             Dtype *y) {\
+  CHECK_GT(n, 0); CHECK(x); CHECK(y);\
+  for (int index = 0; index < n; ++index) { op_expression; }\
+}\
+template void cpu_##name<float>(const int n, const float *x, float *y);\
+template void cpu_##name<double>(const int n, const double *x, double *y);
 
-template<typename Dtype>
-void cpu_sqrt(const int n,
-              const Dtype *a,
-              Dtype *y) {
-  vSqrt(n, a, y);
-}
-INITIAL_UNARY_FUNC_PP(cpu_sqrt);
-
-template<typename Dtype>
-void cpu_square(const int n,
-                const Dtype *a,
-                Dtype *y) {
-  vSqr(n, a, y);
-}
-INITIAL_UNARY_FUNC_PP(cpu_square);
-
-template<typename Dtype>
-void cpu_sign(const int n,
-              const Dtype *a,
-              Dtype *y) {
-  vSign(n, a, y);
-}
-INITIAL_UNARY_FUNC_PP(cpu_sign);
+IMPLEMENT_CPU_UNARY_FUNC(exp, y[index] = exp(x[index]));
+IMPLEMENT_CPU_UNARY_FUNC(log, y[index] = log(x[index]));
+IMPLEMENT_CPU_UNARY_FUNC(abs, y[index] = abs(x[index]));
+IMPLEMENT_CPU_UNARY_FUNC(sqrt, y[index] = sqrt(x[index]));
+IMPLEMENT_CPU_UNARY_FUNC(square, y[index] = x[index] * x[index]);
+IMPLEMENT_CPU_UNARY_FUNC(sign, y[index] = x[index]> 0 ? 1 : -1);
+IMPLEMENT_CPU_UNARY_FUNC(sigmoid, y[index] =  1.0 / (1.0 + exp(-x[index])));
+IMPLEMENT_CPU_UNARY_FUNC(tanh, Dtype e_2x = exp(2 * x[index]);y[index] = (e_2x-1)/(e_2x+1));
+IMPLEMENT_CPU_UNARY_FUNC(relu, y[index] = x[index]> 0 ? x[index] : 0);
+IMPLEMENT_CPU_UNARY_FUNC(elu, y[index] = x[index]> 0 ? x[index] : exp(x[index])-1);
+IMPLEMENT_CPU_UNARY_FUNC(gelu, y[index] = 0.5*x[index]*(1.0+std::erf(x[index]/std::sqrt(2.0))));
+IMPLEMENT_CPU_UNARY_FUNC(leakyrelu, y[index] = x[index]> 0 ? x[index] : 0.2*x[index]);
 
 template<typename Dtype>
 void cpu_clamp(const int n,
@@ -136,6 +125,7 @@ void cpu_clamp(const int n,
 template void cpu_clamp<int>(const int n, const int min, const int max, const int *a, int *y);
 template void cpu_clamp<float>(const int n, const float min, const float max, const float *a, float *y);
 template void cpu_clamp<double>(const int n, const double min, const double max, const double *a, double *y);
+
 
 /* self op end*/
 
