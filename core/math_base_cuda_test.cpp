@@ -94,7 +94,7 @@ TEST_F(GPUMathTest, MMTest) {
 }
 
 TEST_F(GPUMathTest, SpeedTest) {
-  int N = 2000;
+  int N = 5000;
   int size1 = N * N;
   int size2 = N * N;
   int size3 = N * N;

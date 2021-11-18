@@ -253,6 +253,7 @@ void gpu_copy(const size_t N, const void *X, void *Y) {
     CUDA_CHECK(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(stensor/alt_fn)
   }
 }
+
 IMPLEMENT_GPU_BINARY_FUNC(add, y[index] = a[index] + b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(sub, y[index] = a[index] - b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(mul, y[index] = a[index] * b[index]);
@@ -279,7 +280,7 @@ IMPLEMENT_GPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
     if (shape_a[i]!=1)  index_a += ma; \
     if (shape_b[i]!=1)  index_b += mb; \
   }
-
+// Broadcast functions
 #define IMPLEMENT_BROADCAST_OP_KERNEL(name, op_expression)\
 template<typename Dtype>\
 __global__ void name##_kernel(const int n, const int sy,\
@@ -291,12 +292,6 @@ __global__ void name##_kernel(const int n, const int sy,\
     op_expression;\
   }\
 }
-
-IMPLEMENT_BROADCAST_OP_KERNEL(add_broadcast, y[index] = a[index_a] + b[index_b]);
-IMPLEMENT_BROADCAST_OP_KERNEL(sub_broadcast, y[index] = a[index_a] - b[index_b]);
-IMPLEMENT_BROADCAST_OP_KERNEL(mul_broadcast, y[index] = a[index_a] * b[index_b]);
-IMPLEMENT_BROADCAST_OP_KERNEL(div_broadcast, y[index] = a[index_a] / b[index_b]);
-IMPLEMENT_BROADCAST_OP_KERNEL(pow_broadcast, y[index] = pow(a[index_a], b[index_b]));
 
 #define IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(name, type) \
 template<>\
@@ -323,6 +318,12 @@ void gpu_##name<type>(const type *a, const type *b,\
   FreeGPU(shape_b_gpu);\
   FreeGPU(shape_y_gpu);\
 }
+
+IMPLEMENT_BROADCAST_OP_KERNEL(add_broadcast, y[index] = a[index_a] + b[index_b]);
+IMPLEMENT_BROADCAST_OP_KERNEL(sub_broadcast, y[index] = a[index_a] - b[index_b]);
+IMPLEMENT_BROADCAST_OP_KERNEL(mul_broadcast, y[index] = a[index_a] * b[index_b]);
+IMPLEMENT_BROADCAST_OP_KERNEL(div_broadcast, y[index] = a[index_a] / b[index_b]);
+IMPLEMENT_BROADCAST_OP_KERNEL(pow_broadcast, y[index] = pow(a[index_a], b[index_b]));
 
 IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(add_broadcast, float);
 IMPLEMENT_BINARY_BROADCAST_GPU_FUNC(add_broadcast, double);

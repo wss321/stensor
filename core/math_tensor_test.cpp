@@ -9,8 +9,8 @@
 #include "math_tesnsor.hpp"
 
 namespace stensor {
-class TensorTest : public ::testing::Test {};
-TEST_F(TensorTest, Gennerator) {
+class MathTensorTest : public ::testing::Test {};
+TEST_F(MathTensorTest, Gennerator) {
   Tensor tensor(Tensor::ShapeType{3, 4});
   std::cout << stensor::zeros_like(&tensor) << std::endl;
   std::cout << stensor::ones_like(&tensor) << std::endl;
@@ -21,7 +21,7 @@ TEST_F(TensorTest, Gennerator) {
   std::cout << stensor::random_gaussian(std::vector<uint32_t>{1, 3}) << std::endl;
 }
 
-TEST_F(TensorTest, MathUnary) {
+TEST_F(MathTensorTest, MathUnary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
@@ -52,7 +52,7 @@ TEST_F(TensorTest, MathUnary) {
   std::cout << "\tdiv:\n" << d;
 }
 
-TEST_F(TensorTest, MathRandomTest) {
+TEST_F(MathTensorTest, MathRandomTest) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{3, 1, 1};
   stensor::Config::set_random_seed(123);
@@ -64,7 +64,7 @@ TEST_F(TensorTest, MathRandomTest) {
   }
 }
 
-TEST_F(TensorTest, MathBinary) {
+TEST_F(MathTensorTest, MathBinary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
@@ -93,7 +93,7 @@ TEST_F(TensorTest, MathBinary) {
 
 }
 
-TEST_F(TensorTest, MathCPUBroadCast) {
+TEST_F(MathTensorTest, MathCPUBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{3, 1, 1};
   Tensor::ShapeType shape3{3, 4, 5};
@@ -118,7 +118,7 @@ TEST_F(TensorTest, MathCPUBroadCast) {
   EXPECT_EQ(c->shape(), shape3);
 }
 
-TEST_F(TensorTest, MathGPUBroadCast) {
+TEST_F(MathTensorTest, MathGPUBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{4, 1};
   Tensor::ShapeType shape3{3, 4, 5};
@@ -146,15 +146,11 @@ TEST_F(TensorTest, MathGPUBroadCast) {
   delete e;
   delete f;
 
-  //TODO:fix std::cout <<c->cpu_data()[10]; stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
-
-  //TODO:Fix bug -- delete error after gpu add
-
 }
 
-TEST_F(TensorTest, MathGPUBroadCastSpeed) {
-  Tensor::ShapeType shape1{128, 224, 224};
-  Tensor::ShapeType shape2{224, 224};
+TEST_F(MathTensorTest, MathGPUBroadCastSpeed) {
+  Tensor::ShapeType shape1{128, 3, 224, 224};
+  Tensor::ShapeType shape2{3, 224, 224};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape2);
   long long start = systemtime_ms();

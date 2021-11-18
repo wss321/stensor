@@ -5,52 +5,6 @@
 #include "math_base_cpu.hpp"
 namespace stensor {
 
-#define DEFINE_VSL_UNARY_FUNC(name, operation) \
-  template<typename Dtype> \
-  void v##name(const int n, const Dtype* a, Dtype* y) { \
-    CHECK(a); CHECK(y); \
-    for (int i = 0; i < n; ++i) { operation; } \
-  } \
-  inline void vs##name( \
-    const int n, const float* a, float* y) { \
-    v##name<float>(n, a, y); \
-  } \
-  inline void vd##name( \
-      const int n, const double* a, double* y) { \
-    v##name<double>(n, a, y); \
-  }
-
-DEFINE_VSL_UNARY_FUNC(Sqr, y[i] = a[i] * a[i])
-DEFINE_VSL_UNARY_FUNC(Sqrt, y[i] = sqrt(a[i]))
-//DEFINE_VSL_UNARY_FUNC(Exp, y[i] = exp(a[i]))
-DEFINE_VSL_UNARY_FUNC(Log, y[i] = log(a[i]))
-DEFINE_VSL_UNARY_FUNC(Abs, y[i] = fabs(a[i]))
-DEFINE_VSL_UNARY_FUNC(Sign, y[i] = a[i] > 0 ? 1 : -1)
-
-#define DEFINE_VSL_BINARY_FUNC(name, operation) \
-  template<typename Dtype> \
-  void v##name(const int n, const Dtype* a, const Dtype* b, Dtype* y) { \
-    CHECK_GT(n, 0); CHECK(a); CHECK(b); CHECK(y); \
-    for (int i = 0; i < n; ++i) { operation; } \
-  }                                             \
-  inline void vi##name( \
-      const int n, const int* a, const int* b, int* y) { \
-    v##name<int>(n, a, b, y); \
-  }inline void vs##name( \
-    const int n, const float* a, const float* b, float* y) { \
-    v##name<float>(n, a, b, y); \
-  } \
-  inline void vd##name( \
-      const int n, const double* a, const double* b, double* y) { \
-    v##name<double>(n, a, b, y); \
-  }
-
-DEFINE_VSL_BINARY_FUNC(Add, y[i] = a[i] + b[i])
-DEFINE_VSL_BINARY_FUNC(Sub, y[i] = a[i] - b[i])
-DEFINE_VSL_BINARY_FUNC(Mul, y[i] = a[i] * b[i])
-DEFINE_VSL_BINARY_FUNC(Div, y[i] = a[i] / b[i])
-DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
-
 #define INITIAL_UNARY_FUNC_PP(name) \
   template void name<int>(const int n, const int *a, int *y); \
   template void name<float>(const int n, const float *a, float *y); \
@@ -65,24 +19,8 @@ DEFINE_VSL_BINARY_FUNC(Pow, y[i] = std::pow(a[i], b[i]))
   template void name<int>(const int n, const int *a, const int val, int *y); \
   template void name<float>(const int n, const float *a, const float val, float *y); \
   template void name<double>(const int n, const double *a, const double val, double *y);
-#define INITIAL_BINARY_FUNC_PPP(name) \
-  template void name<int>(const int n, const int *a, const int *b, int *y); \
-  template void name<float>(const int n, const float *a, const float *b, float *y); \
-  template void name<double>(const int n, const double *a, const double *b, double *y);
 
 /* self op start*/
-
-template<typename Dtype>
-void vExp(const int n, const Dtype *a, Dtype *y) {
-  static_cast<void>(0), !((__builtin_expect(!(a), 0))) ? (void) 0 : google::LogMessageVoidify()
-      & google::LogMessageFatal("_file_name_",
-                                25).stream() << "Check failed: " "a" " ";
-  static_cast<void>(0), !((__builtin_expect(!(y), 0))) ? (void) 0 : google::LogMessageVoidify()
-      & google::LogMessageFatal("_file_name_", 25).stream() << "Check failed: " "y" " ";
-  for (int i = 0; i < n; ++i) { y[i] = exp(a[i]); }
-}
-inline void vsExp(const int n, const float *a, float *y) { vExp<float>(n, a, y); }
-inline void vdExp(const int n, const double *a, double *y) { vExp<double>(n, a, y); }
 
 #define IMPLEMENT_CPU_UNARY_FUNC(name, op_expression)\
 template<typename Dtype>\
@@ -147,11 +85,11 @@ void cpu_set(const int n,
 }
 INITIAL_UNARY_FUNC_SP(cpu_set);
 template<typename Dtype>
-void cpu_copy(const int n, const Dtype *X, Dtype *Y) {
-  CHECK(X);
-  CHECK(Y);
-  if (X != Y) std::memcpy(Y, X, sizeof(Dtype) * n);
-  //cblas_ccopy(static_cast<int>(n), X, 1, Y, 1);
+void cpu_copy(const int n, const Dtype *x, Dtype *y) {
+  CHECK(x);
+  CHECK(y);
+  if (x != y) std::memcpy(y, x, sizeof(Dtype) * n);
+  //cblas_ccopy(static_cast<int>(n), x, 1, y, 1);
 }
 INITIAL_UNARY_FUNC_PP(cpu_copy);
 
@@ -206,45 +144,22 @@ INITIAL_BINARY_FUNC_PSP(cpu_pow_scalar);
 /* vector scalar end*/
 
 /* vector vector start*/
-template<typename Dtype>
-void cpu_add(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y) {
-  vAdd(n, a, b, y);
-}
-INITIAL_BINARY_FUNC_PPP(cpu_add);
 
-template<typename Dtype>
-void cpu_sub(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y) {
-  vSub(n, a, b, y);
-}
-INITIAL_BINARY_FUNC_PPP(cpu_sub);
+#define IMPLEMENT_CPU_BINARY_FUNC(name, op_expression) \
+  template<typename Dtype> \
+  void cpu_##name(const int n, const Dtype* a, const Dtype* b, Dtype* y) { \
+    CHECK_GT(n, 0); CHECK(a); CHECK(b); CHECK(y); \
+    for (int index = 0; index < n; ++index) { op_expression; } \
+  }                                             \
+template void cpu_##name<int>(const int n, const int *a, const int *b, int *y);\
+template void cpu_##name<float>(const int n, const float *a, const float *b, float *y);\
+template void cpu_##name<double>(const int n, const double *a, const double *b, double *y)
 
-template<typename Dtype>
-void cpu_mul(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y) {
-  vMul(n, a, b, y);
-}
-INITIAL_BINARY_FUNC_PPP(cpu_mul);
-
-template<typename Dtype>
-void cpu_div(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y) {
-  vDiv(n, a, b, y);
-}
-INITIAL_BINARY_FUNC_PPP(cpu_div);
-
-template<typename Dtype>
-void cpu_pow(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y) {
-  vPow(n, a, b, y);
-}
-INITIAL_BINARY_FUNC_PPP(cpu_pow);
+IMPLEMENT_CPU_BINARY_FUNC(add, y[index] = a[index] + b[index]);
+IMPLEMENT_CPU_BINARY_FUNC(sub, y[index] = a[index] - b[index]);
+IMPLEMENT_CPU_BINARY_FUNC(mul, y[index] = a[index] * b[index]);
+IMPLEMENT_CPU_BINARY_FUNC(div, y[index] = a[index] / b[index]);
+IMPLEMENT_CPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
 
 #define BROADCAST_INDEX(index, n, num_axis, indices_in_result, shape_a, shape_b, shape_y, index_a, index_b) \
   indices_in_result[num_axis - 1] = index % shape_y[num_axis - 1]; \
