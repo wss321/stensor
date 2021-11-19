@@ -249,13 +249,13 @@ TEST_F(GPUMathTest, CompTest) {
   B.copy_gpu_to_cpu();
   C.copy_gpu_to_cpu();
 
-  gpu_equal(size1, g1, g2, g3);
+  bool iseq = gpu_equal(size1, g1, g2);
   C.copy_gpu_to_cpu();
-  EXPECT_EQ(float(0), *g3);
+  EXPECT_EQ(false, iseq);
 
-  gpu_equal(size1, g1, g1, g3);
+  iseq = gpu_equal(size1, g1, g1);
   C.copy_gpu_to_cpu();
-  EXPECT_EQ(float(1), *g3);
+  EXPECT_EQ(true, iseq);
 
   gpu_maximum(size1, g1, g2, g3);
   C.copy_gpu_to_cpu();

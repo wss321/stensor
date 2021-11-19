@@ -6,6 +6,8 @@
 #define STENSOR_CORE_MATH_TESNSOR_HPP_
 #include "public/common.hpp"
 #include "tensor.hpp"
+#include "math_base_cpu.hpp"
+#include "math_base_cuda.hpp"
 
 namespace stensor {
 
@@ -52,15 +54,25 @@ inline Tensor *exp(Tensor &tensor, bool inplace = false) {
 
 /* Tensor-scalar end*/
 
+/* Tensor-Tensor start*/
 Tensor *add(const Tensor *a, const Tensor *b);
 Tensor *sub(const Tensor *a, const Tensor *b);
 Tensor *mul(const Tensor *a, const Tensor *b);
 Tensor *div(const Tensor *a, const Tensor *b);
+Tensor *pow(const Tensor *a, const Tensor *b);
 
 inline Tensor *add(const Tensor &a, const Tensor &b) { return add(&a, &b); }
 inline Tensor *sub(const Tensor &a, const Tensor &b) { return sub(&a, &b); }
 inline Tensor *mul(const Tensor &a, const Tensor &b) { return mul(&a, &b); }
 inline Tensor *div(const Tensor &a, const Tensor &b) { return div(&a, &b); }
+inline Tensor *pow(const Tensor &a, const Tensor &b) { return pow(&a, &b); }
+
+// matmul at last two axis
+Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1, bool transA = false, bool transB = false);
+
+
+/* Tensor-Tensor start*/
+
 /* math of Tensor end */
 
 /* Tensor Generator*/
@@ -93,7 +105,7 @@ inline Tensor *zeros(const Tensor::ShapeType &shape, int device_id = -1, bool re
 }
 
 inline Tensor *ones(const Tensor::ShapeType &shape, int device_id = -1, bool require_grad = false) {
-  return constants(shape, 1.0, require_grad);
+  return constants(shape, 1.0, device_id, require_grad);
 }
 
 inline Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad = false) {

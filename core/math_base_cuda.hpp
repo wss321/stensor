@@ -95,7 +95,7 @@ void gpu_pow_scalar(const int n, const Dtype *a, const Dtype b, Dtype *y);
 
 /* vector-vector start*/
 template<typename Dtype>
-void gpu_equal(const int n, const Dtype *x, const Dtype *y, Dtype *out);
+bool gpu_equal(const int n, const Dtype *x, const Dtype *y);
 
 void gpu_copy(const size_t n, const void *x, void *y);
 

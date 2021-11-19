@@ -95,6 +95,7 @@ void gpu_set(const int N, const Dtype alpha, Dtype *Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   set_kernel < Dtype ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, alpha, Y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template void gpu_set<int>(const int N, const int alpha, int *Y);
@@ -221,7 +222,7 @@ void gpu_pow_scalar<double>(const int N, const double *a,
 
 /* vector-vector start*/
 template<typename Dtype>
-__global__ void equal_kernel(const int n, const Dtype *a, const Dtype *b, Dtype *y) {
+__global__ void equal_kernel(const int n, const Dtype *a, const Dtype *b, int *y) {
   CUDA_KERNEL_LOOP(index, n) {
     if (*y!=Dtype(0)){
       if (a[index]!=b[index]) *y = Dtype(0);
@@ -229,21 +230,37 @@ __global__ void equal_kernel(const int n, const Dtype *a, const Dtype *b, Dtype 
   }
 }
 template<>
-void gpu_equal<int>(const int N, const int *a, const int *b, int *y) {
-  gpu_set(N, int(1), y);
-  equal_kernel < int ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
-}
-template<>
-void gpu_equal<float>(const int N, const float *a, const float *b, float *y) {
-  gpu_set(N, float(1), y);
-  equal_kernel < float ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
-}
-template<>
-void gpu_equal<double>(const int N, const double *a, const double *b, double *y) {
-  gpu_set(N, double(1), y);
-  equal_kernel < double ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+bool gpu_equal<int>(const int N, const int *a, const int *b) {
+  int *y;
+  MallocGPU((void **) &y, sizeof(int));
+  gpu_set(1, 1, y);
+  equal_kernel<int><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  int o;
+  stensor::memcopy(sizeof (int), y, &o);
+  return o == 1;
 }
 
+template<>
+bool gpu_equal<float>(const int N, const float *a, const float *b) {
+  int *y;
+  MallocGPU((void **) &y, sizeof(int));
+  gpu_set(1, 1, y);
+  equal_kernel<float><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  int o;
+  stensor::memcopy(sizeof (int), y, &o);
+  return o == 1;
+}
+
+template<>
+bool gpu_equal<double>(const int N, const double *a, const double *b) {
+  int *y;
+  MallocGPU((void **) &y, sizeof(int));
+  gpu_set(1, 1, y);
+  equal_kernel < double ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  int o;
+  stensor::memcopy(sizeof (int), y, &o);
+  return o == 1;
+}
 
 #define IMPLEMENT_GPU_BINARY_FUNC(name, op_expression) \
 template<typename Dtype>\
@@ -277,7 +294,6 @@ void gpu_copy(const size_t N, const void *X, void *Y) {
     CUDA_CHECK(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(stensor/alt_fn)
   }
 }
-
 
 IMPLEMENT_GPU_BINARY_FUNC(add, y[index] = a[index] + b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(sub, y[index] = a[index] - b[index]);

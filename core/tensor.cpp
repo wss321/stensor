@@ -8,11 +8,13 @@ void Tensor::to_cpu() {
   if (_capacity != 0) {
     if (!_data->has_cpu_data())
       _data->alloc_cpu();
+    CHECK(_data->has_gpu_data()) << "GPU data is none";
     _data->copy_gpu_to_cpu();
     _data->free_gpu();
     if (require_grad()){
       if (!_grad->has_cpu_data())
         _grad->alloc_cpu();
+      CHECK(_grad->has_gpu_data()) << "GPU grad is none";
       _grad->copy_gpu_to_cpu();
       _grad->free_gpu();
     }
@@ -24,11 +26,13 @@ void Tensor::to_gpu() {
   if (_capacity != 0) {
     if (!_data->has_gpu_data())
       _data->alloc_gpu();
+    CHECK(_data->has_cpu_data()) << "CPU data is none";
     _data->copy_cpu_to_gpu();
     _data->free_cpu();
     if (require_grad()){
       if (!_grad->has_gpu_data())
         _grad->alloc_gpu();
+      CHECK(_grad->has_cpu_data()) << "CPU grad is none";
       _grad->copy_cpu_to_gpu();
       _grad->free_cpu();
     }

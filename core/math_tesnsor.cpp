@@ -3,7 +3,7 @@
 * Created by wss on 11月,16, 2021
 */
 #include "math_tesnsor.hpp"
-#include "math_base_cpu.hpp"
+
 namespace stensor {
 /* math of Tensor */
 /* self-op start*/
@@ -279,27 +279,6 @@ inline int broadcast_index(const Tensor::ShapeType &shape_in,
   }
   return out;
 }
-#define MIN_FUNC(a, b, c) c = a>b ? b: a
-#define BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y, index_a, index_b) \
-  int indices_in_result[MAX_AXES]{0};\
-  indices_in_result[sy - 1] = index % static_cast<int>(shape_y[sy - 1]); \
-  int div = 1; \
-  for (int i = sy - 2; i >= 0; --i) { \
-    div *=  static_cast<int>(shape_y[i + 1]); \
-    indices_in_result[i] = (index / div)% static_cast<int>(shape_y[i]); \
-  } \
-  int index_a = 0; \
-  int index_b = 0; \
-  for (int i = 0; i < sy; ++i) { \
-    int ma;           \
-    MIN_FUNC(indices_in_result[i], static_cast<int>(shape_a[i]), ma); \
-    int mb;        \
-    MIN_FUNC(indices_in_result[i], static_cast<int>(shape_b[i]), mb);  \
-    index_a *= static_cast<int>(shape_a[i]); \
-    index_b *= static_cast<int>(shape_b[i]); \
-    if (shape_a[i]!=1)  index_a += ma; \
-    if (shape_b[i]!=1)  index_b += mb; \
-  }
 
 inline void VecUint32ToVecInt(const std::vector<uint32_t> &shape_u, std::vector<int> &shape_i) {
   shape_i.resize(shape_u.size());
@@ -341,6 +320,7 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
       }\
       break;\
     case stensor::GPU:\
+      CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";   \
       if (a->shape() == b->shape()) {\
         bool require_grad = (a->require_grad() || b->require_grad());\
         Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);\
@@ -380,7 +360,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
     case stensor::CPU:
       if (a->shape() == b->shape()) {
         bool require_grad = (a->require_grad() || b->require_grad());
-        Tensor *out_tensor = new Tensor(a->shape(), -1,  require_grad);
+        Tensor *out_tensor = new Tensor(a->shape(), -1, require_grad);
         stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(),
                          out_tensor->mutable_cpu_data());
         return out_tensor;
@@ -401,6 +381,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
       }
       break;
     case stensor::GPU:
+      CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
       if (a->shape() == b->shape()) {
         bool require_grad = (a->require_grad() || b->require_grad());
         Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
@@ -425,6 +406,52 @@ Tensor *add(const Tensor *a, const Tensor *b) {
       break;
   }
 }
+
+Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB) {
+  CHECK_EQ(a->state(), b->state()) << "tensors must be at same device";
+  // inference shape
+  uint32_t start_axis_a = a->CanonicalAxisIndex(axis);
+  uint32_t start_axis_b = a->CanonicalAxisIndex(axis);
+  int Ma = a->count(0, start_axis_a);
+  int Na = a->count(start_axis_a, a->num_axes());
+  if (transA) swap(Ma, Na);
+
+  int Mb = b->count(0, start_axis_b);
+  int Nb = b->count(start_axis_b, b->num_axes());
+  if (transB) swap(Mb, Nb);
+
+  std::vector<uint32_t> out_shape;
+  for (int i = 0; i < start_axis_a; ++i)
+    out_shape.push_back(a->shape(i));
+  for (int i = start_axis_b; i < b->num_axes(); ++i)
+    out_shape.push_back(b->shape(i));
+
+  CHECK_EQ(Na, Mb) << "Shape mismatch";
+  const CBLAS_TRANSPOSE TranA = transA ? CblasTrans : CblasNoTrans;
+  const CBLAS_TRANSPOSE TranB = transB ? CblasTrans : CblasNoTrans;
+  Tensor * out_tensor;
+  bool require_grad = (a->require_grad() || b->require_grad());
+
+  switch (a->state()) {
+    case stensor::CPU:
+      out_tensor = new Tensor(out_shape, -1, require_grad);
+      stensor::cpu_gemm(TranA, TranB, Ma, Nb, Mb,
+                        1.0f, a->cpu_data(), b->cpu_data(),
+                        0.0f, out_tensor->mutable_cpu_data());
+      return out_tensor;
+      break;
+    case stensor::GPU:
+      CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
+      out_tensor = new Tensor(out_shape, a->device(), require_grad);
+      stensor::gpu_gemm(TranA, TranB, Ma, Nb, Mb,
+                        1.0f, a->gpu_data(), b->gpu_data(),
+                        0.0f, out_tensor->mutable_gpu_data());
+        return out_tensor;
+      break;
+  }
+}
+
+
 /* math of Tensor end */
 
 /* Tensor Generator*/
@@ -454,7 +481,6 @@ Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id, 
 
   return new_t;
 }
-
 
 Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id, bool require_grad) {
   Tensor *new_t = new Tensor(shape, device_id, require_grad);

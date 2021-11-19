@@ -102,6 +102,12 @@ inline long long systemtime_ms() {
   return t.time * 1000 + t.millitm;
 }
 
+inline void swap(int &a, int &b) {
+  a = a ^ b;
+  b = a ^ b;
+  a = a ^ b;
+}
+
 /* borrow from caffe /end*/
 }// namespace stensor
 #endif //STENSOR_COMMON_HPP

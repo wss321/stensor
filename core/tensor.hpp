@@ -97,10 +97,10 @@ class Tensor {
   inline const ShapeType &shape() const { return _shape; }
   inline uint32_t CanonicalAxisIndex(int32_t axis_index) const {
     int32_t num_axes_t = static_cast<int32_t>(num_axes());
-    DCHECK_GE(axis_index, -num_axes_t)
+    CHECK_GE(axis_index, -num_axes_t)
       << "axis " << axis_index << " out of range for " << num_axes_t
       << "-D Tensor with shape " << shape_string();
-    DCHECK_LT(axis_index, num_axes_t)
+    CHECK_LT(axis_index, num_axes_t)
       << "axis " << axis_index << " out of range for " << num_axes_t
       << "-D Tensor with shape " << shape_string();
     if (axis_index < 0) {
@@ -143,12 +143,12 @@ class Tensor {
   };
 
   inline uint32_t offset(const ShapeType &indices) const {
-    DCHECK_LE(indices.size(), num_axes());
+    CHECK_LE(indices.size(), num_axes());
     uint32_t offset = 0;
     for (int32_t i = 0; i < num_axes(); ++i) {
       offset *= shape(i);
       if (indices.size() > i) {
-        DCHECK_LT(indices[i], shape(i));
+        CHECK_LT(indices[i], shape(i));
         offset += indices[i];
       }
     }
@@ -160,12 +160,12 @@ class Tensor {
   };
 
   inline uint32_t count(int32_t start_axis, int32_t end_axis) const {
-    DCHECK_LE(start_axis, end_axis);
-    DCHECK_GE(start_axis, 0);
-    DCHECK_GE(end_axis, 0);
+    CHECK_LE(start_axis, end_axis);
+    CHECK_GE(start_axis, 0);
+    CHECK_GE(end_axis, 0);
     int32_t num_axes_t = static_cast<int32_t>(num_axes());
-    DCHECK_LE(start_axis, num_axes_t);
-    DCHECK_LE(end_axis, num_axes_t);
+    CHECK_LE(start_axis, num_axes_t);
+    CHECK_LE(end_axis, num_axes_t);
     uint32_t count = 1ul;
     for (int32_t i = start_axis; i < end_axis; ++i) {
       count *= shape(i);

@@ -183,7 +183,6 @@ TEST_F(MathTensorTest, MathGPUBroadCastSpeed) {
 
 }
 
-
 TEST_F(MathTensorTest, ActivateFunc) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1, -1.0f, 1.0f);
@@ -191,27 +190,67 @@ TEST_F(MathTensorTest, ActivateFunc) {
   auto d = stensor::sigmoid(a);
   std::cout << "\tsigmoid:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
-    float x=a->data_at(index);
-    float y=d->data_at(index);
-    EXPECT_EQ(1.0f/(1.0f + std::exp(-x)), y);
+    float x = a->data_at(index);
+    float y = d->data_at(index);
+    EXPECT_EQ(1.0f / (1.0f + std::exp(-x)), y);
   }
   delete d;
 
   d = stensor::tanh(a);
   std::cout << "\ttanh:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
-    float x=a->data_at(index);
-    float y=d->data_at(index);
+    float x = a->data_at(index);
+    float y = d->data_at(index);
     EXPECT_EQ(std::tanh(x), y);
   }
   delete d;
   d = stensor::relu(a);
   std::cout << "\trelu:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
-    float x=a->data_at(index);
-    float y=d->data_at(index);
+    float x = a->data_at(index);
+    float y = d->data_at(index);
     EXPECT_EQ(std::max(x, 0.0f), y);
   }
   delete d;
 }
+
+TEST_F(MathTensorTest, MathMatmulTest) {
+  Tensor::ShapeType shape1{2, 3};
+  Tensor::ShapeType shape2{3, 4};
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::random(shape2);
+  long long start = systemtime_ms();
+  Tensor *c = stensor::matmul(a, b);
+  LOG(INFO) << "CPU matmul operation time:" << systemtime_ms() - start << "ms";
+  LOG(INFO) << "out shape:" << c->shape();
+
+  a->to_gpu();
+  b->to_gpu();
+  EXPECT_EQ(a->device(), 0);
+  start = systemtime_ms();
+  Tensor *g = stensor::matmul(a, b);
+  LOG(INFO) << "GPU matmul operation time:" << systemtime_ms() - start << "ms";
+
+  c->to_gpu();
+
+  bool iseq = gpu_equal(c->size(), c->gpu_data(), g->gpu_data());
+  EXPECT_EQ(iseq, true);
+//  std::cout<<c;
+//  std::cout<<g;
+
+  c->to_cpu();
+  g->to_cpu();
+  iseq = cpu_equal(c->size(), c->cpu_data(), g->cpu_data());
+  EXPECT_EQ(iseq, true);
+
+  std::cout<<c;
+  std::cout<<g;
+
+  delete a;
+  delete b;
+  delete g;
+  delete c;
+
+}
+
 }
