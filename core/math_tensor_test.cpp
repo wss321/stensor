@@ -213,12 +213,5 @@ TEST_F(MathTensorTest, ActivateFunc) {
     EXPECT_EQ(std::max(x, 0.0f), y);
   }
   delete d;
-//  d = stensor::tanh(a);
-//  std::cout << "\telu:\n" << d;
-//  for (int index = 0; index < a->size(); ++index) {
-//    float x=a->data_at(index);
-//    float y=d->data_at(index);
-//    EXPECT_EQ(std::tanh(x), y);
-//  }
 }
 }

@@ -35,12 +35,6 @@ Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
 Tensor *pow(Tensor *tensor, const float val, bool inplace = false);
 Tensor *exp(Tensor *tensor, bool inplace = false);
 
-// inplace op
-void add_(Tensor *tensor, const float val);
-void scale_(Tensor *tensor, const float val);
-void pow_(Tensor *tensor, const float val);
-void exp_(Tensor *tensor);
-
 inline Tensor *add(Tensor &tensor, const float val, bool inplace = false) {
   return add(&tensor, val, inplace);
 }

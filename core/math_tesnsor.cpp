@@ -259,7 +259,9 @@ Tensor *exp(Tensor *tensor, bool inplace) {
 }
 
 // Tensor - Tensor
-inline int broadcast_index(const Tensor::ShapeType &shape_in, const Tensor::ShapeType &shape_out, int index) {
+inline int broadcast_index(const Tensor::ShapeType &shape_in,
+                           const Tensor::ShapeType &shape_out,
+                           int index) {
   std::vector<int> indices_in_result(shape_out.size(), 0);
   indices_in_result[shape_out.size() - 1] = index % static_cast<int>(shape_out[shape_out.size() - 1]);
   int div = 1;
@@ -320,7 +322,8 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
       if (a->shape() == b->shape()) {\
         bool require_grad = (a->require_grad() || b->require_grad());\
         Tensor *out_tensor = new Tensor(a->shape(), -1, require_grad);\
-        stensor::cpu_##name(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());\
+        stensor::cpu_##name(a->size(), a->cpu_data(), b->cpu_data(),   \
+        out_tensor->mutable_cpu_data());\
         return out_tensor;\
       } else { \
         std::vector<int> shape_a;          \
@@ -332,7 +335,8 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
         VecIntToUint32(shape_out, shape_out_u);  \
         bool require_grad = (a->require_grad() || b->require_grad());\
         Tensor *out_tensor = new Tensor(shape_out_u, -1, require_grad);\
-        stensor::cpu_##name##_broadcast(a->cpu_data(), b->cpu_data(), shape_a, shape_b, out_tensor->mutable_cpu_data());\
+        stensor::cpu_##name##_broadcast(a->cpu_data(), b->cpu_data(), shape_a, shape_b,              \
+        out_tensor->mutable_cpu_data());\
         return out_tensor;\
       }\
       break;\
@@ -340,7 +344,8 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
       if (a->shape() == b->shape()) {\
         bool require_grad = (a->require_grad() || b->require_grad());\
         Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);\
-        stensor::gpu_##name(a->size(), a->gpu_data(), b->gpu_data(), out_tensor->mutable_gpu_data());\
+        stensor::gpu_##name(a->size(), a->gpu_data(), b->gpu_data(),   \
+        out_tensor->mutable_gpu_data());\
         return out_tensor;\
       } else {\
         std::vector<int> shape_a;          \
@@ -352,7 +357,8 @@ Tensor* name(const Tensor *a, const Tensor *b) { \
         VecIntToUint32(shape_out, shape_out_u);  \
         bool require_grad = (a->require_grad() || b->require_grad());\
         Tensor *out_tensor = new Tensor(shape_out_u, a->device(), require_grad);\
-        gpu_##name##_broadcast<float>(a->gpu_data(), b->gpu_data(), shape_a, shape_b, out_tensor->mutable_gpu_data());\
+        gpu_##name##_broadcast<float>(a->gpu_data(), b->gpu_data(),    \
+        shape_a, shape_b, out_tensor->mutable_gpu_data());\
         return out_tensor;\
       }\
       break;\
@@ -375,7 +381,8 @@ Tensor *add(const Tensor *a, const Tensor *b) {
       if (a->shape() == b->shape()) {
         bool require_grad = (a->require_grad() || b->require_grad());
         Tensor *out_tensor = new Tensor(a->shape(), -1,  require_grad);
-        stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
+        stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(),
+                         out_tensor->mutable_cpu_data());
         return out_tensor;
       } else {
         std::vector<int> shape_a;
@@ -387,7 +394,9 @@ Tensor *add(const Tensor *a, const Tensor *b) {
         VecIntToUint32(shape_out, shape_out_u);
         bool require_grad = (a->require_grad() || b->require_grad());
         Tensor *out_tensor = new Tensor(shape_out_u, -1, require_grad);
-        stensor::cpu_add_broadcast(a->cpu_data(), b->cpu_data(), shape_a, shape_b, out_tensor->mutable_cpu_data());
+        stensor::cpu_add_broadcast(a->cpu_data(), b->cpu_data(),
+                                   shape_a, shape_b,
+                                   out_tensor->mutable_cpu_data());
         return out_tensor;
       }
       break;
@@ -395,7 +404,8 @@ Tensor *add(const Tensor *a, const Tensor *b) {
       if (a->shape() == b->shape()) {
         bool require_grad = (a->require_grad() || b->require_grad());
         Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
-        stensor::gpu_add(a->size(), a->gpu_data(), b->gpu_data(), out_tensor->mutable_gpu_data());
+        stensor::gpu_add(a->size(), a->gpu_data(), b->gpu_data(),
+                         out_tensor->mutable_gpu_data());
         return out_tensor;
       } else {
         std::vector<int> shape_a;
@@ -407,7 +417,9 @@ Tensor *add(const Tensor *a, const Tensor *b) {
         VecIntToUint32(shape_out, shape_out_u);
         bool require_grad = (a->require_grad() || b->require_grad());
         Tensor *out_tensor = new Tensor(shape_out_u, a->device(), require_grad);
-        gpu_add_broadcast<float>(a->gpu_data(), b->gpu_data(), shape_a, shape_b, out_tensor->mutable_gpu_data());
+        gpu_add_broadcast<float>(a->gpu_data(), b->gpu_data(),
+                                 shape_a, shape_b,
+                                 out_tensor->mutable_gpu_data());
         return out_tensor;
       }
       break;
