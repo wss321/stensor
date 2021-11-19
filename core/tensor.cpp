@@ -6,10 +6,14 @@
 namespace stensor {
 void Tensor::to_cpu() {
   if (_capacity != 0) {
-    _data->to_cpu();
+    if (!_data->has_cpu_data())
+      _data->alloc_cpu();
+    _data->copy_gpu_to_cpu();
     _data->free_gpu();
     if (require_grad()){
-      _grad->to_cpu();
+      if (!_grad->has_cpu_data())
+        _grad->alloc_cpu();
+      _grad->copy_gpu_to_cpu();
       _grad->free_gpu();
     }
 
@@ -18,10 +22,14 @@ void Tensor::to_cpu() {
 
 void Tensor::to_gpu() {
   if (_capacity != 0) {
-    _data->to_gpu();
+    if (!_data->has_gpu_data())
+      _data->alloc_gpu();
+    _data->copy_cpu_to_gpu();
     _data->free_cpu();
     if (require_grad()){
-      _grad->to_gpu();
+      if (!_grad->has_gpu_data())
+        _grad->alloc_gpu();
+      _grad->copy_cpu_to_gpu();
       _grad->free_cpu();
     }
   }
@@ -128,11 +136,9 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
   if (_capacity == _size) return;
   _capacity = _size;
   _data.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
-  if (device_id > -1) gpu_data(); else cpu_data();
 
   if (_require_grad) {
     _grad.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
-    if (device_id > -1) gpu_grad(); else cpu_grad();
   }
 
 }
@@ -252,7 +258,7 @@ void Tensor::FromProto(const TensorProto *proto, bool reset) {
       if (proto->data_size() > 0) {
         Dtype *data_vec = mutable_gpu_data();
         CHECK_EQ(_size, proto->data_size()) << "data size mismatch.";
-        stensor::cpu_copy(_size, proto->data().data(), data_vec);
+        stensor::gpu_copy(_size, proto->data().data(), data_vec);
       }
       // 3. copy grad
       if (proto->grad_size() > 0) {
@@ -268,7 +274,7 @@ void Tensor::FromProto(const TensorProto *proto, bool reset) {
       if (proto->data_size() > 0) {
         Dtype *data_vec = mutable_cpu_data();
         CHECK_EQ(_size, proto->data_size()) << "data size mismatch.";
-        stensor::gpu_copy(_size, proto->data().data(), data_vec);
+        stensor::cpu_copy(_size, proto->data().data(), data_vec);
       }
       if (proto->grad_size() > 0) {
         CHECK_EQ(_size, proto->grad_size()) << "gradiant size mismatch.";

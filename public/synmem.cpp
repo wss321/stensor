@@ -16,7 +16,7 @@ SynMem::SynMem(uint32_t size, int device_id) :
     cpu_ptr_(nullptr), gpu_ptr_(nullptr),
     size_(size), state_(NONE),
     own_cpu_data_(false), own_gpu_data_(false),
-    gpu_device_(device_id) {}
+    gpu_device_(device_id) { if (device_id > -1) alloc_gpu(); else alloc_cpu(); }
 
 SynMem::~SynMem() {
   free_cpu();
@@ -42,69 +42,69 @@ void SynMem::update_state() {
   }
 }
 
-void SynMem::to_cpu() {
-  switch (state_) {
-    case NONE:alloc_cpu();
-      std::memset(cpu_ptr_, 0, size_);
-      break;
-    case AT_GPU:
-      if (!has_cpu_data()) {
-        alloc_cpu();
-      }
-      stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
-      break;
-    case AT_CPU:;
-    case BOTH:;
-      break;
-  }
-  update_state();
-}
-
-void SynMem::to_gpu() {
-  switch (state_) {
-    case NONE:alloc_gpu();
-      CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
-      break;
-    case AT_CPU:
-      if (!has_gpu_data()) {
-        alloc_gpu();
-      }
-      stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);
-      break;
-    case AT_GPU:;
-    case BOTH:;
-      break;
-  }
-  update_state();
-}
-
-void SynMem::syn() {
-  switch (state_) {
-    case NONE:
-      if (gpu_device_ > -1) {
-        alloc_gpu();
-        CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
-      } else {
-        alloc_cpu();
-        std::memset(cpu_ptr_, 0, size_);
-      }
-      break;
-    case AT_CPU:
-      if (!has_gpu_data()) {
-        alloc_gpu();
-      }
-      stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);
-      break;
-    case AT_GPU:
-      if (!has_cpu_data()) {
-        alloc_cpu();
-      }
-      stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
-      break;
-    case BOTH:break;
-  }
-  update_state();
-}
+//void SynMem::to_cpu() {
+//  switch (state_) {
+//    case NONE:alloc_cpu();
+//      std::memset(cpu_ptr_, 0, size_);
+//      break;
+//    case AT_GPU:
+//      if (!has_cpu_data()) {
+//        alloc_cpu();
+//      }
+//      stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
+//      break;
+//    case AT_CPU:;
+//    case BOTH:;
+//      break;
+//  }
+//  update_state();
+//}
+//
+//void SynMem::to_gpu() {
+//  switch (state_) {
+//    case NONE:alloc_gpu();
+//      CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
+//      break;
+//    case AT_CPU:
+//      if (!has_gpu_data()) {
+//        alloc_gpu();
+//      }
+//      stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);
+//      break;
+//    case AT_GPU:;
+//    case BOTH:;
+//      break;
+//  }
+//  update_state();
+//}
+//
+//void SynMem::syn() {
+//  switch (state_) {
+//    case NONE:
+//      if (gpu_device_ > -1) {
+//        alloc_gpu();
+//        CUDA_CHECK(cudaMemset(gpu_ptr_, 0, size_));
+//      } else {
+//        alloc_cpu();
+//        std::memset(cpu_ptr_, 0, size_);
+//      }
+//      break;
+//    case AT_CPU:
+//      if (!has_gpu_data()) {
+//        alloc_gpu();
+//      }
+//      stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);
+//      break;
+//    case AT_GPU:
+//      if (!has_cpu_data()) {
+//        alloc_cpu();
+//      }
+//      stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
+//      break;
+//    case BOTH:break;
+//  }
+//  update_state();
+//}
 
 void SynMem::set_cpu_data(void *data_ptr) {
   CHECK(data_ptr);

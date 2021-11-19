@@ -54,11 +54,12 @@ class Tensor {
     if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::BOTH) return GPU;
     return CPU;
   }
-  inline void check_data() const { CHECK(_data)<<"Data is None";}
-  inline void check_grad() const { CHECK(_require_grad &&_grad)<<"Gradient is None";}
+  inline void check_data() const { CHECK(_data) << "Data is None"; }
+  inline void check_grad() const { CHECK(_require_grad && _grad) << "Gradient is None"; }
   inline int device() const {
     check_data();
-    return _data->device(); }
+    return _data->device();
+  }
   inline bool has_grad() const {
     check_grad();
     return _grad->has_cpu_data() || _grad->has_gpu_data();
@@ -179,16 +180,19 @@ class Tensor {
 
   inline const Dtype *cpu_data() const {
     check_data();
+    CHECK(_data->has_cpu_data());
     return (const Dtype *) _data->cpu_data();
   };
 
   inline const Dtype *cpu_grad() const {
     check_grad();
+    CHECK(_grad->has_cpu_data());
     return (const Dtype *) _grad->cpu_data();
   };
 
   inline Dtype *mutable_cpu_data() {
     check_data();
+    CHECK(_data->has_cpu_data());
     return static_cast<Dtype * >(_data->mutable_cpu_data());
   };
 
@@ -231,11 +235,20 @@ class Tensor {
   Tensor &operator=(const Tensor *other);
 
   Dtype operator[](std::vector<int> indices) const; // get data
+  Dtype& operator[](int index) {
+    if (index < 0) {
+      CHECK_GE(size() + index, 0);
+      index = static_cast<int>(size()) + index;
+    }
+    CHECK_LE(index + 1, _size) << "index out of range";
+    if (state() == GPU) return mutable_gpu_data()[index];
+    return mutable_cpu_data()[index];
+  }
   void zero_data();
   void zero_grad();
   Tensor *operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
-  void CopyData(const Tensor *other, bool reset=false);
-  void CopyGrad(const Tensor *other, bool reset=false);
+  void CopyData(const Tensor *other, bool reset = false);
+  void CopyGrad(const Tensor *other, bool reset = false);
 // DISABLE_COPY_AND_ASSIGN(Tensor);
  private:
   void register_op(OpType);

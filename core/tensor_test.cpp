@@ -46,16 +46,16 @@ TEST_F(TensorTest, CPUandGPU) {
 }
 
 TEST_F(TensorTest, SaveAndLoad) {
-  Tensor a(Tensor::ShapeType{300, 400});
-  a.CopyFrom(stensor::zeros(a.shape()));
+  Tensor a(Tensor::ShapeType{5, 5}, -1);
+  a.CopyFrom(stensor::random(a.shape()));
   std::string path = "/home/wss/CLionProjects/stensor/output/a.pt3";
   stensor::save(a, path);
   Tensor *b = stensor::load(path);
   for (int i = 0; i < a.size(); ++i) {
-    EXPECT_EQ(a.data_at(i), b->data_at(i));
+    EXPECT_EQ(a[i], b->data_at(i));
   }
-  std::cout << "a:\n" << b;
-  std::cout << "b:\n" << b;
+//  std::cout << "a:\n" << b;
+//  std::cout << "b:\n" << b;
   delete b;
 }
 

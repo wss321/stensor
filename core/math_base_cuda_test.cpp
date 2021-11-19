@@ -17,8 +17,9 @@ TEST_F(GPUMathTest, MemTest) {
   SynMem data(size);
   LOG(INFO) << data.device();
 
+  data.alloc_gpu();
   void *gpu_m = data.mutable_gpu_data();
-  EXPECT_EQ(data.state(), SynMem::AT_GPU);
+  EXPECT_EQ(data.state(), SynMem::BOTH);
 
   void *cpu_m = data.mutable_cpu_data();
   EXPECT_EQ(data.state(), SynMem::BOTH);
@@ -49,6 +50,9 @@ TEST_F(GPUMathTest, MMTest) {
 //  for (int i = 0; i < 2 * sizeof(float); ++i) {
 //    EXPECT_EQ(((char *) A.gpu_data())[i], 1);
 //  }
+  A.alloc_gpu();
+  B.alloc_gpu();
+  C.alloc_gpu();
   float *g1 = (float *) A.mutable_gpu_data();
   float *g2 = (float *) B.mutable_gpu_data();
   float *g3 = (float *) C.mutable_gpu_data();
@@ -120,7 +124,9 @@ TEST_F(GPUMathTest, SpeedTest) {
   SynMem A(size1 * sizeof(float));
   SynMem B(size2 * sizeof(float));
   SynMem C(size3 * sizeof(float));
-
+  A.alloc_gpu();
+  B.alloc_gpu();
+  C.alloc_gpu();
   float *g1 = (float *) A.mutable_gpu_data();
   float *g2 = (float *) B.mutable_gpu_data();
   float *g3 = (float *) C.mutable_gpu_data();
@@ -173,33 +179,45 @@ TEST_F(GPUMathTest, SpeedTest) {
 }
 
 TEST_F(GPUMathTest, ActivateFUNC) {
-  Tensor t1(Tensor::ShapeType{3, 40});
-  Tensor::Dtype *d1 = t1.mutable_gpu_data();
+  Tensor t1(Tensor::ShapeType{5, 6}, 0);
+  Tensor::Dtype *gpu_data = t1.mutable_gpu_data();
   // 1. sigmoid
-  stensor::gpu_set(t1.size(), 1.0f, d1);
-  stensor::gpu_sigmoid(t1.size(), d1, d1);
+  stensor::gpu_set(t1.size(), 1.0f, gpu_data);
+  stensor::gpu_sigmoid(t1.size(), gpu_data, gpu_data);
+  t1.to_cpu();
+  Tensor::Dtype *cpu_data = t1.mutable_cpu_data();
   for (int i = 0; i < t1.size(); ++i) {
-    EXPECT_LE(d1[i] - 1.0f / (1.0f + exp(-1.0f)), 1e-6);
+    EXPECT_LE(t1[i] - 1.0f / (1.0f + exp(-1.0f)), 1e-6);
   }
 
   // 2. sign
-  stensor::gpu_set(t1.size(), 1.0f, d1);
-  stensor::gpu_sign(t1.size(), d1, d1);
+  t1.to_gpu();
+  gpu_data = t1.mutable_gpu_data();
+  stensor::gpu_set(t1.size(), 1.0f, gpu_data);
+  stensor::gpu_sign(t1.size(), gpu_data, gpu_data);
+  t1.to_cpu();
   for (int i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(d1[i], 1.0f);
+    EXPECT_EQ(t1[i], 1.0f);
   }
   // 3. tanh
-  stensor::gpu_set(t1.size(), 1.0f, d1);
-  stensor::gpu_tanh(t1.size(), d1, d1);
+  t1.to_gpu();
+  gpu_data = t1.mutable_gpu_data();
+  stensor::gpu_set(t1.size(), 1.0f, gpu_data);
+  stensor::gpu_tanh(t1.size(), gpu_data, gpu_data);
+  t1.to_cpu();
   for (int i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(d1[i], std::tanh(1.0f));
+    EXPECT_EQ(t1[i], std::tanh(1.0f));
   }
 
   // 4. relu
-  stensor::gpu_set(t1.size(), -1.0f, d1);
-  stensor::gpu_relu(t1.size(), d1, d1);
+  t1.to_gpu();
+  gpu_data = t1.mutable_gpu_data();
+  stensor::gpu_set(t1.size(), -1.0f, gpu_data);
+  stensor::gpu_relu(t1.size(), gpu_data, gpu_data);
+  t1.to_cpu();
+  cpu_data = t1.mutable_cpu_data();
   for (int i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(d1[i], 0.0f);
+    EXPECT_EQ(t1[i], 0.0f);
   }
 
 }
@@ -212,6 +230,9 @@ TEST_F(GPUMathTest, CompTest) {
   SynMem A(size1 * sizeof(float));
   SynMem B(size2 * sizeof(float));
   SynMem C(size3 * sizeof(float));
+  A.alloc_gpu();
+  B.alloc_gpu();
+  C.alloc_gpu();
 
   float *g1 = (float *) A.mutable_gpu_data();
   float *g2 = (float *) B.mutable_gpu_data();

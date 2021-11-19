@@ -29,36 +29,37 @@ class SynMem {
 //  explicit SynMem(uint32_t size);
   explicit SynMem(uint32_t size, int device_id = -1);
   ~SynMem();
-  inline const void *cpu_data() {
-    to_cpu();
-    return const_cast<const void *> (cpu_ptr_);
-  }
-
-  const void *gpu_data() {
-    to_gpu();
-    return const_cast<const void *> (gpu_ptr_);
-  }
-
-  void set_cpu_data(void *data_ptr);
-  void set_gpu_data(void *data_ptr);
-  inline void *mutable_cpu_data() {
-    to_cpu();
-    return cpu_ptr_;
-  };
-  inline void *mutable_gpu_data() {
-    to_gpu();
-    return gpu_ptr_;
-  };
-
   enum SynState { NONE, AT_CPU, AT_GPU, BOTH };
   inline uint32_t size() const { return size_; }
   inline SynState state() const { return state_; }
   inline int device() const { return gpu_device_; }
   inline bool has_gpu_data() const { return gpu_ptr_ && own_gpu_data_; }
   inline bool has_cpu_data() const { return cpu_ptr_ && own_cpu_data_; }
-  void to_cpu();
-  void to_gpu();
-  void syn();
+  inline const void *cpu_data() {
+    CHECK(has_cpu_data())<<"CPU data is none";
+    return const_cast<const void *> (cpu_ptr_);
+  }
+
+  const void *gpu_data() {
+    CHECK(has_gpu_data())<<"GPU data is none";
+    return const_cast<const void *> (gpu_ptr_);
+  }
+
+  void set_cpu_data(void *data_ptr);
+  void set_gpu_data(void *data_ptr);
+  inline void *mutable_cpu_data() {
+    CHECK(has_cpu_data())<<"CPU data is none";
+    return cpu_ptr_;
+  };
+  inline void *mutable_gpu_data() {
+    CHECK(has_gpu_data())<<"GPU data is none";
+    return gpu_ptr_;
+  };
+
+
+//  void to_cpu();
+//  void to_gpu();
+//  void syn();
   inline void copy_cpu_to_gpu(){
     CHECK(has_cpu_data())<<"CPU data is none";
     CHECK(has_gpu_data())<<"GPU data is none";
@@ -83,17 +84,6 @@ class SynMem {
     own_gpu_data_ = false;
     update_state();
   };
-
- private:
-  void *cpu_ptr_;
-  void *gpu_ptr_;
-  uint32_t size_;
-  SynState state_;
-  bool own_cpu_data_;
-  bool own_gpu_data_;
-  int gpu_device_;
-
-  void update_state();
   inline void alloc_cpu() {
     CHECK(!has_cpu_data()) << "Already alloc cpu";
     MallocCPU(&cpu_ptr_, size_);
@@ -106,6 +96,17 @@ class SynMem {
     own_gpu_data_ = true;
     update_state();
   };
+ private:
+  void *cpu_ptr_;
+  void *gpu_ptr_;
+  uint32_t size_;
+  SynState state_;
+  bool own_cpu_data_;
+  bool own_gpu_data_;
+  int gpu_device_;
+
+  void update_state();
+
 
  DISABLE_COPY_AND_ASSIGN(SynMem);
 };
