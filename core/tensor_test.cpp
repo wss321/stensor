@@ -37,8 +37,9 @@ TEST_F(TensorTest, Index) {
   std::cout << a[{-1, -1}];
   EXPECT_EQ((a[{-1, -1}]), a.data_at(-1));
 }
+
 TEST_F(TensorTest, CPUandGPU) {
-  Tensor a(Tensor::ShapeType{3, 4}, false, 0);
+  Tensor a(Tensor::ShapeType{3, 4}, 0, false);
   EXPECT_EQ(a.device(), 0);
   Tensor b(Tensor::ShapeType{3, 4});
   EXPECT_EQ(b.device(), -1);
@@ -60,7 +61,7 @@ TEST_F(TensorTest, SaveAndLoad) {
 
 TEST_F(TensorTest, ZeroDataGrad) {
   stensor::Config::set_random_seed(1024);
-  Tensor* a = stensor::random({3, 4}, true, 0, 1);
+  Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
   std::cout<<a;
   a->zero_data();
   for (int i = 0; i < a->size(); ++i) {
@@ -75,9 +76,17 @@ TEST_F(TensorTest, ZeroDataGrad) {
 
 TEST_F(TensorTest, FreeTest) {
   stensor::Config::set_random_seed(1024);
-  Tensor* a = stensor::random({3, 4}, true, 0, 1);
+  Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
+  EXPECT_EQ(a->state(), CPU);
   a->to_gpu();
+  EXPECT_EQ(a->state(), GPU);
+  Tensor* b = stensor::random({3, 4}, 0, 1, 0, true);
+  EXPECT_EQ(b->state(), GPU);
+  Tensor* c = stensor::random_gaussian({3, 4}, 0, 1, 0, true);
+  EXPECT_EQ(c->state(), GPU);
   delete a;
+  delete b;
+  delete c;
 }
 
 }

@@ -25,6 +25,7 @@ inline Tensor *add(Tensor &tensor, const float val, bool inplace = false) {
 inline Tensor *scale(Tensor &tensor, const float val, bool inplace = false) {
   return scale(&tensor, val, inplace);
 }
+
 inline Tensor *pow(Tensor &tensor, const float val, bool inplace = false) {
   return pow(&tensor, val, inplace);
 }
@@ -44,17 +45,17 @@ inline Tensor *div(const Tensor &a, const Tensor &b) { return div(&a, &b); }
 /* math of Tensor end */
 
 /* Tensor Generator*/
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad, float a, float b);
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *random(const Tensor::ShapeType &shape, float a, float b);
+Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id=-1, bool require_grad = false);
+Tensor *random(const Tensor::ShapeType &shape, int device_id=-1, bool require_grad = false);
+Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id=-1);
 
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad, float mu, float sigma);
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma);
+Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id, bool require_grad);
+Tensor *random_gaussian(const Tensor::ShapeType &shape, int device_id=-1, bool require_grad = false);
+Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id=-1);
 
-Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, bool require_grad = false);
-Tensor *zeros(const Tensor::ShapeType &shape, bool require_grad = false);
-Tensor *ones(const Tensor::ShapeType &shape, bool require_grad = false);
+Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, int device_id=-1, bool require_grad = false);
+Tensor *zeros(const Tensor::ShapeType &shape, int device_id=-1, bool require_grad = false);
+Tensor *ones(const Tensor::ShapeType &shape, int device_id=-1, bool require_grad = false);
 Tensor *zeros_like(Tensor *other, bool require_grad = false);
 Tensor *ones_like(Tensor *other, bool require_grad = false);
 Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad = false);

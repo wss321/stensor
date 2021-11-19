@@ -24,6 +24,8 @@ const char *curandGetErrorString(curandStatus_t error);
     CHECK_EQ(error, cudaSuccess) << " " << cudaGetErrorString(error); \
   } while (0)
 
+#define CUDA_POST_KERNEL_CHECK CUDA_CHECK(cudaPeekAtLastError())
+
 #define CURAND_CHECK(condition) \
   do { \
     curandStatus_t status = condition; \
@@ -52,6 +54,7 @@ inline int getMaxThreadNum() {
 inline int GET_BLOCKS(const int N) {
   return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;
 }
+
 #define CUBLAS_CHECK(condition) \
   do { \
     cublasStatus_t status = condition; \

@@ -199,7 +199,7 @@ inline void VecUint32ToVecInt(const std::vector<uint32_t> &shape_u, std::vector<
   for (int i = 0; i < shape_u.size(); ++i)
     shape_i[i] = static_cast<int>(shape_u[i]);
 }
-inline void VecIntToUint32(const std::vector<int> &shape_i, std::vector<uint32_t> &shape_u ) {
+inline void VecIntToUint32(const std::vector<int> &shape_i, std::vector<uint32_t> &shape_u) {
   shape_u.resize(shape_i.size());
   for (int i = 0; i < shape_u.size(); ++i) {
     CHECK_GE(shape_i[i], 0);
@@ -272,8 +272,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
         Tensor *out_tensor = new Tensor(a->shape(), require_grad);
         stensor::cpu_add(a->size(), a->cpu_data(), b->cpu_data(), out_tensor->mutable_cpu_data());
         return out_tensor;
-      }
-      else {
+      } else {
         std::vector<int> shape_a;
         VecUint32ToVecInt(a->shape(), shape_a);
         std::vector<int> shape_b;
@@ -293,8 +292,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
         Tensor *out_tensor = new Tensor(a->shape(), require_grad, a->device());
         stensor::gpu_add(a->size(), a->gpu_data(), b->gpu_data(), out_tensor->mutable_gpu_data());
         return out_tensor;
-      }
-      else {
+      } else {
         std::vector<int> shape_a;
         VecUint32ToVecInt(a->shape(), shape_a);
         std::vector<int> shape_b;
@@ -314,46 +312,82 @@ Tensor *add(const Tensor *a, const Tensor *b) {
 
 /* Tensor Generator*/
 
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad, float a, float b) {
-  Tensor *new_t = new Tensor(shape, require_grad);
-  stensor::cpu_rng_uniform<Tensor::Dtype>(new_t->size(), Tensor::Dtype(a), Tensor::Dtype(b), new_t->mutable_cpu_data());
+Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id, bool require_grad) {
+  Tensor *new_t = new Tensor(shape, device_id, require_grad);
+  switch (new_t->state()) {
+    case CPU:
+      cpu_rng_uniform<Tensor::Dtype>(new_t->size(),
+                                     Tensor::Dtype(a),
+                                     Tensor::Dtype(b),
+                                     new_t->mutable_cpu_data());
+      break;
+    case GPU:
+      gpu_rng_uniform<Tensor::Dtype>(new_t->size(),
+                                     Tensor::Dtype(a),
+                                     Tensor::Dtype(b),
+                                     new_t->mutable_gpu_data());
+      break;
+    default:
+      cpu_rng_uniform<Tensor::Dtype>(new_t->size(),
+                                     Tensor::Dtype(a),
+                                     Tensor::Dtype(b),
+                                     new_t->mutable_cpu_data());
+      break;
+  }
+
   return new_t;
 }
 
-Tensor *random(const Tensor::ShapeType &shape, bool require_grad) {
-  return random(shape, require_grad, 0.0, 1.0);
+Tensor *random(const Tensor::ShapeType &shape, int device_id, bool require_grad) {
+  return random(shape, 0.0, 1.0, device_id, require_grad);
 }
-Tensor *random(const Tensor::ShapeType &shape, float a, float b) {
-  return random(shape, false, a, b);
+Tensor *random(const Tensor::ShapeType &shape, int device_id, float a, float b) {
+  return random(shape, a, b, device_id, false);
 }
 
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad, float mu, float sigma) {
-  Tensor *new_t = new Tensor(shape, require_grad);
-  stensor::cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
-                                           Tensor::Dtype(mu),
-                                           Tensor::Dtype(sigma),
-                                           new_t->mutable_cpu_data());
+Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id, bool require_grad) {
+  Tensor *new_t = new Tensor(shape, device_id, require_grad);
+  switch (new_t->state()) {
+    case CPU:
+      cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
+                                      Tensor::Dtype(mu),
+                                      Tensor::Dtype(sigma),
+                                      new_t->mutable_cpu_data());
+      break;
+    case GPU:
+      gpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
+                                      Tensor::Dtype(mu),
+                                      Tensor::Dtype(sigma),
+                                      new_t->mutable_gpu_data());
+      break;
+    default:
+      cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
+                                      Tensor::Dtype(mu),
+                                      Tensor::Dtype(sigma),
+                                      new_t->mutable_cpu_data());
+      break;
+  }
   return new_t;
 }
 
-Tensor *random_gaussian(const Tensor::ShapeType &shape, bool require_grad) {
-  return random_gaussian(shape, require_grad, 0.0, 1.0);
+Tensor *random_gaussian(const Tensor::ShapeType &shape, int device_id, bool require_grad) {
+  return random_gaussian(shape, 0.0, 1.0, device_id, require_grad);
 }
-Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma) {
-  return random_gaussian(shape, false, mu, sigma);
+Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id) {
+  return random_gaussian(shape, mu, sigma, device_id, false);
 }
 
-Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, bool require_grad) {
-  stensor::Tensor *new_t = new Tensor(shape, require_grad);
+Tensor *constants(const Tensor::ShapeType &shape, Tensor::Dtype val, int device_id, bool require_grad) {
+  stensor::Tensor *new_t = new Tensor(shape, device_id, require_grad);
   stensor::set(new_t, val);
   return new_t;
 }
 
-Tensor *zeros(const Tensor::ShapeType &shape, bool require_grad) {
-  return constants(shape, 0.0, require_grad);
+Tensor *zeros(const Tensor::ShapeType &shape, int device_id, bool require_grad) {
+  return constants(shape, 0.0, device_id, require_grad);
 }
 
-Tensor *ones(const Tensor::ShapeType &shape, bool require_grad) {
+Tensor *ones(const Tensor::ShapeType &shape, int device_id, bool require_grad) {
   return constants(shape, 1.0, require_grad);
 }
 Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad) {

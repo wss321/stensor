@@ -45,13 +45,13 @@ class Tensor {
     _operations.clear();
     _shape.clear();
   }
-  explicit Tensor(const ShapeType &shape, bool require_grad = false, int device_id = -1);
+  explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false);
   Tensor(const Tensor &other, bool require_grad = false);
   Tensor(const Tensor *other, bool require_grad = false);
   Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
   inline Mode state() const {
     check_data();
-    if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::SYNED) return GPU;
+    if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::BOTH) return GPU;
     return CPU;
   }
   inline void check_data() const { CHECK(_data)<<"Data is None";}
@@ -234,6 +234,8 @@ class Tensor {
   void zero_data();
   void zero_grad();
   Tensor *operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
+  void CopyData(const Tensor *other, bool reset=false);
+  void CopyGrad(const Tensor *other, bool reset=false);
 // DISABLE_COPY_AND_ASSIGN(Tensor);
  private:
   void register_op(OpType);

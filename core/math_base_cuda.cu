@@ -260,6 +260,8 @@ IMPLEMENT_GPU_BINARY_FUNC(mul, y[index] = a[index] * b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(div, y[index] = a[index] / b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
 
+// Broadcast functions
+
 #define BROADCAST_INDEX(index, n, sy, shape_a, shape_b, shape_y) \
   int indices_in_result[MAX_AXES]{0};\
   indices_in_result[sy - 1] = index % shape_y[sy - 1]; \
@@ -280,7 +282,7 @@ IMPLEMENT_GPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
     if (shape_a[i]!=1)  index_a += ma; \
     if (shape_b[i]!=1)  index_b += mb; \
   }
-// Broadcast functions
+
 #define IMPLEMENT_BROADCAST_OP_KERNEL(name, op_expression)\
 template<typename Dtype>\
 __global__ void name##_kernel(const int n, const int sy,\

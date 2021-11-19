@@ -7,20 +7,78 @@ namespace stensor {
 void Tensor::to_cpu() {
   if (_capacity != 0) {
     _data->to_cpu();
-    if (require_grad())
+    _data->free_gpu();
+    if (require_grad()){
       _grad->to_cpu();
+      _grad->free_gpu();
+    }
+
   }
 }
 
 void Tensor::to_gpu() {
   if (_capacity != 0) {
     _data->to_gpu();
-    if (require_grad())
+    _data->free_cpu();
+    if (require_grad()){
       _grad->to_gpu();
+      _grad->free_cpu();
+    }
   }
 }
+
+
 void Tensor::CopyFrom(const Tensor &source, bool copy_grad, bool reset) {
   CopyFrom(&source, copy_grad, reset);
+}
+
+
+void Tensor::CopyData(const Tensor *source, bool reset) {
+  if (source->size() != _size) {
+    if (!reset)
+      LOG(FATAL) << "Trying to copy tensor of different sizes."
+                 << _size << " vs " << source->size();
+    Reset(source->shape());
+  }
+  switch (state()) {
+    case stensor::CPU:
+      if (source->state() == stensor::GPU)
+        LOG(FATAL) << "Trying to copy tensor of different sizes."
+                   << "CPU" << " vs " << "GPU:" << source->device();
+        cpu_copy(_size, source->cpu_data(), static_cast<Dtype *>(_data->mutable_cpu_data()));
+      break;
+    case stensor::GPU:
+      if (source->state() == stensor::CPU)
+        LOG(FATAL) << "Trying to copy tensor of different sizes."
+                   << "GPU:" << device() << " vs " << "CPU";
+        gpu_copy(_size, source->gpu_data(), static_cast<Dtype *>(_data->mutable_gpu_data()));
+      break;
+    default:LOG(FATAL) << "Unknown device mode.";
+  }
+}
+
+void Tensor::CopyGrad(const Tensor *source, bool reset) {
+  if (source->size() != _size) {
+    if (!reset)
+      LOG(FATAL) << "Trying to copy tensor of different sizes."
+                 << _size << " vs " << source->size();
+    Reset(source->shape());
+  }
+  switch (state()) {
+    case stensor::CPU:
+      if (source->state() == stensor::GPU)
+        LOG(FATAL) << "Trying to copy tensor of different sizes."
+                   << "CPU" << " vs " << "GPU:" << source->device();
+      cpu_copy(_size, source->cpu_grad(), static_cast<Dtype *>(_data->mutable_cpu_data()));
+      break;
+    case stensor::GPU:
+      if (source->state() == stensor::CPU)
+        LOG(FATAL) << "Trying to copy tensor of different sizes."
+                   << "GPU:" << device() << " vs " << "CPU";
+      gpu_copy(_size, source->gpu_grad(), static_cast<Dtype *>(_data->mutable_gpu_data()));
+      break;
+    default:LOG(FATAL) << "Unknown device mode.";
+  }
 }
 
 void Tensor::CopyFrom(const Tensor *source, bool copy_grad, bool reset) {
@@ -31,27 +89,24 @@ void Tensor::CopyFrom(const Tensor *source, bool copy_grad, bool reset) {
     Reset(source->shape());
   }
 
-  //TODO:CopyFrom GPU
   switch (state()) {
     case stensor::CPU:
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-      if (copy_grad) {
+      if (copy_grad)
         cpu_copy(_size, source->cpu_grad(), static_cast<Dtype *>(_grad->mutable_cpu_data()));
-      } else {
-        cpu_copy(_size, source->cpu_data(), static_cast<Dtype *>(_data->mutable_cpu_data()));
-      }
+      cpu_copy(_size, source->cpu_data(), static_cast<Dtype *>(_data->mutable_cpu_data()));
+
       break;
     case stensor::GPU:
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-      if (copy_grad) {
+      if (copy_grad)
         gpu_copy(_size, source->gpu_grad(), static_cast<Dtype *>(_grad->mutable_gpu_data()));
-      } else {
-        gpu_copy(_size, source->gpu_data(), static_cast<Dtype *>(_data->mutable_gpu_data()));
-      }
+      gpu_copy(_size, source->gpu_data(), static_cast<Dtype *>(_data->mutable_gpu_data()));
+
       break;
     default:LOG(FATAL) << "Unknown device mode.";
   }
@@ -111,7 +166,7 @@ void Tensor::flatten() {
   Reshape(ShapeType{_size});
 }
 
-Tensor::Tensor(const ShapeType &shape, bool require_grad, int device_id) :
+Tensor::Tensor(const ShapeType &shape, int device_id, bool require_grad) :
     _capacity(0ul), _require_grad(require_grad) {
   Reset(shape, device_id);
 }

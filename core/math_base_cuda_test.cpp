@@ -21,14 +21,14 @@ TEST_F(GPUMathTest, MemTest) {
   EXPECT_EQ(data.state(), SynMem::AT_GPU);
 
   void *cpu_m = data.mutable_cpu_data();
-  EXPECT_EQ(data.state(), SynMem::AT_CPU);
+  EXPECT_EQ(data.state(), SynMem::BOTH);
 
   cpu_memset(size, 1, cpu_m);
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(((char *) cpu_m)[i], 1);
   }
 
-  data.to_gpu();
+  data.copy_cpu_to_gpu();
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(((char *) gpu_m)[i], 1);
   }
@@ -38,9 +38,9 @@ TEST_F(GPUMathTest, MemTest) {
 }
 
 TEST_F(GPUMathTest, MMTest) {
-  int size1 = 2 * 10;
-  int size2 = 2 * 10;
-  int size3 = 2 * 10;
+  int size1 = 4 * 10;
+  int size2 = 4 * 10;
+  int size3 = 4 * 10;
 
   SynMem A(size1 * sizeof(float));
   SynMem B(size2 * sizeof(float));
@@ -53,43 +53,61 @@ TEST_F(GPUMathTest, MMTest) {
   float *g2 = (float *) B.mutable_gpu_data();
   float *g3 = (float *) C.mutable_gpu_data();
 
-  const float *g1c = (const float *) A.gpu_data();
-  const float *g2c = (const float *) B.gpu_data();
-  const float *g3c = (const float *) C.gpu_data();
+  const float *g1c = (const float *) A.cpu_data();
+  const float *g2c = (const float *) B.cpu_data();
+  const float *g3c = (const float *) C.cpu_data();
 
   stensor::gpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
   stensor::gpu_rng_uniform<float>(size2, 0.0, 1.0, g2);
-  stensor::gpu_abs<float>(size1, g1c, g3);
+
+  A.copy_gpu_to_cpu();
+  B.copy_gpu_to_cpu();
+  C.copy_gpu_to_cpu();
   for (int i = 0; i < size1; ++i) {
-    EXPECT_EQ(std::abs(g1c[i]), g3c[i]);
+    EXPECT_EQ(g1c[i], g1[i]);
+//    LOG(INFO) << std::abs(g1c[i]) << " " << g3c[i];
   }
 
-  stensor::gpu_div<float>(size1, g1c, g2c, g3);
+  stensor::gpu_abs<float>(size1, g1, g3);
+  C.copy_gpu_to_cpu();
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(std::abs(g1[i]), g3c[i]);
+//    LOG(INFO) << std::abs(g1c[i]) << " " << g3c[i];
+  }
+
+  stensor::gpu_div<float>(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
   for (int i = 0; i < size1; ++i) {
     EXPECT_EQ(g1c[i] / g2c[i], g3c[i]);
 //    LOG(INFO) << g1c[i] / g2c[i] << " " << g3c[i];
   }
-  stensor::gpu_mul<float>(size1, g1c, g2c, g3);
+
+  stensor::gpu_mul<float>(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
   for (int i = 0; i < size1; ++i) {
     EXPECT_EQ(g1c[i] * g2c[i], g3c[i]);
-//    LOG(INFO) << g1c[i] / g2c[i] << " " << g3c[i];
-  }
-  stensor::gpu_dot<float>(size1, g1c, g2c, g3);
-  for (int i = 0; i < size1; ++i) {
-    EXPECT_EQ(g1c[i] * g2c[i], g3c[i]);
-//    LOG(INFO) << g1c[i] * g2c[i] << " " << g3c[i];
   }
 
-  stensor::gpu_sub<float>(size1, g1c, g2c, g3);
+  float ans = 0;
   for (int i = 0; i < size1; ++i) {
-    EXPECT_EQ(g1c[i] - g2c[i], g3c[i]);
-//    LOG(INFO) << g1c[i] - g2c[i] << " " << g3c[i];
+    ans += g1c[i] * g2c[i];
   }
-  stensor::gpu_add_scalar<float>(size1, g1c, 3, g1);
-  stensor::gpu_set<float>(size1, 3.0, g1);
+
+  stensor::gpu_dot<float>(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
+  EXPECT_LE(std::abs(ans-*g3c), 1e-5);
+
+  stensor::gpu_sub<float>(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
   for (int i = 0; i < size1; ++i) {
     EXPECT_EQ(g1c[i] - g2c[i], g3c[i]);
-//    LOG(INFO) << g1c[i] - g2c[i] << " " << g3c[i];
+  }
+
+  stensor::gpu_add_scalar<float>(size1, g1, 3, g1);
+  stensor::gpu_set<float>(size1, 3.0, g1);
+  C.copy_gpu_to_cpu();
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(g1c[i] - g2c[i], g3c[i]);
   }
 }
 
@@ -154,7 +172,6 @@ TEST_F(GPUMathTest, SpeedTest) {
 
 }
 
-
 TEST_F(GPUMathTest, ActivateFUNC) {
   Tensor t1(Tensor::ShapeType{3, 40});
   Tensor::Dtype *d1 = t1.mutable_gpu_data();
@@ -162,7 +179,7 @@ TEST_F(GPUMathTest, ActivateFUNC) {
   stensor::gpu_set(t1.size(), 1.0f, d1);
   stensor::gpu_sigmoid(t1.size(), d1, d1);
   for (int i = 0; i < t1.size(); ++i) {
-    EXPECT_LE(d1[i]-1.0f / (1.0f + exp(-1.0f)), 1e-6);
+    EXPECT_LE(d1[i] - 1.0f / (1.0f + exp(-1.0f)), 1e-6);
   }
 
   // 2. sign
