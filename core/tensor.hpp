@@ -116,10 +116,10 @@ class Tensor {
   void to_cpu();
   void to_gpu();
 
-  bool ShapeEquals(const Tensor *other);
-  bool ShapeEquals(const Tensor &other);
-  bool ShapeEquals(const TensorProto *other);
-  bool ShapeEquals(const TensorProto &other);
+  bool ShapeEquals(const Tensor *other) const;
+  inline bool ShapeEquals(const Tensor &other) const { return ShapeEquals(&other); }
+  bool ShapeEquals(const TensorProto *other) const;
+  inline bool ShapeEquals(const TensorProto &other) const { return ShapeEquals(&other); }
 
   inline uint32_t num_axes() const { return _shape.size(); }
   inline Dtype data_at(int index) const {
@@ -235,7 +235,7 @@ class Tensor {
   Tensor &operator=(const Tensor *other);
 
   Dtype operator[](std::vector<int> indices) const; // get data
-  Dtype& operator[](int index) {
+  Dtype &operator[](int index) {
     if (index < 0) {
       CHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;

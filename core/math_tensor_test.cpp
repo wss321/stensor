@@ -215,8 +215,8 @@ TEST_F(MathTensorTest, ActivateFunc) {
 }
 
 TEST_F(MathTensorTest, MathMatmulTest) {
-  Tensor::ShapeType shape1{2, 3};
-  Tensor::ShapeType shape2{3, 4};
+  Tensor::ShapeType shape1{2222, 3333};
+  Tensor::ShapeType shape2{3333, 512};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape2);
   long long start = systemtime_ms();
@@ -234,22 +234,45 @@ TEST_F(MathTensorTest, MathMatmulTest) {
   c->to_gpu();
 
   bool iseq = gpu_equal(c->size(), c->gpu_data(), g->gpu_data());
-  EXPECT_EQ(iseq, true);
 //  std::cout<<c;
 //  std::cout<<g;
 
   c->to_cpu();
   g->to_cpu();
   iseq = cpu_equal(c->size(), c->cpu_data(), g->cpu_data());
-  EXPECT_EQ(iseq, true);
 
-  std::cout<<c;
-  std::cout<<g;
+//  std::cout<<c;
+//  std::cout<<g;
 
   delete a;
   delete b;
   delete g;
   delete c;
+
+}
+
+TEST_F(MathTensorTest, MinMax) {
+  Tensor::ShapeType shape1{2, 2};
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::random(shape1);
+  Tensor *c = stensor::minimum(a, b);
+
+  a->to_gpu();
+  b->to_gpu();
+
+  Tensor *d = stensor::minimum(a, b);
+  d->to_cpu();
+  bool iseq = cpu_equal(c->size(), c->cpu_data(), d->cpu_data());
+  EXPECT_EQ(iseq, true);
+//  std::cout<<a;
+//  std::cout<<b;
+//  std::cout<<c;
+//  std::cout<<d;
+
+  delete a;
+  delete b;
+  delete c;
+  delete d;
 
 }
 

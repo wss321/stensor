@@ -181,7 +181,7 @@ Tensor::Tensor(const ShapeType &shape, int device_id, bool require_grad) :
   Reset(shape, device_id);
 }
 
-bool Tensor::ShapeEquals(const Tensor *other) {
+bool Tensor::ShapeEquals(const Tensor *other)const {
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other->shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -191,10 +191,7 @@ bool Tensor::ShapeEquals(const Tensor *other) {
   return true;
 }
 
-bool Tensor::ShapeEquals(const Tensor &other) {
-  return ShapeEquals(&other);
-}
-bool Tensor::ShapeEquals(const TensorProto *other) {
+bool Tensor::ShapeEquals(const TensorProto *other) const{
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other->shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -202,10 +199,6 @@ bool Tensor::ShapeEquals(const TensorProto *other) {
     if (_shape[i] != shapeOther[i]) return false;
   }
   return true;
-}
-
-bool Tensor::ShapeEquals(const TensorProto &other) {
-  return ShapeEquals(&other);
 }
 
 void Tensor::ToProto(TensorProto *proto, bool write_grad) const {

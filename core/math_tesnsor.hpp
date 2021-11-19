@@ -69,7 +69,8 @@ inline Tensor *pow(const Tensor &a, const Tensor &b) { return pow(&a, &b); }
 
 // matmul at last two axis
 Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1, bool transA = false, bool transB = false);
-
+Tensor *maximum(const Tensor *a, const Tensor *b);
+Tensor *minimum(const Tensor *a, const Tensor *b);
 
 /* Tensor-Tensor start*/
 
