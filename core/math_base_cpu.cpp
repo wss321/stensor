@@ -70,6 +70,20 @@ template void cpu_clamp<double>(const int n, const double min, const double max,
 
 /* vector scalar start*/
 template<typename Dtype>
+bool cpu_equal(const int n,
+               const Dtype *a,
+               const Dtype *b) {
+  CHECK(a);
+  CHECK(b);
+  for (int i = 0; i < n; ++i)
+    if (a[i] != b[i]) return false;
+  return true;
+}
+template bool cpu_equal<int>(const int n, const int *a, const int *b);
+template bool cpu_equal<float>(const int n, const float *a, const float *b);
+template bool cpu_equal<double>(const int n, const double *a, const double *b);
+
+template<typename Dtype>
 void cpu_set(const int n,
              const Dtype val,
              Dtype *y) {
@@ -160,6 +174,8 @@ IMPLEMENT_CPU_BINARY_FUNC(sub, y[index] = a[index] - b[index]);
 IMPLEMENT_CPU_BINARY_FUNC(mul, y[index] = a[index] * b[index]);
 IMPLEMENT_CPU_BINARY_FUNC(div, y[index] = a[index] / b[index]);
 IMPLEMENT_CPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
+IMPLEMENT_CPU_BINARY_FUNC(maximum, y[index] = std::max(a[index], b[index]));
+IMPLEMENT_CPU_BINARY_FUNC(minimum, y[index] = std::min(a[index], b[index]));
 
 #define BROADCAST_INDEX(index, n, num_axis, indices_in_result, shape_a, shape_b, shape_y, index_a, index_b) \
   indices_in_result[num_axis - 1] = index % shape_y[num_axis - 1]; \

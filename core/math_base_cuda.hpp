@@ -94,6 +94,9 @@ void gpu_pow_scalar(const int n, const Dtype *a, const Dtype b, Dtype *y);
 
 
 /* vector-vector start*/
+template<typename Dtype>
+void gpu_equal(const int n, const Dtype *x, const Dtype *y, Dtype *out);
+
 void gpu_copy(const size_t n, const void *x, void *y);
 
 template<typename Dtype>
@@ -113,31 +116,31 @@ void gpu_pow(const int n, const Dtype *a, const Dtype *b, Dtype *y);
 
 template<typename Dtype>
 void gpu_add_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void gpu_sub_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void gpu_mul_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
 void gpu_div_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 template<typename Dtype>
 void gpu_pow_broadcast(const Dtype *a, const Dtype *b,
-                       std::vector<int>& shape_a,
-                       std::vector<int>& shape_b,
+                       std::vector<int> &shape_a,
+                       std::vector<int> &shape_b,
                        Dtype *y);
 
 template<typename Dtype>
@@ -147,6 +150,17 @@ void gpu_stride_dot(int n,
                     const Dtype *x, int incx,
                     const Dtype *y, int incy,
                     Dtype *out);
+
+template<typename Dtype>
+void gpu_maximum(const int n,
+                 const Dtype *a, const Dtype *b,
+                 Dtype *y);
+
+template<typename Dtype>
+void gpu_minimum(const int n,
+                 const Dtype *a, const Dtype *b,
+                 Dtype *y);
+
 /* vector-vector end*/
 
 /* matrix-vector start*/

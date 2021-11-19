@@ -220,6 +220,30 @@ void gpu_pow_scalar<double>(const int N, const double *a,
 /* vector-scalar end*/
 
 /* vector-vector start*/
+template<typename Dtype>
+__global__ void equal_kernel(const int n, const Dtype *a, const Dtype *b, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    if (*y!=Dtype(0)){
+      if (a[index]!=b[index]) *y = Dtype(0);
+    }
+  }
+}
+template<>
+void gpu_equal<int>(const int N, const int *a, const int *b, int *y) {
+  gpu_set(N, int(1), y);
+  equal_kernel < int ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+}
+template<>
+void gpu_equal<float>(const int N, const float *a, const float *b, float *y) {
+  gpu_set(N, float(1), y);
+  equal_kernel < float ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+}
+template<>
+void gpu_equal<double>(const int N, const double *a, const double *b, double *y) {
+  gpu_set(N, double(1), y);
+  equal_kernel < double ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+}
+
 
 #define IMPLEMENT_GPU_BINARY_FUNC(name, op_expression) \
 template<typename Dtype>\
@@ -254,11 +278,14 @@ void gpu_copy(const size_t N, const void *X, void *Y) {
   }
 }
 
+
 IMPLEMENT_GPU_BINARY_FUNC(add, y[index] = a[index] + b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(sub, y[index] = a[index] - b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(mul, y[index] = a[index] * b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(div, y[index] = a[index] / b[index]);
 IMPLEMENT_GPU_BINARY_FUNC(pow, y[index] = pow(a[index], b[index]));
+IMPLEMENT_GPU_BINARY_FUNC(maximum, y[index] = max(a[index], b[index]));
+IMPLEMENT_GPU_BINARY_FUNC(minimum, y[index] = min(a[index], b[index]));
 
 // Broadcast functions
 

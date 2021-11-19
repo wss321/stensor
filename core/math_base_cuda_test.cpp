@@ -95,7 +95,7 @@ TEST_F(GPUMathTest, MMTest) {
 
   stensor::gpu_dot<float>(size1, g1, g2, g3);
   C.copy_gpu_to_cpu();
-  EXPECT_LE(std::abs(ans-*g3c), 1e-5);
+  EXPECT_LE(std::abs(ans - *g3c), 1e-5);
 
   stensor::gpu_sub<float>(size1, g1, g2, g3);
   C.copy_gpu_to_cpu();
@@ -200,6 +200,52 @@ TEST_F(GPUMathTest, ActivateFUNC) {
   stensor::gpu_relu(t1.size(), d1, d1);
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(d1[i], 0.0f);
+  }
+
+}
+
+TEST_F(GPUMathTest, CompTest) {
+  int size1 = 4 * 10;
+  int size2 = 4 * 10;
+  int size3 = 4 * 10;
+
+  SynMem A(size1 * sizeof(float));
+  SynMem B(size2 * sizeof(float));
+  SynMem C(size3 * sizeof(float));
+
+  float *g1 = (float *) A.mutable_gpu_data();
+  float *g2 = (float *) B.mutable_gpu_data();
+  float *g3 = (float *) C.mutable_gpu_data();
+
+  const float *g1c = (const float *) A.cpu_data();
+  const float *g2c = (const float *) B.cpu_data();
+  const float *g3c = (const float *) C.cpu_data();
+
+  stensor::gpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
+  stensor::gpu_rng_uniform<float>(size2, 0.0, 1.0, g2);
+
+  A.copy_gpu_to_cpu();
+  B.copy_gpu_to_cpu();
+  C.copy_gpu_to_cpu();
+
+  gpu_equal(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
+  EXPECT_EQ(float(0), *g3);
+
+  gpu_equal(size1, g1, g1, g3);
+  C.copy_gpu_to_cpu();
+  EXPECT_EQ(float(1), *g3);
+
+  gpu_maximum(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(std::max(g1c[i], g2c[i]), g3c[i]);
+  }
+
+  gpu_minimum(size1, g1, g2, g3);
+  C.copy_gpu_to_cpu();
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(std::min(g1c[i], g2c[i]), g3c[i]);
   }
 
 }

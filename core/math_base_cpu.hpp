@@ -9,6 +9,7 @@
 #include <random>
 #include <cstdint>
 #include "public/common.hpp"
+#include "omp.h"
 
 namespace stensor {
 
@@ -90,6 +91,11 @@ void cpu_pow_scalar(const int n,
 
 /* vector vector start*/
 template<typename Dtype>
+bool cpu_equal(const int n,
+              const Dtype *a,
+              const Dtype *b);
+
+template<typename Dtype>
 void cpu_copy(const int n,
               const Dtype *a,
               Dtype *y);
@@ -146,6 +152,16 @@ void cpu_pow_broadcast(const Dtype *a, const Dtype *b,
                        std::vector<int> &shape_a,
                        std::vector<int> &shape_b,
                        Dtype *y);
+
+template<typename Dtype>
+void cpu_maximum(const int n,
+             const Dtype *a, const Dtype *b,
+             Dtype *y);
+
+template<typename Dtype>
+void cpu_minimum(const int n,
+                 const Dtype *a, const Dtype *b,
+                 Dtype *y);
 
 // Returns the sum of the absolute values of the elements of vector a
 

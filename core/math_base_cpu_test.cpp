@@ -9,9 +9,9 @@
 #include <vector>
 
 namespace stensor {
-class MathTest : public ::testing::Test {};
+class CPUMathTest : public ::testing::Test {};
 
-TEST_F(MathTest, SelfOp) {
+TEST_F(CPUMathTest, SelfOp) {
   Tensor t1(Tensor::ShapeType{3, 4});
   Tensor::Dtype *d1 = t1.mutable_cpu_data();
 
@@ -62,7 +62,7 @@ TEST_F(MathTest, SelfOp) {
 }
 
 
-TEST_F(MathTest, ActivateFUNC) {
+TEST_F(CPUMathTest, ActivateFUNC) {
   Tensor t1(Tensor::ShapeType{3, 4});
   Tensor::Dtype *d1 = t1.mutable_cpu_data();
   // 1. sigmoid
@@ -91,6 +91,42 @@ TEST_F(MathTest, ActivateFUNC) {
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(d1[i], 0);
   }
+
+}
+
+
+TEST_F(CPUMathTest, CompTest) {
+  int size1 = 4 * 10;
+  int size2 = 4 * 10;
+  int size3 = 4 * 10;
+
+  SynMem A(size1 * sizeof(float));
+  SynMem B(size2 * sizeof(float));
+  SynMem C(size3 * sizeof(float));
+
+  float *g1 = (float *) A.mutable_cpu_data();
+  float *g2 = (float *) B.mutable_cpu_data();
+  float *g3 = (float *) C.mutable_cpu_data();
+
+  stensor::cpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
+  stensor::cpu_rng_uniform<float>(size2, 0.0, 1.0, g2);
+
+  bool iseq = cpu_equal(size1,  g1, g2);
+  EXPECT_EQ(false, iseq);
+
+  iseq = cpu_equal(size1,  g1, g1);
+  EXPECT_EQ(true, iseq);
+
+  cpu_maximum(size1, g1, g2, g3);
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(std::max(g1[i], g2[i]), g3[i]);
+  }
+  cpu_minimum(size1, g1, g2, g3);
+  for (int i = 0; i < size1; ++i) {
+    EXPECT_EQ(std::min(g1[i], g2[i]), g3[i]);
+  }
+
+
 
 }
 
