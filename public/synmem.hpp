@@ -83,22 +83,33 @@ class SynMem {
     own_gpu_data_ = false;
     update_state();
   };
-  inline void alloc_cpu() {
+  inline void alloc_cpu(uint32_t NewSize=0) {
     if (has_cpu_data()) {
       LOG(INFO) << "Already alloc cpu";
       return;
     }
-
-    MallocCPU(&cpu_ptr_, size_);
+    if (NewSize==0){
+      CHECK_GT(size_, 0)<<"Size must great than 0.";
+      MallocCPU(&cpu_ptr_, size_);
+    }else{
+      MallocCPU(&cpu_ptr_, NewSize);
+      size_ = NewSize;
+    }
     own_cpu_data_ = true;
     update_state();
   };
-  inline void alloc_gpu() {
+  inline void alloc_gpu(uint32_t NewSize=0) {
     if (has_gpu_data()) {
       LOG(INFO) << "Already alloc gpu";
       return;
     }
-    MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
+    if (NewSize==0){
+      CHECK_GT(size_, 0)<<"Size must great than 0.";
+      MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
+    }else{
+      MALLOC_GPU_DEVICE(gpu_ptr_, NewSize, gpu_device_);
+      size_ = NewSize;
+    }
     own_gpu_data_ = true;
     update_state();
   };

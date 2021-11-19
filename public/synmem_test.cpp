@@ -12,8 +12,10 @@ namespace stensor {
 class SynMemTest : public ::testing::Test {};
 
 TEST_F(SynMemTest, TestInitialization) {
-  SynMem mem(10);
+  SynMem mem;
   EXPECT_EQ(mem.state(), SynMem::NONE);
+  mem.alloc_cpu(10);
+  EXPECT_EQ(mem.state(), SynMem::AT_CPU);
   EXPECT_EQ(mem.size(), 10);
   auto p_mem = std::make_shared<SynMem>(10 * sizeof(float));
   EXPECT_EQ(p_mem->size(), 10 * sizeof(float));
@@ -29,8 +31,7 @@ TEST_F(SynMemTest, TestAllocationGPU) {
   SynMem mem(10);
   LOG(INFO)<<"Device:"<<mem.device();
   EXPECT_EQ(mem.device(), -1);
-  EXPECT_TRUE(mem.gpu_data());
-  EXPECT_TRUE(mem.mutable_gpu_data());
+  mem.alloc_gpu();
   LOG(INFO)<<"Device:"<<mem.device();
 }
 
@@ -52,7 +53,7 @@ TEST_F(SynMemTest, TestCPUWrite) {
 }
 
 TEST_F(SynMemTest, TestGPUWrite) {
-  SynMem mem(10);
+  SynMem mem(10, 0);
   void *gpu_data = mem.mutable_gpu_data();
   LOG(INFO)<<"Device:"<<mem.device();
   EXPECT_EQ(mem.state(), SynMem::AT_GPU);
@@ -78,10 +79,10 @@ TEST_F(SynMemTest, TestCPU2GPU) {
   for (uint32_t i = 0; i < mem.size(); ++i) {
     EXPECT_EQ((static_cast<char *>(cpu_data))[i], 1);
   }
-  mem.to_gpu();
+  mem.alloc_gpu();
   // do another round
   cpu_data = mem.mutable_cpu_data();
-  EXPECT_EQ(mem.state(), SynMem::AT_CPU);
+  EXPECT_EQ(mem.state(), SynMem::BOTH);
   stensor::cpu_memset(mem.size(), 2, cpu_data);
   for (uint32_t i = 0; i < mem.size(); ++i) {
     EXPECT_EQ((static_cast<char *>(cpu_data))[i], 2);
