@@ -62,8 +62,8 @@ void Tensor::to_gpu() {
   update_state();
 }
 
-void Tensor::CopyFrom(const Tensor &source, bool copy_grad, bool reset) {
-  CopyFrom(&source, copy_grad, reset);
+void Tensor::copy_from(const Tensor &source, bool copy_grad, bool reset) {
+  copy_from(&source, copy_grad, reset);
 }
 
 void Tensor::CopyData(const Tensor *source, bool reset) {
@@ -114,7 +114,7 @@ void Tensor::CopyGrad(const Tensor *source, bool reset) {
   }
 }
 
-void Tensor::CopyFrom(const Tensor *source, bool copy_grad, bool reset) {
+void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
   if (source->size() != _size) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
@@ -168,7 +168,7 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
   update_state();
 }
 
-void Tensor::Reshape(const ShapeType &shape) {
+void Tensor::reshape(const ShapeType &shape) {
   CHECK_LE(shape.size(), kMaxTensorAxes);
   int new_size = 1;
   for (int i = 0; i < shape.size(); ++i) {
@@ -186,7 +186,7 @@ void Tensor::Reshape(const ShapeType &shape) {
 
 }
 
-bool Tensor::ShapeEquals(const Tensor &other) const {
+bool Tensor::shape_equal(const Tensor &other) const {
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other.shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -196,7 +196,7 @@ bool Tensor::ShapeEquals(const Tensor &other) const {
   return true;
 }
 
-bool Tensor::ShapeEquals(const TensorProto &other) const {
+bool Tensor::shape_equal(const TensorProto &other) const {
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other.shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -206,7 +206,7 @@ bool Tensor::ShapeEquals(const TensorProto &other) const {
   return true;
 }
 
-void Tensor::ToProto(TensorProto &proto, bool write_grad) const {
+void Tensor::to_proto(TensorProto &proto, bool write_grad) const {
   proto.clear_shape();
   // 1. shape
   for (int i = 0; i < _shape.size(); ++i) {
@@ -239,7 +239,7 @@ void Tensor::ToProto(TensorProto &proto, bool write_grad) const {
   }
 }
 
-void Tensor::FromProto(const TensorProto &proto, bool reset) {
+void Tensor::from_proto(const TensorProto &proto, bool reset) {
   // 1. reshape
   _size = proto.size();
   _require_grad = proto.require_grad();
@@ -249,7 +249,7 @@ void Tensor::FromProto(const TensorProto &proto, bool reset) {
     stensor::RepeatTypeToVector(proto.shape(), new_shape);
     Reset(new_shape);
   } else {
-    CHECK(ShapeEquals(proto)) << "shape mismatch.";
+    CHECK(shape_equal(proto)) << "shape mismatch.";
   }
   // 2. copy data
   switch (state()) {
@@ -364,11 +364,11 @@ std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
 
 
 Tensor &Tensor::operator=(const Tensor &other) {
-  CopyFrom(other, false, true);
+  copy_from(other, false, true);
   return (*this);
 }
 Tensor &Tensor::operator=(const Tensor *other) {
-  CopyFrom(other, false, true);
+  copy_from(other, false, true);
   return (*this);
 }
 
@@ -402,7 +402,7 @@ Tensor::Dtype& Tensor::operator[](std::vector<int> indices) {
 /* save and load*/
 void save(const Tensor *tensor, const std::string &path) {
   TensorProto proto;
-  tensor->ToProto(proto);
+  tensor->to_proto(proto);
   std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
   bool success = proto.SerializeToOstream(&output);
   CHECK(success) << "Failed to save tensor to " << path;
@@ -413,7 +413,7 @@ Tensor *load(const std::string &path) {
   bool success = proto.ParseFromIstream(&input);
   CHECK(success) << "Failed to load tensor from " << path;
   Tensor *new_tensor = new Tensor();
-  new_tensor->FromProto(proto);
+  new_tensor->from_proto(proto);
   return new_tensor;
 }
 

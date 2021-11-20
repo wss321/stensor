@@ -206,7 +206,7 @@ Tensor *add(const Tensor *a, const Tensor *b) {
   float *out_data = nullptr;
   Tensor *out_tensor = nullptr;
   bool broadcast = false;
-  if (a->ShapeEquals(b))
+  if (a->shape_equal(b))
     shape_out = shape_a;
   else {
     broadcast = true;
@@ -240,8 +240,8 @@ Tensor *add(const Tensor *a, const Tensor *b) {
 Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   // inference shape
-  int start_axis_a = a->CanonicalAxisIndex(axis);
-  int start_axis_b = b->CanonicalAxisIndex(axis);
+  int start_axis_a = a->canonical_axis_index(axis);
+  int start_axis_b = b->canonical_axis_index(axis);
   int Ma = a->count(0, start_axis_a);
   int Na = a->count(start_axis_a, a->num_axes());
   if (transA) swap(Ma, Na);
@@ -280,7 +280,7 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
 
 Tensor *maximum(const Tensor *a, const Tensor *b) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
-  CHECK(a->ShapeEquals(b)) << "tensors must be at same shape";
+  CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
   float * out_data = out_tensor->data();
@@ -298,7 +298,7 @@ Tensor *maximum(const Tensor *a, const Tensor *b) {
 }
 Tensor *minimum(const Tensor *a, const Tensor *b) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
-  CHECK(a->ShapeEquals(b)) << "tensors must be at same shape";
+  CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
   float * out_data = out_tensor->data();

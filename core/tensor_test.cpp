@@ -9,13 +9,13 @@ class TensorTest : public ::testing::Test {};
 TEST_F(TensorTest, Construct) {
   Tensor a(Tensor::ShapeType{3, 4});
   Tensor cp = a;
-  cp.CopyFrom(a, false, true);
+  cp.copy_from(a, false, true);
 }
 
 TEST_F(TensorTest, Shape) {
   Tensor tensor(Tensor::ShapeType{3, 4});
   Tensor::Dtype *cpu_d = tensor.data();
-  tensor.Reshape(Tensor::ShapeType{4, 3});
+  tensor.reshape(Tensor::ShapeType{4, 3});
   std::cout << tensor.shape_string() << std::endl;
   tensor.flatten();
   std::cout << tensor.shape_string() << std::endl;
@@ -33,7 +33,7 @@ TEST_F(TensorTest, Shape) {
 
 TEST_F(TensorTest, Index) {
   Tensor a(Tensor::ShapeType{3, 4});
-  a.CopyFrom(stensor::random(a.shape()));
+  a.copy_from(stensor::random(a.shape()));
   std::cout << a[{-1, -1}];
   EXPECT_EQ((a[{-1, -1}]), a.data_at(-1));
 }
@@ -47,7 +47,7 @@ TEST_F(TensorTest, CPUandGPU) {
 
 TEST_F(TensorTest, SaveAndLoad) {
   Tensor a(Tensor::ShapeType{5, 5}, -1);
-  a.CopyFrom(stensor::random(a.shape()));
+  a.copy_from(stensor::random(a.shape()));
   std::string path = "/home/wss/CLionProjects/stensor/output/a.pt3";
   stensor::save(a, path);
   Tensor *b = stensor::load(path);

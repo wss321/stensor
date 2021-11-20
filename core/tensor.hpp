@@ -56,14 +56,14 @@ class Tensor {
       _size(0), _capacity(0), _name(),
       _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
-    CopyFrom(other, false, true);
+    copy_from(other, false, true);
   }
   Tensor(const Tensor *other, bool require_grad = false) :
       _data(), _grad(), _device(other->device()),
       _size(0), _capacity(0), _name(),
       _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
-    CopyFrom(other, false, true);
+    copy_from(other, false, true);
   }
 
   inline Dtype *data() {
@@ -102,10 +102,10 @@ class Tensor {
   inline void set_name(const std::string &new_name) { _name = new_name; }
 
   // shape operations
-  void Reshape(const ShapeType &shape);
-  inline void ReshapeLike(const Tensor &other) { Reshape(other.shape()); }
+  void reshape(const ShapeType &shape);
+  inline void ReshapeLike(const Tensor &other) { reshape(other.shape()); }
 
-  inline void flatten() { Reshape(ShapeType{_size}); }
+  inline void flatten() { reshape(ShapeType{_size}); }
 
   inline std::string shape_string() const {
     std::ostringstream stream;
@@ -128,7 +128,7 @@ class Tensor {
   std::string grad_string() const;
 
   inline const ShapeType &shape() const { return _shape; }
-  inline int CanonicalAxisIndex(int axis_index) const {
+  inline int canonical_axis_index(int axis_index) const {
     int num_axes_t = num_axes();
     CHECK_GE(axis_index, -num_axes_t)
       << "axis " << axis_index << " out of range for " << num_axes_t
@@ -143,14 +143,14 @@ class Tensor {
   }
 
   inline int shape(int index) const {
-    return _shape[CanonicalAxisIndex(index)];
+    return _shape[canonical_axis_index(index)];
   }
 
   void to_cpu();
   void to_gpu();
 
-  bool ShapeEquals(const Tensor &other) const;
-  bool ShapeEquals(const TensorProto &other) const;
+  bool shape_equal(const Tensor &other) const;
+  bool shape_equal(const TensorProto &other) const;
 
   inline int num_axes() const { return _shape.size(); }
   inline Dtype data_at(int index) const {
@@ -202,18 +202,18 @@ class Tensor {
     return count;
   }
 
-  void CopyFrom(const Tensor &source, bool copy_grad = false,
-                bool reset = false);
-  void CopyFrom(const Tensor *source, bool copy_grad = false,
-                bool reset = false);
+  void copy_from(const Tensor &source, bool copy_grad = false,
+                 bool reset = false);
+  void copy_from(const Tensor *source, bool copy_grad = false,
+                 bool reset = false);
 
   inline bool require_grad() const {
     return _require_grad;
   }
 
 //  const std::pair<Tensor *, std::string> neighbors() const;
-  void FromProto(const TensorProto &proto, bool reset = true);
-  void ToProto(TensorProto &proto, bool write_grad = false) const;
+  void from_proto(const TensorProto &proto, bool reset = true);
+  void to_proto(TensorProto &proto, bool write_grad = false) const;
 
   Tensor &operator=(const Tensor &other);
   Tensor &operator=(const Tensor *other);
