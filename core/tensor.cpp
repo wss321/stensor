@@ -1,27 +1,141 @@
 #include <public/synmem.hpp>
+#include <utility>
 #include "tensor.hpp"
 #include "proto/tensor.pb.h"
 #include "math_base_cpu.hpp"
 
 namespace stensor {
+int get_index(std::vector<int> &shape, Tensor::PairIndexType &stride, int index) {
+  std::vector<int> new_shape(shape.size());
+  for (int i = 0; i < shape.size(); ++i) {
+    new_shape[i] = stride[i].end - stride[i].start;
+  }
+  int num_axis = new_shape.size();
+  std::vector<int> indices(shape.size());
+  int div = 1;
+  indices[num_axis - 1] = index % new_shape[num_axis - 1];
+  for (int i = num_axis - 2; i >= 0; --i) {
+    div *= new_shape[i + 1];
+    indices[i] = (index / div) % new_shape[i];
+  }
+//  std::cout << indices << "\n";
+  for (int i = 0; i < num_axis; ++i) {
+    indices[i] += stride[i].start;
+  }
+//  std::cout << indices;
+  int offset = 0;
+  for (int i = 0; i < num_axis; ++i) {
+    offset *= shape[i];
+    if (indices.size() > i) {
+      CHECK_LT(indices[i], shape[i]);
+      offset += indices[i];
+    }
+  }
+  return offset;
+}
+int Tensor::get_new_index(int index) const {
+  int num_axis = num_axes();
+  std::vector<int> indices(_shape.size());
+  int div = 1;
+  indices[num_axis - 1] = index % _actual_shape[num_axis - 1];
+  for (int i = num_axis - 2; i >= 0; --i) {
+    div *= _actual_shape[i + 1];
+    indices[i] = (index / div) % _actual_shape[i];
+  }
+  for (int i = 0; i < num_axis; ++i) {
+    indices[i] += _axis_start_ends[i].start;
+  }
+
+  int offset = 0;
+  for (int i = 0; i < num_axis; ++i) {
+    offset *= _shape[i];
+    if (indices.size() > i) {
+      CHECK_LT(indices[i], _shape[i]);
+      offset += indices[i];
+    }
+  }
+  return offset;
+}
+
+int Tensor::get_new_index(int index, const PairIndexType &axis_start_ends) const {
+  int num_axis = num_axes();
+  std::vector<int> indices(_shape.size());
+  int div = 1;
+  indices[num_axis - 1] = index % _actual_shape[num_axis - 1];
+  for (int i = num_axis - 2; i >= 0; --i) {
+    div *= _actual_shape[i + 1];
+    indices[i] = (index / div) % _actual_shape[i];
+  }
+  for (int i = 0; i < num_axis; ++i) {
+    indices[i] += axis_start_ends[i].start;
+  }
+
+  int offset = 0;
+  for (int i = 0; i < num_axis; ++i) {
+    offset *= _shape[i];
+    if (indices.size() > i) {
+      CHECK_LT(indices[i], _shape[i]);
+      offset += indices[i];
+    }
+  }
+  return offset;
+}
+
+//TODO:[]
+Tensor::Tensor(Tensor *other, const PairIndexType &new_axis_index, bool inplace) :
+    _device(other->device()), _name(), _size(0),
+    _require_grad(other->require_grad()) {
+  CHECK_EQ(new_axis_index.size(), other->num_axes()) << "indices size must be equal with num axes";
+  PairIndexType new_canonical_axis_index(other->num_axes());
+  ShapeType new_shape(new_axis_index.size());
+  int new_size = 1;
+  for (int i = 0; i < other->num_axes(); ++i) {
+    int start_axis_index = new_axis_index[i].start;
+    int end_axis_index = new_axis_index[i].end;
+    CHECK_LT(start_axis_index, end_axis_index) << "index error";
+    new_canonical_axis_index[i] = PairType({start_axis_index, end_axis_index});
+    new_size *= end_axis_index - start_axis_index;
+    new_shape[i] = end_axis_index - start_axis_index;
+  }
+  if (inplace) {
+    _shape = other->shape();
+    _data = other->get_shared_data();
+    _grad = other->get_shared_grad();
+    _size = new_size;
+    _capacity = other->size();
+    _current_grad = other->grad();
+    _current_data = other->data();
+    _axis_start_ends = new_axis_index;
+  } else {
+    Reset(new_shape, other->device());
+    copy_from(other, true, false);
+  }
+  update_state();
+}
 
 void Tensor::update_state() {
-  if (_data){
+  if (_data) {
     if (_data->gpu_data()) {
       _current_data = static_cast<Dtype *>(_data->gpu_data());
       _device = _data->device();
-    }else if (_data->cpu_data()) {
+    } else if (_data->cpu_data()) {
       _current_data = static_cast<Dtype *>(_data->cpu_data());
       _device = -1;
     }
   }
-  if (_grad){
+  if (_grad) {
     if (_grad->gpu_data()) {
       _current_grad = static_cast<Dtype *>(_grad->gpu_data());
       _device = _grad->device();
-    }else if (_grad->cpu_data()) {
+    } else if (_grad->cpu_data()) {
       _current_grad = static_cast<Dtype *>(_grad->cpu_data());
       _device = -1;
+    }
+  }
+  if (!_axis_start_ends.empty()) {
+    _actual_shape.resize(_axis_start_ends.size());
+    for (int i = 0; i < _shape.size(); ++i) {
+      _actual_shape[i] = _axis_start_ends[i].end - _axis_start_ends[i].start;
     }
   }
 }
@@ -128,17 +242,28 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
       if (copy_grad)
-        cpu_copy(_size, source->const_grad(),grad());
-      cpu_copy(_size, source->const_data(), data());
+        for (uint32_t i = 0; i < size(); ++i)
+          grad_at(i) = source->grad_at(i);
+//        cpu_copy(_size, source->const_grad(), grad());
+      for (uint32_t i = 0; i < size(); ++i)
+        data_at(i) = source->data_at(i);
+//      cpu_copy(_size, source->const_data(), data());
 
       break;
     case stensor::GPU:
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
+//      if (copy_grad)
+//        gpu_copy(_size, source->const_grad(), grad());
+//      gpu_copy(_size, source->const_data(), data());
       if (copy_grad)
-        gpu_copy(_size, source->const_grad(), grad());
-      gpu_copy(_size, source->const_data(), data());
+        for (uint32_t i = 0; i < size(); ++i)
+          grad_at(i) = source->grad_at(i);
+//        cpu_copy(_size, source->const_grad(), grad());
+      for (uint32_t i = 0; i < size(); ++i)
+        data_at(i) = source->data_at(i);
+//      cpu_copy(_size, source->const_data(), data());
 
       break;
     default:LOG(FATAL) << "Unknown device mode.";
@@ -361,7 +486,6 @@ std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
   return stensor::operator<<(out, &tensor);
 }
 
-
 Tensor &Tensor::operator=(const Tensor &other) {
   copy_from(other, false, true);
   return (*this);
@@ -371,7 +495,7 @@ Tensor &Tensor::operator=(const Tensor *other) {
   return (*this);
 }
 
-Tensor::Dtype& Tensor::operator[](std::vector<int> indices) {
+Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
   CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
   Tensor::ShapeType canonicalIndex(num_axes(), 0);
   for (int i = 0; i < num_axes(); ++i) {
@@ -388,14 +512,22 @@ Tensor::Dtype& Tensor::operator[](std::vector<int> indices) {
   return data()[out - 1];
 }
 
-//Tensor::Dtype& Tensor::operator[](std::vector<uint32_t> indices) {
-//  CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
-//  int out = 1;
-//  for (int i = 0; i < indices.size(); ++i) {
-//    out *= static_cast<int>(indices[i] + 1);
-//  }
-//  return data()[out - 1];
-//}
+Tensor::PairIndexType Tensor::get_canonical_start_ends(PairIndexType start_end_indices) const {
+  CHECK_EQ(start_end_indices.size(), num_axes()) << "indices size must be equal with num axes";
+  PairIndexType new_axis_index(num_axes());
+  for (int i = 0; i < num_axes(); ++i) {
+    int start_axis_index = canonical_axis_index(start_end_indices[i].start, i);
+    int end_axis_index = canonical_axis_index(start_end_indices[i].end, i);
+    CHECK_LT(start_axis_index, end_axis_index) << "index error";
+    new_axis_index[i] = PairType({start_axis_index, end_axis_index});
+  }
+  return new_axis_index;
+}
+
+Tensor *Tensor::operator[](PairIndexType start_end_indices) {
+  return new Tensor(this, get_canonical_start_ends(start_end_indices), false);
+
+}
 
 /* Tensor Generator end*/
 /* save and load*/

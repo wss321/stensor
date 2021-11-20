@@ -240,8 +240,8 @@ Tensor *add(const Tensor *a, const Tensor *b) {
 Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   // inference shape
-  int start_axis_a = a->canonical_axis_index(axis);
-  int start_axis_b = b->canonical_axis_index(axis);
+  int start_axis_a = a->canonical_axis(axis);
+  int start_axis_b = b->canonical_axis(axis);
   int Ma = a->count(0, start_axis_a);
   int Na = a->count(start_axis_a, a->num_axes());
   if (transA) swap(Ma, Na);

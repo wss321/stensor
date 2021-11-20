@@ -59,9 +59,9 @@ TEST_F(TensorTest, SaveAndLoad) {
 
 TEST_F(TensorTest, ZeroDataGrad) {
   stensor::Config::set_random_seed(1024);
-  Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
-  std::cout<<a;
-  Tensor& b(*a);
+  Tensor *a = stensor::random({3, 4}, 0, 1, -1, true);
+  std::cout << a;
+  Tensor &b(*a);
   a->zero_data();
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(b[i], 0);
@@ -75,13 +75,13 @@ TEST_F(TensorTest, ZeroDataGrad) {
 
 TEST_F(TensorTest, FreeTest) {
   stensor::Config::set_random_seed(1024);
-  Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
+  Tensor *a = stensor::random({3, 4}, 0, 1, -1, true);
   EXPECT_EQ(a->state(), CPU);
   a->to_gpu();
   EXPECT_EQ(a->state(), GPU);
-  Tensor* b = stensor::random({3, 4}, 0, 1, 0, true);
+  Tensor *b = stensor::random({3, 4}, 0, 1, 0, true);
   EXPECT_EQ(b->state(), GPU);
-  Tensor* c = stensor::random_gaussian({3, 4}, 0, 1, 0, true);
+  Tensor *c = stensor::random_gaussian({3, 4}, 0, 1, 0, true);
   EXPECT_EQ(c->state(), GPU);
   delete a;
   delete b;
@@ -89,14 +89,61 @@ TEST_F(TensorTest, FreeTest) {
 }
 TEST_F(TensorTest, ElementAsinment) {
   stensor::Config::set_random_seed(1024);
-  Tensor* a = stensor::random({3, 4}, 0, 1, 0, true);
-  std::cout<<a;
+  Tensor *a = stensor::random({3, 4}, 0, 1, 0, true);
+  std::cout << a;
   a->zero_data();
   (*a)[0] = 1;
-  std::cout<<a;
+  std::cout << a;
   a->to_cpu();
   (*a)[2] = 1;
-  std::cout<<a;
+  std::cout << a;
+  delete a;
+}
+
+int get_index(std::vector<int> &shape, Tensor::PairIndexType &stride, int index) {
+  std::vector<int> new_shape(shape.size());
+  for (int i = 0; i < shape.size(); ++i) {
+    new_shape[i] = stride[i].end - stride[i].start;
+  }
+  int num_axis = new_shape.size();
+  std::vector<int> indices(shape.size());
+  int div = 1;
+  indices[num_axis - 1] = index % new_shape[num_axis - 1];
+  for (int i = num_axis - 2; i >= 0; --i) {
+    div *= new_shape[i + 1];
+    indices[i] = (index / div) % new_shape[i];
+  }
+//  std::cout << indices << "\n";
+  for (int i = 0; i < num_axis; ++i) {
+    indices[i] += stride[i].start;
+  }
+//  std::cout << indices;
+  int offset = 0;
+  for (int i = 0; i < num_axis; ++i) {
+    offset *= shape[i];
+    if (indices.size() > i) {
+      CHECK_LT(indices[i], shape[i]);
+      offset += indices[i];
+    }
+  }
+  return offset;
+}
+
+TEST_F(TensorTest, index2indices) {
+  std::vector<int> shape({4, 4});
+  Tensor::PairIndexType stride({{0, 3},
+                                {1, 3},});
+  for (int i = 0; i < 6; ++i) {
+    std::cout << get_index(shape, stride, i) << " ";
+  }
+
+}
+
+TEST_F(TensorTest, Slice) {
+  stensor::Config::set_random_seed(1024);
+  Tensor *a = stensor::random({3, 4}, 0, 1, 0, true);
+  std::cout << a;
+  std::cout<<(*a)[{{0, 2}, {2, 4}}];
   delete a;
 }
 

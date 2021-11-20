@@ -30,6 +30,7 @@ class Tensor {
   int _capacity;
   int _device;
   PairIndexType _axis_start_ends;
+  ShapeType _actual_shape;
   NbType _neighbors;
   std::vector<OpType> _operations;
   Dtype *_current_data;
@@ -37,38 +38,47 @@ class Tensor {
 
  private:
   void Reset(const ShapeType &shape, int device_id = -1);//device_id = -1 represent cpu
-  void update_state(); // update current data, grad, device
+  void update_state(); // update current data, grad, device, actual_shape
+  int get_new_index(int index) const;
+  int get_new_index(int index, const PairIndexType& axis_start_ends) const;
+  PairIndexType get_canonical_start_ends(PairIndexType start_end_indices) const;
 
  public:
   Tensor() :
       _data(), _grad(), _size(0),
       _capacity(0), _name(), _device(-1),
-      _require_grad(false),_axis_start_ends({}),
+      _require_grad(false), _axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {};
   ~Tensor() {
     _data.reset();
     _grad.reset();
   }
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
-      _capacity(0), _require_grad(require_grad),_axis_start_ends({}),
+      _capacity(0), _require_grad(require_grad), _axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {
     Reset(shape, device_id);
   }
   Tensor(const Tensor &other, bool require_grad = false) :
       _data(), _grad(), _device(other.device()),
       _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),_axis_start_ends({}),
-      _current_data(nullptr), _current_grad(nullptr) {
-    copy_from(other, false, true);
-  }
-  Tensor(const Tensor *other, bool require_grad = false) :
-      _data(), _grad(), _device(other->device()),
-      _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),_axis_start_ends({}),
+      _require_grad(require_grad), _axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {
     copy_from(other, false, true);
   }
 
+  Tensor(const Tensor *other, bool require_grad = false) :
+      _data(), _grad(), _device(other->device()),
+      _size(0), _capacity(0), _name(),
+      _require_grad(require_grad), _axis_start_ends({}),
+      _current_data(nullptr), _current_grad(nullptr) {
+    copy_from(other, false, true);
+  }
+
+  Tensor(Tensor *other, const PairIndexType &new_axis_index, bool inplace = true);
+  inline void set_stride(PairIndexType new_strid){
+    _axis_start_ends = new_strid;
+    update_state();
+  };
   inline Dtype *data() {
     check_data();
     return _current_data;
@@ -76,6 +86,15 @@ class Tensor {
   inline Dtype *grad() {
     check_grad();
     return _current_data;
+  }
+
+  inline SharedPtr get_shared_data() {
+    check_data();
+    return _data;
+  }
+  inline SharedPtr get_shared_grad() {
+    check_data();
+    return _grad;
   }
 
   inline const Dtype *const_data() const {
@@ -131,7 +150,7 @@ class Tensor {
   std::string grad_string() const;
 
   inline const ShapeType &shape() const { return _shape; }
-  inline int canonical_axis_index(int axis_index) const {
+  inline int canonical_axis(int axis_index) const {
     int num_axes_t = num_axes();
     CHECK_GE(axis_index, -num_axes_t)
       << "axis " << axis_index << " out of range for " << num_axes_t
@@ -144,9 +163,20 @@ class Tensor {
     }
     return axis_index;
   }
+  inline int canonical_axis_index(int index_at_axis, int axis) const {
+    axis = canonical_axis(axis);
+    int max_index_at_axis = shape(axis);
+    if (index_at_axis < 0) {
+      CHECK_GE(max_index_at_axis + index_at_axis, 0) << "index out of range";
+      return max_index_at_axis + index_at_axis;
+    } else {
+      CHECK_LE(index_at_axis, max_index_at_axis) << "index out of range";
+      return index_at_axis;
+    }
+  }
 
   inline int shape(int index) const {
-    return _shape[canonical_axis_index(index)];
+    return _shape[canonical_axis(index)];
   }
 
   void to_cpu();
@@ -156,22 +186,56 @@ class Tensor {
   bool shape_equal(const TensorProto &other) const;
 
   inline int num_axes() const { return _shape.size(); }
+  inline Dtype& data_at(int index) {
+    if (index < 0) {
+      DCHECK_GE(size() + index, 0);
+      index = static_cast<int>(size()) + index;
+    }
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_data[index];
+    else return _current_data[get_new_index(index)];
+  };
   inline Dtype data_at(int index) const {
     if (index < 0) {
-      CHECK_GE(size() + index, 0);
+      DCHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
-    CHECK_LE(index + 1, _size) << "index out of range";
-    return _current_data[index];
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_data[index];
+    else return _current_data[get_new_index(index)];
   };
 
-  inline Dtype grad_at(int index) const {
+  inline Dtype& data_at(uint32_t index) {
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_data[index];
+    else return _current_data[get_new_index(static_cast<int>(index))];
+  };
+
+  inline Dtype& grad_at(int index) {
     if (index < 0) {
-      CHECK_GE(size() + index, 0);
+      DCHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
-    CHECK_LT(index, _size) << "index out of range";
-    return _current_grad[index];
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_grad[index];
+    else return _current_grad[get_new_index(index)];
+  };
+
+  inline Dtype& grad_at(uint32_t index) {
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_grad[index];
+    else return _current_grad[get_new_index(static_cast<int>(index))];
+  };
+  inline Dtype grad_at(uint32_t index) const {
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    if (_axis_start_ends.empty())
+      return _current_grad[index];
+    else return _current_grad[get_new_index(static_cast<int>(index))];
   };
 
   inline int offset(const ShapeType &indices) const {
@@ -223,19 +287,23 @@ class Tensor {
 
   Dtype &operator[](std::vector<int> indices); // get data
 //  Dtype &operator[](std::vector<uint32_t> indices);
-  Tensor &operator[](PairIndexType start_end_indices); // slice
+  Tensor *operator[](PairIndexType start_end_indices); // slice
   Dtype &operator[](int index) {
     if (index < 0) {
       DCHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
     DCHECK_LE(index + 1, _size) << "index out of range";
-    return _current_data[index];
+    if (_axis_start_ends.empty())
+      return _current_data[index];
+    else return _current_data[get_new_index(index)];
   }
 
   Dtype &operator[](uint32_t index) {
     DCHECK_LE(index + 1, _size) << "index out of range";
-    return _current_data[index];
+    if (_axis_start_ends.empty())
+      return _current_data[index];
+    else return _current_data[get_new_index(static_cast<int>(index))];
   }
   void zero_data();
   void zero_grad();
