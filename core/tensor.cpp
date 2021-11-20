@@ -71,7 +71,7 @@ void Tensor::CopyData(const Tensor *source, bool reset) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
                  << _size << " vs " << source->size();
-    Reset(source->shape());
+    reset(source->shape());
   }
   switch (state()) {
     case stensor::CPU:
@@ -95,7 +95,7 @@ void Tensor::CopyGrad(const Tensor *source, bool reset) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
                  << _size << " vs " << source->size();
-    Reset(source->shape());
+    reset(source->shape());
   }
   switch (state()) {
     case stensor::CPU:
@@ -119,7 +119,7 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
                  << _size << " vs " << source->size();
-    Reset(source->shape(), source->device());
+    reset(source->shape(), source->device());
   }
 
   switch (state()) {
@@ -145,7 +145,7 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
   }
 }
 
-void Tensor::Reset(const ShapeType &shape, int device_id) {
+void Tensor::reset(const ShapeType &shape, int device_id) {
   CHECK_LE(shape.size(), kMaxTensorAxes);
   _size = 1;
   _shape.resize(shape.size());
@@ -247,7 +247,7 @@ void Tensor::from_proto(const TensorProto &proto, bool reset) {
   if (reset) {
     Tensor::ShapeType new_shape;
     stensor::RepeatTypeToVector(proto.shape(), new_shape);
-    Reset(new_shape);
+    reset(new_shape);
   } else {
     CHECK(shape_equal(proto)) << "shape mismatch.";
   }
