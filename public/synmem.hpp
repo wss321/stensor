@@ -25,104 +25,90 @@ namespace stensor {
 
 class SynMem {
  public:
-  SynMem();
-//  explicit SynMem(uint32_t size);
-  explicit SynMem(uint32_t size, int device_id = -1);
-  ~SynMem();
-  enum SynState { NONE, AT_CPU, AT_GPU, BOTH };
-  inline uint32_t size() const { return size_; }
-  inline SynState state() const { return state_; }
+  SynMem() :
+      cpu_ptr_(nullptr), gpu_ptr_(nullptr),
+      size_(0), gpu_device_(-1) {}
+  explicit SynMem(int size, int device_id = -1) :
+      cpu_ptr_(nullptr), gpu_ptr_(nullptr),
+      size_(size), gpu_device_(device_id) {
+    if (device_id > -1) alloc_gpu();
+    else alloc_cpu();
+  }
+  ~SynMem() {
+    free_cpu();
+    free_gpu();
+  }
+  inline int size() const { return size_; }
   inline int device() const { return gpu_device_; }
-  inline bool has_gpu_data() const { return gpu_ptr_ && own_gpu_data_; }
-  inline bool has_cpu_data() const { return cpu_ptr_ && own_cpu_data_; }
-  inline const void *cpu_data() {
-    CHECK(has_cpu_data()) << "CPU data is none";
-    return const_cast<const void *> (cpu_ptr_);
-  }
-
-  const void *gpu_data() {
-    CHECK(has_gpu_data()) << "GPU data is none";
-    return const_cast<const void *> (gpu_ptr_);
-  }
-
-  void set_cpu_data(void *data_ptr);
-  void set_gpu_data(void *data_ptr);
-  inline void *mutable_cpu_data() {
-    CHECK(has_cpu_data()) << "CPU data is none";
+  inline void *cpu_data() {
     return cpu_ptr_;
-  };
-  inline void *mutable_gpu_data() {
-    CHECK(has_gpu_data()) << "GPU data is none";
-    return gpu_ptr_;
-  };
+  }
 
-//  void to_cpu();
-//  void to_gpu();
-//  void syn();
+  inline void *gpu_data() {
+    return gpu_ptr_;
+  }
+
+  inline void set_cpu_data(void *data_ptr, int size) {
+    free_cpu();
+    free_gpu();
+    cpu_ptr_ = data_ptr;
+    size_ = size;
+  }
+
+  inline void set_gpu_data(void *data_ptr, int size) {
+    free_cpu();
+    free_gpu();
+    gpu_ptr_ = data_ptr;
+    size_ = size;
+  }
+
   inline void copy_cpu_to_gpu() {
-    CHECK(has_cpu_data()) << "CPU data is none";
-    CHECK(has_gpu_data()) << "GPU data is none";
     stensor::memcopy(size_, cpu_ptr_, gpu_ptr_);
   };
+
   inline void copy_gpu_to_cpu() {
-    CHECK(has_cpu_data()) << "CPU data is none";
-    CHECK(has_gpu_data()) << "GPU data is none";
     stensor::memcopy(size_, gpu_ptr_, cpu_ptr_);
   };
+
   inline void free_cpu() {
-    if (has_cpu_data())
-      FreeCPU(cpu_ptr_);
+    if (cpu_ptr_ != nullptr) FreeCPU(cpu_ptr_);
     cpu_ptr_ = nullptr;
-    own_cpu_data_ = false;
-    update_state();
   };
   inline void free_gpu() {
-    if (has_gpu_data())
-      FreeGPU(gpu_ptr_);
+    if (gpu_ptr_ != nullptr) FreeGPU(gpu_ptr_);
     gpu_ptr_ = nullptr;
-    own_gpu_data_ = false;
-    update_state();
   };
-  inline void alloc_cpu(uint32_t NewSize=0) {
-    if (has_cpu_data()) {
+
+  inline void alloc_cpu(int NewSize = 0) {
+    if (cpu_ptr_ != nullptr) {
       LOG(INFO) << "Already alloc cpu";
       return;
     }
-    if (NewSize==0){
-      CHECK_GT(size_, 0)<<"Size must great than 0.";
+
+    if (NewSize == 0)
       MallocCPU(&cpu_ptr_, size_);
-    }else{
+    else {
       MallocCPU(&cpu_ptr_, NewSize);
       size_ = NewSize;
     }
-    own_cpu_data_ = true;
-    update_state();
   };
-  inline void alloc_gpu(uint32_t NewSize=0) {
-    if (has_gpu_data()) {
+  inline void alloc_gpu(int NewSize = 0) {
+    if (gpu_ptr_ != nullptr) {
       LOG(INFO) << "Already alloc gpu";
       return;
     }
-    if (NewSize==0){
-      CHECK_GT(size_, 0)<<"Size must great than 0.";
+    if (NewSize == 0) {
       MALLOC_GPU_DEVICE(gpu_ptr_, size_, gpu_device_);
-    }else{
+    } else {
       MALLOC_GPU_DEVICE(gpu_ptr_, NewSize, gpu_device_);
       size_ = NewSize;
     }
-    own_gpu_data_ = true;
-    update_state();
   };
  private:
   void *cpu_ptr_;
   void *gpu_ptr_;
-  uint32_t size_;
-  SynState state_;
-  bool own_cpu_data_;
-  bool own_gpu_data_;
+  int size_;
   int gpu_device_;
-
-  void update_state();
 
  DISABLE_COPY_AND_ASSIGN(SynMem);
 };

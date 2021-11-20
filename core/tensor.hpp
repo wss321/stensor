@@ -9,59 +9,93 @@
 using namespace boost;
 namespace stensor {
 
-const uint32_t kMaxTensorAxes = MAX_AXES;
+const int kMaxTensorAxes = MAX_AXES;
 
 class Tensor {
  public:
-  typedef std::vector<uint32_t> ShapeType;
+  typedef std::vector<int> ShapeType;
   typedef float Dtype;
   typedef TensorProto_Operation OpType;
   typedef shared_ptr<SynMem> SharedPtr;
-  typedef SynMem::SynState State;
  private:
   SharedPtr _data;
   SharedPtr _grad;
   ShapeType _shape;
-  uint32_t _size;
-  std::vector<std::string> _neighbors;
-  std::vector<OpType> _operations;
+  int _size;
   bool _require_grad;
   std::string _name;
-  uint32_t _capacity;
+  int _capacity;
+  int _device;
+  std::vector<std::pair<int, int>> axis_start_ends;
+  std::vector<std::string> _neighbors;
+  std::vector<OpType> _operations;
+  Dtype *_current_data;
+  Dtype *_current_grad;
+
+ private:
   void Reset(const ShapeType &shape, int device_id = -1);//device_id = -1 represent cpu
+  void update_state(); // update current data, grad, device
+
  public:
-  Tensor() : _data(),
-             _grad(), _size(0ul),
-             _capacity(0ul), _name(),
-             _require_grad(false) {};
+  Tensor() :
+      _data(), _grad(), _size(0),
+      _capacity(0), _name(), _device(-1),
+      _require_grad(false),
+      _current_data(nullptr), _current_grad(nullptr) {};
   ~Tensor() {
     _data.reset();
     _grad.reset();
-    _size = 0;
-    _capacity = 0;
-    _name = "";
-    _require_grad = false;
-    _neighbors.clear();
-    _operations.clear();
-    _shape.clear();
   }
-  explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false);
-  Tensor(const Tensor &other, bool require_grad = false);
-  Tensor(const Tensor *other, bool require_grad = false);
+  explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
+      _capacity(0), _require_grad(require_grad),
+      _current_data(nullptr), _current_grad(nullptr) {
+    Reset(shape, device_id);
+  }
+  Tensor(const Tensor &other, bool require_grad = false) :
+      _data(), _grad(), _device(other.device()),
+      _size(0), _capacity(0), _name(),
+      _require_grad(require_grad),
+      _current_data(nullptr), _current_grad(nullptr) {
+    CopyFrom(other, false, true);
+  }
+  Tensor(const Tensor *other, bool require_grad = false) :
+      _data(), _grad(), _device(other->device()),
+      _size(0), _capacity(0), _name(),
+      _require_grad(require_grad),
+      _current_data(nullptr), _current_grad(nullptr) {
+    CopyFrom(other, false, true);
+  }
+
+  inline Dtype *data() {
+    check_data();
+    return _current_data;
+  }
+  inline Dtype *grad() {
+    check_grad();
+    return _current_data;
+  }
+
+  inline const Dtype *const_data() const {
+    check_data();
+    return _current_data;
+  }
+  inline const Dtype *const_grad() const {
+    check_grad();
+    return _current_data;
+  }
+
   inline Mode state() const {
     check_data();
-    if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::BOTH) return GPU;
+    if (_device > -1) return GPU;
     return CPU;
   }
-  inline void check_data() const { CHECK(_data) << "Data is None"; }
-  inline void check_grad() const { CHECK(_require_grad && _grad) << "Gradient is None"; }
+  inline void check_data() const { CHECK(_current_data) << "Data is None"; }
+  inline void check_grad() const { CHECK(_require_grad && _current_grad) << "Gradient is None"; }
   inline int device() const {
-    check_data();
-    return _data->device();
+    return _device;
   }
   inline bool has_grad() const {
-    check_grad();
-    return _grad->has_cpu_data() || _grad->has_gpu_data();
+    return _current_grad != nullptr;
   }
 
   inline void set_require_grad(bool require_grad) { _require_grad = require_grad; }
@@ -69,14 +103,14 @@ class Tensor {
 
   // shape operations
   void Reshape(const ShapeType &shape);
-  void ReshapeLike(const Tensor &other);
-  void ReshapeLike(const Tensor *other);
-  void flatten();
+  inline void ReshapeLike(const Tensor &other) { Reshape(other.shape()); }
+
+  inline void flatten() { Reshape(ShapeType{_size}); }
 
   inline std::string shape_string() const {
     std::ostringstream stream;
     stream << "{shape:(";
-    for (uint32_t i = 0; i < _shape.size() - 1; ++i) {
+    for (int i = 0; i < _shape.size() - 1; ++i) {
       stream << _shape[i] << "x";
     }
     if (!_shape.empty())
@@ -94,8 +128,8 @@ class Tensor {
   std::string grad_string() const;
 
   inline const ShapeType &shape() const { return _shape; }
-  inline uint32_t CanonicalAxisIndex(int32_t axis_index) const {
-    int32_t num_axes_t = static_cast<int32_t>(num_axes());
+  inline int CanonicalAxisIndex(int axis_index) const {
+    int num_axes_t = num_axes();
     CHECK_GE(axis_index, -num_axes_t)
       << "axis " << axis_index << " out of range for " << num_axes_t
       << "-D Tensor with shape " << shape_string();
@@ -108,27 +142,24 @@ class Tensor {
     return axis_index;
   }
 
-  inline uint32_t shape(int32_t index) const {
+  inline int shape(int index) const {
     return _shape[CanonicalAxisIndex(index)];
   }
 
   void to_cpu();
   void to_gpu();
 
-  bool ShapeEquals(const Tensor *other) const;
-  inline bool ShapeEquals(const Tensor &other) const { return ShapeEquals(&other); }
-  bool ShapeEquals(const TensorProto *other) const;
-  inline bool ShapeEquals(const TensorProto &other) const { return ShapeEquals(&other); }
+  bool ShapeEquals(const Tensor &other) const;
+  bool ShapeEquals(const TensorProto &other) const;
 
-  inline uint32_t num_axes() const { return _shape.size(); }
+  inline int num_axes() const { return _shape.size(); }
   inline Dtype data_at(int index) const {
     if (index < 0) {
       CHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
     CHECK_LE(index + 1, _size) << "index out of range";
-    if (state() == GPU) return gpu_data()[index];
-    return cpu_data()[index];
+    return _current_data[index];
   };
 
   inline Dtype grad_at(int index) const {
@@ -137,14 +168,13 @@ class Tensor {
       index = static_cast<int>(size()) + index;
     }
     CHECK_LT(index, _size) << "index out of range";
-    if (state() == GPU) return gpu_grad()[index];
-    return cpu_grad()[index];
+    return _current_grad[index];
   };
 
-  inline uint32_t offset(const ShapeType &indices) const {
+  inline int offset(const ShapeType &indices) const {
     CHECK_LE(indices.size(), num_axes());
-    uint32_t offset = 0;
-    for (int32_t i = 0; i < num_axes(); ++i) {
+    int offset = 0;
+    for (int i = 0; i < num_axes(); ++i) {
       offset *= shape(i);
       if (indices.size() > i) {
         CHECK_LT(indices[i], shape(i));
@@ -154,19 +184,19 @@ class Tensor {
     return offset;
   }
 
-  inline uint32_t size() const {
+  inline int size() const {
     return _size;
   };
 
-  inline uint32_t count(int32_t start_axis, int32_t end_axis) const {
+  inline int count(int start_axis, int end_axis) const {
     CHECK_LE(start_axis, end_axis);
     CHECK_GE(start_axis, 0);
     CHECK_GE(end_axis, 0);
-    int32_t num_axes_t = static_cast<int32_t>(num_axes());
+    int num_axes_t = static_cast<int>(num_axes());
     CHECK_LE(start_axis, num_axes_t);
     CHECK_LE(end_axis, num_axes_t);
-    uint32_t count = 1ul;
-    for (int32_t i = start_axis; i < end_axis; ++i) {
+    int count = 1;
+    for (int i = start_axis; i < end_axis; ++i) {
       count *= shape(i);
     }
     return count;
@@ -177,80 +207,39 @@ class Tensor {
   void CopyFrom(const Tensor *source, bool copy_grad = false,
                 bool reset = false);
 
-  inline const Dtype *cpu_data() const {
-    check_data();
-    CHECK(_data->has_cpu_data());
-    return (const Dtype *) _data->cpu_data();
-  };
-
-  inline const Dtype *cpu_grad() const {
-    check_grad();
-    CHECK(_grad->has_cpu_data());
-    return (const Dtype *) _grad->cpu_data();
-  };
-
-  inline Dtype *mutable_cpu_data() {
-    check_data();
-    CHECK(_data->has_cpu_data());
-    return static_cast<Dtype * >(_data->mutable_cpu_data());
-  };
-
-  inline Dtype *mutable_cpu_grad() {
-    check_grad();
-    return static_cast<Dtype * >(_grad->mutable_cpu_data());
-  };
-
-  inline const Dtype *gpu_data() const {
-    check_data();
-    return (const Dtype *) _data->gpu_data();
-  };
-
-  inline const Dtype *gpu_grad() const {
-    check_grad();
-    return (const Dtype *) _grad->gpu_data();
-  };
-
-  inline Dtype *mutable_gpu_data() {
-    check_data();
-    return static_cast<Dtype * >(_data->mutable_gpu_data());
-  };
-
-  inline Dtype *mutable_gpu_grad() {
-    check_grad();
-    return static_cast<Dtype * >(_grad->mutable_gpu_data());
-  };
-
   inline bool require_grad() const {
     return _require_grad;
   }
 
 //  const std::pair<Tensor *, std::string> neighbors() const;
-  void FromProto(const TensorProto &proto, bool reshape = true);
-  void FromProto(const TensorProto *proto, bool reset = true);
+  void FromProto(const TensorProto &proto, bool reset = true);
   void ToProto(TensorProto &proto, bool write_grad = false) const;
-  void ToProto(TensorProto *proto, bool write_grad = false) const;
 
   Tensor &operator=(const Tensor &other);
   Tensor &operator=(const Tensor *other);
 
-  Dtype operator[](std::vector<int> indices) const; // get data
+  Dtype &operator[](std::vector<int> indices); // get data
+//  Dtype &operator[](std::vector<uint32_t> indices);
+  Tensor &operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
   Dtype &operator[](int index) {
     if (index < 0) {
       DCHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
     DCHECK_LE(index + 1, _size) << "index out of range";
-    if (state() == GPU) return mutable_gpu_data()[index];
-    return mutable_cpu_data()[index];
+    return _current_data[index];
+  }
+
+  Dtype &operator[](uint32_t index) {
+    DCHECK_LE(index + 1, _size) << "index out of range";
+    return _current_data[index];
   }
   void zero_data();
   void zero_grad();
-  Tensor *operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
+
   void CopyData(const Tensor *other, bool reset = false);
   void CopyGrad(const Tensor *other, bool reset = false);
 // DISABLE_COPY_AND_ASSIGN(Tensor);
- private:
-  void register_op(OpType);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tensor &tensor);

@@ -18,11 +18,11 @@ TEST_F(GPUMathTest, MemTest) {
   LOG(INFO) << data.device();
 
   data.alloc_gpu();
-  void *gpu_m = data.mutable_gpu_data();
-  EXPECT_EQ(data.state(), SynMem::BOTH);
+  void *gpu_m = data.gpu_data();
+  EXPECT_EQ(data.device(), 0);
 
-  void *cpu_m = data.mutable_cpu_data();
-  EXPECT_EQ(data.state(), SynMem::BOTH);
+  void *cpu_m = data.cpu_data();
+  EXPECT_EQ(data.device(), 0);
 
   cpu_memset(size, 1, cpu_m);
   for (int i = 0; i < size; ++i) {
@@ -53,9 +53,9 @@ TEST_F(GPUMathTest, MMTest) {
   A.alloc_gpu();
   B.alloc_gpu();
   C.alloc_gpu();
-  float *g1 = (float *) A.mutable_gpu_data();
-  float *g2 = (float *) B.mutable_gpu_data();
-  float *g3 = (float *) C.mutable_gpu_data();
+  float *g1 = (float *) A.gpu_data();
+  float *g2 = (float *) B.gpu_data();
+  float *g3 = (float *) C.gpu_data();
 
   const float *g1c = (const float *) A.cpu_data();
   const float *g2c = (const float *) B.cpu_data();
@@ -127,13 +127,13 @@ TEST_F(GPUMathTest, SpeedTest) {
   A.alloc_gpu();
   B.alloc_gpu();
   C.alloc_gpu();
-  float *g1 = (float *) A.mutable_gpu_data();
-  float *g2 = (float *) B.mutable_gpu_data();
-  float *g3 = (float *) C.mutable_gpu_data();
+  float *g1 = (float *) A.gpu_data();
+  float *g2 = (float *) B.gpu_data();
+  float *g3 = (float *) C.gpu_data();
 
-  float *c1 = (float *) A.mutable_cpu_data();
-  float *c2 = (float *) B.mutable_cpu_data();
-  float *c3 = (float *) C.mutable_cpu_data();
+  float *c1 = (float *) A.cpu_data();
+  float *c2 = (float *) B.cpu_data();
+  float *c3 = (float *) C.cpu_data();
   long long start = systemtime_ms();
   stensor::gpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
   stensor::gpu_rng_uniform<float>(size2, -1.0, 1.0, g2);
@@ -180,19 +180,19 @@ TEST_F(GPUMathTest, SpeedTest) {
 
 TEST_F(GPUMathTest, ActivateFUNC) {
   Tensor t1(Tensor::ShapeType{5, 6}, 0);
-  Tensor::Dtype *gpu_data = t1.mutable_gpu_data();
+  Tensor::Dtype *gpu_data = t1.data();
   // 1. sigmoid
   stensor::gpu_set(t1.size(), 1.0f, gpu_data);
   stensor::gpu_sigmoid(t1.size(), gpu_data, gpu_data);
   t1.to_cpu();
-  Tensor::Dtype *cpu_data = t1.mutable_cpu_data();
+  Tensor::Dtype *cpu_data = t1.data();
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_LE(t1[i] - 1.0f / (1.0f + exp(-1.0f)), 1e-6);
   }
 
   // 2. sign
   t1.to_gpu();
-  gpu_data = t1.mutable_gpu_data();
+  gpu_data = t1.data();
   stensor::gpu_set(t1.size(), 1.0f, gpu_data);
   stensor::gpu_sign(t1.size(), gpu_data, gpu_data);
   t1.to_cpu();
@@ -201,7 +201,7 @@ TEST_F(GPUMathTest, ActivateFUNC) {
   }
   // 3. tanh
   t1.to_gpu();
-  gpu_data = t1.mutable_gpu_data();
+  gpu_data = t1.data();
   stensor::gpu_set(t1.size(), 1.0f, gpu_data);
   stensor::gpu_tanh(t1.size(), gpu_data, gpu_data);
   t1.to_cpu();
@@ -211,11 +211,11 @@ TEST_F(GPUMathTest, ActivateFUNC) {
 
   // 4. relu
   t1.to_gpu();
-  gpu_data = t1.mutable_gpu_data();
+  gpu_data = t1.data();
   stensor::gpu_set(t1.size(), -1.0f, gpu_data);
   stensor::gpu_relu(t1.size(), gpu_data, gpu_data);
   t1.to_cpu();
-  cpu_data = t1.mutable_cpu_data();
+  cpu_data = t1.data();
   for (int i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(t1[i], 0.0f);
   }
@@ -234,9 +234,9 @@ TEST_F(GPUMathTest, CompTest) {
   B.alloc_gpu();
   C.alloc_gpu();
 
-  float *g1 = (float *) A.mutable_gpu_data();
-  float *g2 = (float *) B.mutable_gpu_data();
-  float *g3 = (float *) C.mutable_gpu_data();
+  float *g1 = (float *) A.gpu_data();
+  float *g2 = (float *) B.gpu_data();
+  float *g3 = (float *) C.gpu_data();
 
   const float *g1c = (const float *) A.cpu_data();
   const float *g2c = (const float *) B.cpu_data();

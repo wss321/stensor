@@ -29,8 +29,9 @@ Tensor *clamp(Tensor *tensor, float minVal, float maxVal, bool inplace = false);
 /* self-op end*/
 
 /* Tensor-scalar start*/
-void set(Tensor &tensor, const float val);
-void set(Tensor *tensor, const float val);
+
+void set(Tensor *tensor, float val);
+inline void set(Tensor &tensor, const float val){ set(&tensor, val);}
 
 Tensor *add(Tensor *tensor, const float val, bool inplace = false);
 Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
@@ -96,8 +97,8 @@ inline Tensor *constants(const Tensor::ShapeType &shape,
                          Tensor::Dtype val,
                          int device_id = -1,
                          bool require_grad = false) {
-  stensor::Tensor *new_t = new Tensor(shape, device_id, require_grad);
-  stensor::set(new_t, val);
+  Tensor *new_t = new Tensor(shape, device_id, require_grad);
+  set(new_t, val);
   return new_t;
 }
 
@@ -111,7 +112,7 @@ inline Tensor *ones(const Tensor::ShapeType &shape, int device_id = -1, bool req
 
 inline Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad = false) {
   Tensor *new_t = new Tensor(other, require_grad);
-  stensor::set(new_t, val);
+  set(new_t, val);
   return new_t;
 }
 

@@ -15,41 +15,48 @@ TEST_F(MathTensorTest, Gennerator) {
   std::cout << stensor::zeros_like(&tensor) << std::endl;
   std::cout << stensor::ones_like(&tensor) << std::endl;
   std::cout << stensor::constants_like(&tensor, 5) << std::endl;
-  std::cout << stensor::ones(std::vector<uint32_t>{5, 8}) << std::endl;
-  std::cout << stensor::zeros(std::vector<uint32_t>{1, 3}) << std::endl;
-  std::cout << stensor::random(std::vector<uint32_t>{1, 3}) << std::endl;
-  std::cout << stensor::random_gaussian(std::vector<uint32_t>{1, 3}) << std::endl;
+  std::cout << stensor::ones(std::vector<int>{5, 8}) << std::endl;
+  std::cout << stensor::zeros(std::vector<int>{1, 3}) << std::endl;
+  std::cout << stensor::random(std::vector<int>{1, 3}) << std::endl;
+  std::cout << stensor::random_gaussian(std::vector<int>{1, 3}) << std::endl;
 }
 
 TEST_F(MathTensorTest, MathUnary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
-  std::cout << "\ta:\n" << a;
-  std::cout << "\tb:\n" << b;
+//  std::cout << "\ta:\n" << a;
+//  std::cout << "\tb:\n" << b;
   auto c = stensor::add(a, b);
-  std::cout << "\ta+b:\n" << c;
-//  for (int i = 0; i < a->size(); ++i) {
-//    EXPECT_EQ(c->data_at(i), a->data_at(i) + b->data_at(i));
-//  }
+//  std::cout << "\ta+b:\n" << c;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(c->data_at(i), a->data_at(i) + b->data_at(i));
+  }
   auto d = stensor::exp(a);
-  std::cout << "\texp:\n" << d;
-//  for (int i = 0; i < a->size(); ++i) {
-//    EXPECT_EQ(d->data_at(i), std::exp(a->data_at(i)));
-//  }
+//  std::cout << "\texp:\n" << d;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(d->data_at(i), std::exp(a->data_at(i)));
+  }
 
   d = stensor::pow(a, 0.0);
-  std::cout << "\tpow:\n" << d;
-//  for (int i = 0; i < a->size(); ++i) {
-//    EXPECT_EQ(d->data_at(i), std::pow(a->data_at(i), 0));
-//  }
+//  std::cout << "\tpow:\n" << d;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(d->data_at(i), std::pow(a->data_at(i), 0));
+  }
   d = stensor::mul(a, b);
-  std::cout << "\tmul:\n" << d;
-//  for (int i = 0; i < a->size(); ++i) {
-//    EXPECT_EQ(d->data_at(i), a->data_at(i) * b->data_at(i));
-//  }
+//  std::cout << "\tmul:\n" << d;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(d->data_at(i), a->data_at(i) * b->data_at(i));
+  }
   d = stensor::div(a, b);
-  std::cout << "\tdiv:\n" << d;
+//  std::cout << "\tdiv:\n" << d;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(d->data_at(i), a->data_at(i) / b->data_at(i));
+  }
+  delete a;
+  delete b;
+  delete c;
+  delete d;
 }
 
 TEST_F(MathTensorTest, MathRandomTest) {
@@ -70,7 +77,14 @@ TEST_F(MathTensorTest, MathBinary) {
   Tensor *b = stensor::random(shape1);
   std::cout << "\ta:\n" << a;
   std::cout << "\tb:\n" << b;
-  auto d = stensor::mul(a, b);
+
+  auto d = stensor::add(a, b);
+  std::cout << "\tadd:\n" << d;
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(d->data_at(i), a->data_at(i) + b->data_at(i));
+  }
+
+  d = stensor::mul(a, b);
   std::cout << "\tmul:\n" << d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) * b->data_at(i));
@@ -80,17 +94,15 @@ TEST_F(MathTensorTest, MathBinary) {
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) / b->data_at(i));
   }
-  d = stensor::add(a, b);
-  std::cout << "\tadd:\n" << d;
-  for (int i = 0; i < a->size(); ++i) {
-    EXPECT_EQ(d->data_at(i), a->data_at(i) + b->data_at(i));
-  }
+
   d = stensor::sub(a, b);
   std::cout << "\tsub:\n" << d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) - b->data_at(i));
   }
-
+  delete a;
+  delete b;
+  delete d;
 }
 
 TEST_F(MathTensorTest, MathCPUBroadCast) {
@@ -122,10 +134,10 @@ TEST_F(MathTensorTest, MathGPUBroadCast) {
   Tensor::ShapeType shape1{3, 4, 5};
   Tensor::ShapeType shape2{4, 1};
   Tensor::ShapeType shape3{3, 4, 5};
-//  Tensor *a = stensor::random(shape1);
-//  Tensor *b = stensor::random(shape2);
-  Tensor *a = stensor::ones(shape1);
-  Tensor *b = stensor::constants(shape2, 2.5);
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::random(shape2);
+//  Tensor *a = stensor::ones(shape1);
+//  Tensor *b = stensor::constants(shape2, 2.5);
   a->to_gpu();
   b->to_gpu();
   EXPECT_EQ(a->device(), 0);
@@ -185,10 +197,10 @@ TEST_F(MathTensorTest, MathGPUBroadCastSpeed) {
 
 TEST_F(MathTensorTest, ActivateFunc) {
   Tensor::ShapeType shape1{3, 4};
-  Tensor *a = stensor::random(shape1, -1.0f, 1.0f);
+  Tensor *a = stensor::random(shape1, -1.0f, 1.0f, -1);
   std::cout << "\ta:\n" << a;
   auto d = stensor::sigmoid(a);
-  std::cout << "\tsigmoid:\n" << d;
+//  std::cout << "\tsigmoid:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -197,7 +209,7 @@ TEST_F(MathTensorTest, ActivateFunc) {
   delete d;
 
   d = stensor::tanh(a);
-  std::cout << "\ttanh:\n" << d;
+//  std::cout << "\ttanh:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -205,7 +217,7 @@ TEST_F(MathTensorTest, ActivateFunc) {
   }
   delete d;
   d = stensor::relu(a);
-  std::cout << "\trelu:\n" << d;
+//  std::cout << "\trelu:\n" << d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -215,8 +227,8 @@ TEST_F(MathTensorTest, ActivateFunc) {
 }
 
 TEST_F(MathTensorTest, MathMatmulTest) {
-  Tensor::ShapeType shape1{2222, 3333};
-  Tensor::ShapeType shape2{3333, 512};
+  Tensor::ShapeType shape1{3, 5000, 4000};
+  Tensor::ShapeType shape2{4000, 5000};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape2);
   long long start = systemtime_ms();
@@ -231,19 +243,6 @@ TEST_F(MathTensorTest, MathMatmulTest) {
   Tensor *g = stensor::matmul(a, b);
   LOG(INFO) << "GPU matmul operation time:" << systemtime_ms() - start << "ms";
 
-  c->to_gpu();
-
-  bool iseq = gpu_equal(c->size(), c->gpu_data(), g->gpu_data());
-//  std::cout<<c;
-//  std::cout<<g;
-
-  c->to_cpu();
-  g->to_cpu();
-  iseq = cpu_equal(c->size(), c->cpu_data(), g->cpu_data());
-
-//  std::cout<<c;
-//  std::cout<<g;
-
   delete a;
   delete b;
   delete g;
@@ -256,23 +255,39 @@ TEST_F(MathTensorTest, MinMax) {
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
   Tensor *c = stensor::minimum(a, b);
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(std::min((*a)[i], (*b)[i]), (*c)[i]);
+  }
 
   a->to_gpu();
   b->to_gpu();
 
   Tensor *d = stensor::minimum(a, b);
   d->to_cpu();
-  bool iseq = cpu_equal(c->size(), c->cpu_data(), d->cpu_data());
+  bool iseq = cpu_equal(c->size(), c->data(), d->data());
   EXPECT_EQ(iseq, true);
-//  std::cout<<a;
-//  std::cout<<b;
-//  std::cout<<c;
-//  std::cout<<d;
+
+  a->to_cpu();
+  b->to_cpu();
+  Tensor *e = stensor::maximum(a, b);
+  for (int i = 0; i < a->size(); ++i) {
+    EXPECT_EQ(std::max((*a)[i], (*b)[i]), (*e)[i]);
+  }
+
+  a->to_gpu();
+  b->to_gpu();
+
+  Tensor *f = stensor::maximum(a, b);
+  f->to_cpu();
+  iseq = cpu_equal(e->size(), e->data(), f->data());
+  EXPECT_EQ(iseq, true);
 
   delete a;
   delete b;
   delete c;
   delete d;
+  delete e;
+  delete f;
 
 }
 

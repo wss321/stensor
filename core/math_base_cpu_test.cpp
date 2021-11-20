@@ -13,15 +13,15 @@ class CPUMathTest : public ::testing::Test {};
 
 TEST_F(CPUMathTest, SelfOp) {
   Tensor t1(Tensor::ShapeType{3, 4});
-  Tensor::Dtype *d1 = t1.mutable_cpu_data();
+  Tensor::Dtype *d1 = t1.data();
 
   Tensor t2(Tensor::ShapeType{3, 4});
-  Tensor::Dtype *d2 = t2.mutable_cpu_data();
+  Tensor::Dtype *d2 = t2.data();
 
   Tensor t3(Tensor::ShapeType{3, 3});
-  Tensor::Dtype *d3 = t3.mutable_cpu_data();
+  Tensor::Dtype *d3 = t3.data();
   Tensor t4(Tensor::ShapeType{3, 4});
-  Tensor::Dtype *d4 = t4.mutable_cpu_data();
+  Tensor::Dtype *d4 = t4.data();
   // 1. set
   stensor::cpu_set(t1.size(), 1.0f, d1);
   stensor::cpu_set(t2.size(), 3.0f, d2);
@@ -64,7 +64,7 @@ TEST_F(CPUMathTest, SelfOp) {
 
 TEST_F(CPUMathTest, ActivateFUNC) {
   Tensor t1(Tensor::ShapeType{3, 4});
-  Tensor::Dtype *d1 = t1.mutable_cpu_data();
+  Tensor::Dtype *d1 = t1.data();
   // 1. sigmoid
   stensor::cpu_set(t1.size(), 1.0f, d1);
   stensor::cpu_sigmoid(t1.size(), d1, d1);
@@ -104,9 +104,9 @@ TEST_F(CPUMathTest, CompTest) {
   SynMem B(size2 * sizeof(float));
   SynMem C(size3 * sizeof(float));
 
-  float *g1 = (float *) A.mutable_cpu_data();
-  float *g2 = (float *) B.mutable_cpu_data();
-  float *g3 = (float *) C.mutable_cpu_data();
+  float *g1 = (float *) A.cpu_data();
+  float *g2 = (float *) B.cpu_data();
+  float *g3 = (float *) C.cpu_data();
 
   stensor::cpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
   stensor::cpu_rng_uniform<float>(size2, 0.0, 1.0, g2);

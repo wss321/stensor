@@ -14,7 +14,7 @@ TEST_F(TensorTest, Construct) {
 
 TEST_F(TensorTest, Shape) {
   Tensor tensor(Tensor::ShapeType{3, 4});
-  Tensor::Dtype *cpu_d = tensor.mutable_cpu_data();
+  Tensor::Dtype *cpu_d = tensor.data();
   tensor.Reshape(Tensor::ShapeType{4, 3});
   std::cout << tensor.shape_string() << std::endl;
   tensor.flatten();
@@ -54,8 +54,6 @@ TEST_F(TensorTest, SaveAndLoad) {
   for (int i = 0; i < a.size(); ++i) {
     EXPECT_EQ(a[i], b->data_at(i));
   }
-//  std::cout << "a:\n" << b;
-//  std::cout << "b:\n" << b;
   delete b;
 }
 
@@ -63,13 +61,14 @@ TEST_F(TensorTest, ZeroDataGrad) {
   stensor::Config::set_random_seed(1024);
   Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
   std::cout<<a;
+  Tensor& b(*a);
   a->zero_data();
   for (int i = 0; i < a->size(); ++i) {
-    EXPECT_EQ(a->data_at(i), 0);
+    EXPECT_EQ(b[i], 0);
   }
   a->zero_grad();
   for (int i = 0; i < a->size(); ++i) {
-    EXPECT_EQ(a->grad_at(i), 0);
+    EXPECT_EQ(b[i], 0);
   }
   delete a;
 }
@@ -88,6 +87,19 @@ TEST_F(TensorTest, FreeTest) {
   delete b;
   delete c;
 }
+TEST_F(TensorTest, ElementAsinment) {
+  stensor::Config::set_random_seed(1024);
+  Tensor* a = stensor::random({3, 4}, 0, 1, 0, true);
+  std::cout<<a;
+  a->zero_data();
+  (*a)[0] = 1;
+  std::cout<<a;
+  a->to_cpu();
+  (*a)[2] = 1;
+  std::cout<<a;
+  delete a;
+}
 
 }
+
 
