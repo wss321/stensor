@@ -48,7 +48,6 @@ class Tensor {
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false);
   Tensor(const Tensor &other, bool require_grad = false);
   Tensor(const Tensor *other, bool require_grad = false);
-  Tensor(const std::vector<Dtype> &other, const ShapeType &shape, bool require_grad = false, const Mode mode = CPU);
   inline Mode state() const {
     check_data();
     if (_data->state() == SynMem::AT_GPU || _data->state() == SynMem::BOTH) return GPU;
@@ -237,10 +236,10 @@ class Tensor {
   Dtype operator[](std::vector<int> indices) const; // get data
   Dtype &operator[](int index) {
     if (index < 0) {
-      CHECK_GE(size() + index, 0);
+      DCHECK_GE(size() + index, 0);
       index = static_cast<int>(size()) + index;
     }
-    CHECK_LE(index + 1, _size) << "index out of range";
+    DCHECK_LE(index + 1, _size) << "index out of range";
     if (state() == GPU) return mutable_gpu_data()[index];
     return mutable_cpu_data()[index];
   }

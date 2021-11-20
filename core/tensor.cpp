@@ -11,7 +11,7 @@ void Tensor::to_cpu() {
     CHECK(_data->has_gpu_data()) << "GPU data is none";
     _data->copy_gpu_to_cpu();
     _data->free_gpu();
-    if (require_grad()){
+    if (require_grad()) {
       if (!_grad->has_cpu_data())
         _grad->alloc_cpu();
       CHECK(_grad->has_gpu_data()) << "GPU grad is none";
@@ -29,7 +29,7 @@ void Tensor::to_gpu() {
     CHECK(_data->has_cpu_data()) << "CPU data is none";
     _data->copy_cpu_to_gpu();
     _data->free_cpu();
-    if (require_grad()){
+    if (require_grad()) {
       if (!_grad->has_gpu_data())
         _grad->alloc_gpu();
       CHECK(_grad->has_cpu_data()) << "CPU grad is none";
@@ -39,11 +39,9 @@ void Tensor::to_gpu() {
   }
 }
 
-
 void Tensor::CopyFrom(const Tensor &source, bool copy_grad, bool reset) {
   CopyFrom(&source, copy_grad, reset);
 }
-
 
 void Tensor::CopyData(const Tensor *source, bool reset) {
   if (source->size() != _size) {
@@ -57,13 +55,13 @@ void Tensor::CopyData(const Tensor *source, bool reset) {
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-        cpu_copy(_size, source->cpu_data(), static_cast<Dtype *>(_data->mutable_cpu_data()));
+      cpu_copy(_size, source->cpu_data(), static_cast<Dtype *>(_data->mutable_cpu_data()));
       break;
     case stensor::GPU:
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-        gpu_copy(_size, source->gpu_data(), static_cast<Dtype *>(_data->mutable_gpu_data()));
+      gpu_copy(_size, source->gpu_data(), static_cast<Dtype *>(_data->mutable_gpu_data()));
       break;
     default:LOG(FATAL) << "Unknown device mode.";
   }
@@ -181,7 +179,7 @@ Tensor::Tensor(const ShapeType &shape, int device_id, bool require_grad) :
   Reset(shape, device_id);
 }
 
-bool Tensor::ShapeEquals(const Tensor *other)const {
+bool Tensor::ShapeEquals(const Tensor *other) const {
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other->shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -191,7 +189,7 @@ bool Tensor::ShapeEquals(const Tensor *other)const {
   return true;
 }
 
-bool Tensor::ShapeEquals(const TensorProto *other) const{
+bool Tensor::ShapeEquals(const TensorProto *other) const {
   ShapeType shapeOther;
   stensor::RepeatTypeToVector(other->shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
@@ -210,13 +208,13 @@ void Tensor::ToProto(TensorProto *proto, bool write_grad) const {
   proto->clear_data();
   proto->clear_grad();
   // 2. data
-  const float *data_vec = cpu_data();
+  const float *data_vec = state() == CPU ? cpu_data() : gpu_data();
   for (int i = 0; i < _size; ++i) {
     proto->add_data(data_vec[i]);
   }
   // 3. grad
   if (write_grad) {
-    const float *grad_vec = cpu_grad();
+    const float *grad_vec = state() == CPU ? cpu_grad() : gpu_grad();
     for (int i = 0; i < _size; ++i) {
       proto->add_grad(grad_vec[i]);
     }
@@ -356,9 +354,9 @@ std::string Tensor::grad_string() const {
   CHECK(has_grad()) << "Tensor does not have gradient";
   std::ostringstream out;
   const Tensor::ShapeType shape = this->shape();
-  const Tensor::Dtype *data = state() == CPU ? this->cpu_grad() : this->gpu_grad();
+  const Tensor::Dtype *data = state() == CPU ? cpu_grad() : gpu_grad();
   out << memoryTostring<Tensor::Dtype>(data, shape);
-  out << "{shape:" << this->shape_string() << ", dtype:"
+  out << "{shape:" << shape_string() << ", dtype:"
       << abi::__cxa_demangle(typeid(Dtype).name(), nullptr, nullptr, nullptr)
       << "}" << std::endl;
   return out.str();
@@ -388,23 +386,6 @@ Tensor::Tensor(const Tensor *other, bool require_grad) :
   CopyFrom(other, false, true);
 }
 
-//TODO:GPU Mode
-Tensor::Tensor(const std::vector<Tensor::Dtype> &other,
-               const ShapeType &shape, bool require_grad,
-               const Mode mode) :
-    _data(), _grad(),
-    _size(0ul), _capacity(0ul), _name(),
-    _require_grad(require_grad) {
-  CHECK(!other.empty()) << "Attempting assign an empty vector to tensor";
-  uint32_t num = stensor::count(shape);
-  CHECK_EQ(other.size(), num) << "Shape mismatch";
-  Reset(shape);
-  Tensor::Dtype *data = mutable_cpu_data();
-  for (int i = 0; i < num; ++i) {
-    data[i] = other[i];
-  }
-}
-//TODO:operater overload
 Tensor &Tensor::operator=(const Tensor &other) {
   CopyFrom(other, false, true);
   return (*this);
@@ -428,7 +409,8 @@ Tensor::Dtype Tensor::operator[](std::vector<int> indices) const {
   for (int i = 0; i < indices.size(); ++i) {
     out *= static_cast<int>(canonicalIndex[i] + 1);
   }
-  return cpu_data()[out - 1];
+
+  return state() == CPU ? cpu_data()[out - 1] : gpu_data()[out - 1];
 }
 
 /* Tensor Generator end*/
@@ -458,7 +440,7 @@ void Tensor::zero_data() {
       break;
   }
 }
-void Tensor::zero_grad(){
+void Tensor::zero_grad() {
   switch (state()) {
     case CPU:stensor::cpu_set<Tensor::Dtype>(_size, 0, mutable_cpu_grad());
       break;
