@@ -33,7 +33,7 @@ class Tensor {
   Dtype *_current_grad;
 
  private:
-  void reset(const ShapeType &shape, int device_id = -1);//device_id = -1 represent cpu
+  void Reset(const ShapeType &shape, int device_id = -1);//device_id = -1 represent cpu
   void update_state(); // update current data, grad, device
 
  public:
@@ -49,7 +49,7 @@ class Tensor {
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
       _capacity(0), _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
-    reset(shape, device_id);
+    Reset(shape, device_id);
   }
   Tensor(const Tensor &other, bool require_grad = false) :
       _data(), _grad(), _device(other.device()),
@@ -237,8 +237,8 @@ class Tensor {
   void zero_data();
   void zero_grad();
 
-  void CopyData(const Tensor *other, bool reset = false);
-  void CopyGrad(const Tensor *other, bool reset = false);
+  void copy_data_from(const Tensor *other, bool reset = false);
+  void copy_grad_from(const Tensor *other, bool reset = false);
 // DISABLE_COPY_AND_ASSIGN(Tensor);
 };
 
