@@ -161,7 +161,6 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
   if (_capacity == _size) return;
   _capacity = _size;
   _data.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
-
   if (_require_grad) {
     _grad.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
   }

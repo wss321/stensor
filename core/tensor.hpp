@@ -17,6 +17,9 @@ class Tensor {
   typedef float Dtype;
   typedef TensorProto_Operation OpType;
   typedef shared_ptr<SynMem> SharedPtr;
+  typedef struct { int start;int end; } PairType;
+  typedef std::vector<PairType> PairIndexType;
+  typedef std::vector<std::string> NbType;
  private:
   SharedPtr _data;
   SharedPtr _grad;
@@ -26,8 +29,8 @@ class Tensor {
   std::string _name;
   int _capacity;
   int _device;
-  std::vector<std::pair<int, int>> axis_start_ends;
-  std::vector<std::string> _neighbors;
+  PairIndexType _axis_start_ends;
+  NbType _neighbors;
   std::vector<OpType> _operations;
   Dtype *_current_data;
   Dtype *_current_grad;
@@ -40,28 +43,28 @@ class Tensor {
   Tensor() :
       _data(), _grad(), _size(0),
       _capacity(0), _name(), _device(-1),
-      _require_grad(false),
+      _require_grad(false),_axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {};
   ~Tensor() {
     _data.reset();
     _grad.reset();
   }
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
-      _capacity(0), _require_grad(require_grad),
+      _capacity(0), _require_grad(require_grad),_axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {
     Reset(shape, device_id);
   }
   Tensor(const Tensor &other, bool require_grad = false) :
       _data(), _grad(), _device(other.device()),
       _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),
+      _require_grad(require_grad),_axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {
     copy_from(other, false, true);
   }
   Tensor(const Tensor *other, bool require_grad = false) :
       _data(), _grad(), _device(other->device()),
       _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),
+      _require_grad(require_grad),_axis_start_ends({}),
       _current_data(nullptr), _current_grad(nullptr) {
     copy_from(other, false, true);
   }
@@ -220,7 +223,7 @@ class Tensor {
 
   Dtype &operator[](std::vector<int> indices); // get data
 //  Dtype &operator[](std::vector<uint32_t> indices);
-  Tensor &operator[](std::vector<std::pair<int, int>> start_end_indices) const; // slice
+  Tensor &operator[](PairIndexType start_end_indices); // slice
   Dtype &operator[](int index) {
     if (index < 0) {
       DCHECK_GE(size() + index, 0);

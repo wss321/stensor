@@ -160,7 +160,7 @@ Tensor *name(const Tensor *a, const Tensor *b) {\
   float *out_data = nullptr;\
   Tensor *out_tensor = nullptr;\
   bool broadcast = false;\
-  if (a->ShapeEquals(b))\
+  if (a->shape_equal(b))\
     shape_out = shape_a;\
   else {\
     broadcast = true;\
