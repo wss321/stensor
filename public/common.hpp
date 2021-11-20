@@ -92,7 +92,7 @@ class Config {
  DISABLE_COPY_AND_ASSIGN(Config);
 };
 
-inline rng_t *stensor_rng() {
+inline rng_t *global_rng() {
   return static_cast<stensor::rng_t *>(Config::rng_stream().generator());
 }
 

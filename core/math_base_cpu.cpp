@@ -349,7 +349,7 @@ void cpu_rng_uniform(int n,
   boost::uniform_real<Dtype> random_distribution(a, std::nextafter<Dtype>(
       b, std::numeric_limits<Dtype>::max()));
   boost::variate_generator<stensor::rng_t *, boost::uniform_real<Dtype> >
-      variate_generator(stensor_rng(), random_distribution);
+      variate_generator(global_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
     r[i] = variate_generator();
   }
@@ -383,7 +383,7 @@ void cpu_rng_gaussian(int n,
   CHECK_GT(sigma, 0);
   boost::normal_distribution<Dtype> random_distribution(mu, sigma);
   boost::variate_generator<stensor::rng_t *, boost::normal_distribution<Dtype> >
-      variate_generator(stensor_rng(), random_distribution);
+      variate_generator(global_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
     r[i] = variate_generator();
   }
@@ -416,7 +416,7 @@ void cpu_rng_bernoulli(int n, Dtype p, int *r) {
   CHECK_LE(p, 1);
   boost::bernoulli_distribution<Dtype> random_distribution(p);
   boost::variate_generator<stensor::rng_t *, boost::bernoulli_distribution<Dtype> >
-      variate_generator(stensor_rng(), random_distribution);
+      variate_generator(global_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
     r[i] = variate_generator();
   }

@@ -67,7 +67,42 @@ Tensor *clamp(Tensor *tensor, float minVal, float maxVal, bool inplace) {
   }
   return out_tensor;
 }
+Tensor *repeat(Tensor *tensor, int axis, int num) {
+  axis = tensor->canonical_axis_index(axis);
+  CHECK_EQ(tensor->shape(axis), 1) << "The shape of the repeat axis must be 1";
+  CHECK_GT(num, 0);
+  std::vector<int> new_shape(tensor->shape());
+  new_shape[axis] = num;
+  int num_axis = tensor->num_axes();
+  int count_row = tensor->count(0, axis);
+  int count_col = tensor->count(axis, num_axis);
 
+  Tensor *new_tensor = new Tensor(new_shape, tensor->device(), tensor->require_grad());
+  switch (tensor->state()) {
+    case CPU:
+      for (int i = 0; i < count_row; ++i) {
+        float *head_in = &tensor->data()[i * count_col];
+        float *head_out = &new_tensor->data()[i * count_col * num];
+        for (int j = 0; j < num; ++j) {
+          cpu_copy(count_col, head_in, head_out);
+          head_out += count_col;
+        }
+      }
+      break;
+    case GPU:
+      for (int i = 0; i < count_row; ++i) {
+        float *head_in = &tensor->data()[i * count_col];
+        float *head_out = &new_tensor->data()[i * count_col * num];
+        for (int j = 0; j < num; ++j) {
+          gpu_copy(count_col, head_in, head_out);
+          head_out += count_col;
+        }
+      }
+      break;
+  }
+
+  return new_tensor;
+}
 /* self-op end*/
 
 void set(Tensor *tensor, float val) {
@@ -283,7 +318,7 @@ Tensor *maximum(const Tensor *a, const Tensor *b) {
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
-  float * out_data = out_tensor->data();
+  float *out_data = out_tensor->data();
   switch (a->state()) {
     case stensor::CPU:
       stensor::cpu_maximum(a->size(), a->const_data(), b->const_data(),
@@ -301,7 +336,7 @@ Tensor *minimum(const Tensor *a, const Tensor *b) {
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
-  float * out_data = out_tensor->data();
+  float *out_data = out_tensor->data();
   switch (a->state()) {
     case stensor::CPU:
       stensor::cpu_minimum(a->size(), a->const_data(), b->const_data(),

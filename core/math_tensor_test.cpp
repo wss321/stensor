@@ -291,4 +291,23 @@ TEST_F(MathTensorTest, MinMax) {
 
 }
 
+TEST_F(MathTensorTest, Repeat) {
+  Tensor::ShapeType shape1{2, 1, 2};
+  Tensor *a = stensor::random(shape1);
+  Tensor *b = stensor::repeat(a, 1, 4);
+  std::cout<<a;
+  std::cout<<b;
+
+  delete a;
+  delete b;
+
+  Tensor *c = stensor::random(shape1, 0);
+  Tensor *d = stensor::repeat(c, 1, 4);
+  std::cout<<c;
+  std::cout<<d;
+
+  delete c;
+  delete d;
+}
+
 }

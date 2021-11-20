@@ -8,6 +8,7 @@
 #include "tensor.hpp"
 #include "math_base_cpu.hpp"
 #include "math_base_cuda.hpp"
+#include "utils.hpp"
 
 namespace stensor {
 
@@ -25,13 +26,13 @@ Tensor *abs(Tensor *tensor, bool inplace = false);
 Tensor *sqrt(Tensor *tensor, bool inplace = false);
 Tensor *square(Tensor *tensor, bool inplace = false);
 Tensor *clamp(Tensor *tensor, float minVal, float maxVal, bool inplace = false);
-
+Tensor *repeat(Tensor *tensor, int axis, int num);
 /* self-op end*/
 
 /* Tensor-scalar start*/
 
 void set(Tensor *tensor, float val);
-inline void set(Tensor &tensor, const float val){ set(&tensor, val);}
+inline void set(Tensor &tensor, const float val) { set(&tensor, val); }
 
 Tensor *add(Tensor *tensor, const float val, bool inplace = false);
 Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
