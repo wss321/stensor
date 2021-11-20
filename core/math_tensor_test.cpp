@@ -7,6 +7,7 @@
 #include "tensor.hpp"
 #include <vector>
 #include "math_tesnsor.hpp"
+#include "transpose.hpp"
 
 namespace stensor {
 class MathTensorTest : public ::testing::Test {};
@@ -295,19 +296,45 @@ TEST_F(MathTensorTest, Repeat) {
   Tensor::ShapeType shape1{2, 1, 2};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::repeat(a, 1, 4);
-  std::cout<<a;
-  std::cout<<b;
+  std::cout << a;
+  std::cout << b;
 
   delete a;
   delete b;
 
   Tensor *c = stensor::random(shape1, 0);
   Tensor *d = stensor::repeat(c, 1, 4);
-  std::cout<<c;
-  std::cout<<d;
+  std::cout << c;
+  std::cout << d;
 
   delete c;
   delete d;
+}
+
+TEST_F(MathTensorTest, TransposeCPU) {
+  Tensor::ShapeType shape1{200, 300, 400};
+  Tensor *a = stensor::random(shape1, -1);
+  Tensor *b = stensor::transpose(a, {1, 0, 2});
+  Tensor *c = stensor::transpose(b, {1, 0, 2});
+
+  for (int i = 0; i < c->size(); ++i) {
+    EXPECT_EQ(c->data()[i], a->data()[i]);
+  }
+  delete a;
+  delete b;
+  delete c;
+}
+TEST_F(MathTensorTest, TransposeGPU) {
+  Tensor::ShapeType shape1{200, 300, 400};
+  Tensor *d = stensor::random(shape1, 0);
+  Tensor *e = stensor::transpose(d, {1, 0, 2});
+  Tensor *f = stensor::transpose(e, {1, 0, 2});
+  for (int i = 0; i < d->size(); ++i) {
+    EXPECT_EQ(f->data()[i], d->data()[i]);
+  }
+  delete d;
+  delete e;
+  delete f;
 }
 
 }

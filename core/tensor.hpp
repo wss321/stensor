@@ -48,6 +48,7 @@ class Tensor {
   ~Tensor() {
     _data.reset();
     _grad.reset();
+    update_state();
   }
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
       _capacity(0), _require_grad(require_grad),_axis_start_ends({}),

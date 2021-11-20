@@ -6,24 +6,29 @@
 namespace stensor {
 
 void Tensor::update_state() {
-  if (_data){
+  if (_data) {
     if (_data->gpu_data()) {
       _current_data = static_cast<Dtype *>(_data->gpu_data());
       _device = _data->device();
-    }else if (_data->cpu_data()) {
+    } else if (_data->cpu_data()) {
       _current_data = static_cast<Dtype *>(_data->cpu_data());
       _device = -1;
     }
+    _size = _data->size() / sizeof(float);
+  } else {
+    _current_data = nullptr;
+    _capacity = 0;
   }
-  if (_grad){
+  if (_grad) {
     if (_grad->gpu_data()) {
       _current_grad = static_cast<Dtype *>(_grad->gpu_data());
       _device = _grad->device();
-    }else if (_grad->cpu_data()) {
+    } else if (_grad->cpu_data()) {
       _current_grad = static_cast<Dtype *>(_grad->cpu_data());
       _device = -1;
     }
-  }
+    if (size() == 0) _size = _grad->size() / sizeof(float);
+  } else _current_grad = nullptr;
 }
 
 void Tensor::to_cpu() {
@@ -128,7 +133,7 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
       if (copy_grad)
-        cpu_copy(_size, source->const_grad(),grad());
+        cpu_copy(_size, source->const_grad(), grad());
       cpu_copy(_size, source->const_data(), data());
 
       break;
@@ -361,7 +366,6 @@ std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
   return stensor::operator<<(out, &tensor);
 }
 
-
 Tensor &Tensor::operator=(const Tensor &other) {
   copy_from(other, false, true);
   return (*this);
@@ -371,7 +375,7 @@ Tensor &Tensor::operator=(const Tensor *other) {
   return (*this);
 }
 
-Tensor::Dtype& Tensor::operator[](std::vector<int> indices) {
+Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
   CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
   Tensor::ShapeType canonicalIndex(num_axes(), 0);
   for (int i = 0; i < num_axes(); ++i) {
