@@ -15,64 +15,44 @@ namespace stensor {
 /* math of Tensor */
 
 /* self-op start*/
-Tensor *sigmoid(Tensor *tensor, bool inplace = false);
-Tensor *tanh(Tensor *tensor, bool inplace = false);
-Tensor *relu(Tensor *tensor, bool inplace = false);
-Tensor *elu(Tensor *tensor, bool inplace = false);
-Tensor *gelu(Tensor *tensor, bool inplace = false);
-Tensor *leakyrelu(Tensor *tensor, bool inplace = false);
-Tensor *sign(Tensor *tensor, bool inplace = false);
-Tensor *abs(Tensor *tensor, bool inplace = false);
-Tensor *sqrt(Tensor *tensor, bool inplace = false);
-Tensor *square(Tensor *tensor, bool inplace = false);
-Tensor *clamp(Tensor *tensor, float minVal, float maxVal, bool inplace = false);
-Tensor *repeat(Tensor *tensor, int axis, int num);
+Tensor *sigmoid(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *tanh(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *relu(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *elu(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *gelu(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *leakyrelu(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *sign(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *abs(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *sqrt(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *square(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
+Tensor *clamp(const Tensor *tensor, float minVal, float maxVal, Tensor *out = nullptr, bool grad_op = false);
+Tensor *repeat(const Tensor *tensor, int axis, int num, Tensor *out = nullptr, bool grad_op = false);
 /* self-op end*/
 
 /* Tensor-scalar start*/
 
-void set(Tensor *tensor, float val);
-inline void set(Tensor &tensor, const float val) { set(&tensor, val); }
+void set(Tensor *tensor, float val, bool grad_op = false);
 
-Tensor *add(Tensor *tensor, const float val, bool inplace = false);
-Tensor *scale(Tensor *tensor, const float val, bool inplace = false);
-Tensor *pow(Tensor *tensor, const float val, bool inplace = false);
-Tensor *exp(Tensor *tensor, bool inplace = false);
-
-inline Tensor *add(Tensor &tensor, const float val, bool inplace = false) {
-  return add(&tensor, val, inplace);
-}
-
-inline Tensor *scale(Tensor &tensor, const float val, bool inplace = false) {
-  return scale(&tensor, val, inplace);
-}
-
-inline Tensor *pow(Tensor &tensor, const float val, bool inplace = false) {
-  return pow(&tensor, val, inplace);
-}
-inline Tensor *exp(Tensor &tensor, bool inplace = false) {
-  return exp(&tensor, inplace);
-}
+Tensor *add(const Tensor *tensor, float val, Tensor *out = nullptr, bool grad_op = false);
+Tensor *scale(const Tensor *tensor, float val, Tensor *out = nullptr, bool grad_op = false);
+Tensor *pow(const Tensor *tensor, float val, Tensor *out = nullptr, bool grad_op = false);
+Tensor *exp(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false);
 
 /* Tensor-scalar end*/
 
 /* Tensor-Tensor start*/
-Tensor *add(const Tensor *a, const Tensor *b);
-Tensor *sub(const Tensor *a, const Tensor *b);
-Tensor *mul(const Tensor *a, const Tensor *b);
-Tensor *div(const Tensor *a, const Tensor *b);
-Tensor *pow(const Tensor *a, const Tensor *b);
-
-inline Tensor *add(const Tensor &a, const Tensor &b) { return add(&a, &b); }
-inline Tensor *sub(const Tensor &a, const Tensor &b) { return sub(&a, &b); }
-inline Tensor *mul(const Tensor &a, const Tensor &b) { return mul(&a, &b); }
-inline Tensor *div(const Tensor &a, const Tensor &b) { return div(&a, &b); }
-inline Tensor *pow(const Tensor &a, const Tensor &b) { return pow(&a, &b); }
+Tensor *add(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
+Tensor *sub(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
+Tensor *mul(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
+Tensor *div(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
+Tensor *pow(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
 
 // matmul at last two axis
-Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1, bool transA = false, bool transB = false);
-Tensor *maximum(const Tensor *a, const Tensor *b);
-Tensor *minimum(const Tensor *a, const Tensor *b);
+Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1,
+               bool transA = false, bool transB = false, float beta = 0.0,
+               Tensor *out = nullptr, bool grad_op = false);
+Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
+Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
 
 /* Tensor-Tensor start*/
 
@@ -126,6 +106,10 @@ inline Tensor *ones_like(Tensor *other, bool require_grad = false) {
 }
 
 /* Tensor Generator end*/
+
+/*reduction*/
+Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr);
+
 }
 
 #endif //STENSOR_CORE_MATH_TESNSOR_HPP_

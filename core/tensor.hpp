@@ -10,6 +10,22 @@ using namespace boost;
 namespace stensor {
 
 const int kMaxTensorAxes = MAX_AXES;
+class Tensor;
+class Children {
+  typedef std::vector<shared_ptr<Tensor>> OpTensorsType;
+  typedef TensorProto_Operation OpType;
+ public:
+  inline void add(OpTensorsType tensors, OpType op) { _pairs.emplace_back(tensors, op); }
+  inline std::pair<OpTensorsType, OpType> get_child(int index) {
+    if (index > 0)return _pairs[index];
+    else
+      return _pairs[num_child() + index];
+  }
+  inline int num_child() { return _pairs.size(); }
+
+ private:
+  std::vector<std::pair<OpTensorsType, OpType>> _pairs;
+};
 
 class Tensor {
  public:
@@ -19,7 +35,7 @@ class Tensor {
   typedef shared_ptr<SynMem> SharedPtr;
   typedef struct { int start;int end; } PairType;
   typedef std::vector<PairType> PairIndexType;
-  typedef std::vector<std::string> NbType;
+  typedef std::vector<std::string> CdNameType;
  private:
   SharedPtr _data;
   SharedPtr _grad;
@@ -29,8 +45,8 @@ class Tensor {
   std::string _name;
   int _capacity;
   int _device;
-  PairIndexType _axis_start_ends;
-  NbType _neighbors;
+//  PairIndexType _axis_start_ends;
+  CdNameType _children_name;
   std::vector<OpType> _operations;
   Dtype *_current_data;
   Dtype *_current_grad;
@@ -40,10 +56,11 @@ class Tensor {
   void update_state(); // update current data, grad, device
 
  public:
+
   Tensor() :
       _data(), _grad(), _size(0),
       _capacity(0), _name(), _device(-1),
-      _require_grad(false),_axis_start_ends({}),
+      _require_grad(false),
       _current_data(nullptr), _current_grad(nullptr) {};
   ~Tensor() {
     _data.reset();
@@ -51,23 +68,23 @@ class Tensor {
     update_state();
   }
   explicit Tensor(const ShapeType &shape, int device_id = -1, bool require_grad = false) :
-      _capacity(0), _require_grad(require_grad),_axis_start_ends({}),
+      _capacity(0), _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
     Reset(shape, device_id);
   }
   Tensor(const Tensor &other, bool require_grad = false) :
       _data(), _grad(), _device(other.device()),
       _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),_axis_start_ends({}),
+      _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
-    copy_from(other, false, true);
+    copy_from(other, true, true);
   }
   Tensor(const Tensor *other, bool require_grad = false) :
       _data(), _grad(), _device(other->device()),
       _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),_axis_start_ends({}),
+      _require_grad(require_grad),
       _current_data(nullptr), _current_grad(nullptr) {
-    copy_from(other, false, true);
+    copy_from(other, true, true);
   }
 
   inline Dtype *data() {
@@ -153,8 +170,8 @@ class Tensor {
   void to_cpu();
   void to_gpu();
 
-  bool shape_equal(const Tensor &other) const;
-  bool shape_equal(const TensorProto &other) const;
+  inline bool shape_equal(const Tensor *other) const{ return other->shape()==_shape;}
+  bool shape_equal(const TensorProto *other) const;
 
   inline int num_axes() const { return _shape.size(); }
   inline Dtype data_at(int index) const {

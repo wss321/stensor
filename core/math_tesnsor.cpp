@@ -7,39 +7,59 @@
 namespace stensor {
 /* math of Tensor */
 /* self-op start*/
+#define CHECK_SHAPE(expect, got)\
+CHECK(expect == got)\
+<< "Expected " << expect\
+<< ", but got " << got\
 
-Tensor *sigmoid(Tensor *tensor, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
+Tensor *sigmoid(const Tensor *in, Tensor *out, bool grad_op) {
+  if (out == nullptr)
+    out = new Tensor(in, in->require_grad());
+  else {
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(in->shape(), out->shape());
   }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_sigmoid(tensor->size(), in_data, out_data);
+  const float *in_data;
+  float *out_data;
+  if (!grad_op) {
+    in_data = in->const_data();
+    out_data = out->data();
+  } else {
+    in_data = in->const_grad();
+    out_data = out->grad();
+  }
+  switch (in->state()) {
+    case stensor::CPU:stensor::cpu_sigmoid(in->size(), in_data, out_data);
       break;
-    case stensor::GPU:stensor::gpu_sigmoid(tensor->size(), in_data, out_data);
+    case stensor::GPU:stensor::gpu_sigmoid(in->size(), in_data, out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
 #define IMPLEMENT_TENSOR_UNARY_FUNC(name) \
-Tensor *name(Tensor *tensor, bool inplace) {\
-  float *in_data = tensor->data();\
-  float *out_data = tensor->data();\
-  Tensor *out_tensor = nullptr;\
-  if (!inplace) {\
-    out_tensor = new Tensor(tensor, tensor->require_grad());\
-    out_data = out_tensor->data();\
+Tensor *name(const Tensor *in, Tensor *out, bool grad_op) {\
+  if (out == nullptr)\
+    out = new Tensor(in, in->require_grad());\
+  else{\
+    CHECK_EQ(in->device(), out->device())<< "tensors must be at same device";\
+    CHECK_SHAPE(in->shape(), out->shape());\
   }\
-  switch (tensor->state()) {\
-    case stensor::CPU:stensor::cpu_##name(tensor->size(), in_data, out_data);\
+  const float *in_data;\
+  float *out_data;\
+  if (!grad_op) {\
+    in_data = in->const_data();\
+    out_data = out->data();\
+  } else {\
+    in_data = in->const_grad();\
+    out_data = out->grad();\
+  }\
+  switch (in->state()) {\
+    case stensor::CPU:stensor::cpu_##name(in->size(), in_data, out_data);\
       break;\
-    case stensor::GPU:stensor::gpu_##name(tensor->size(), in_data, out_data);\
+    case stensor::GPU:stensor::gpu_##name(in->size(), in_data, out_data);\
       break;\
   }\
-  return out_tensor;\
+  return out;\
 }
 
 IMPLEMENT_TENSOR_UNARY_FUNC(tanh);
@@ -50,39 +70,64 @@ IMPLEMENT_TENSOR_UNARY_FUNC(leakyrelu);
 IMPLEMENT_TENSOR_UNARY_FUNC(sign);
 IMPLEMENT_TENSOR_UNARY_FUNC(sqrt);
 IMPLEMENT_TENSOR_UNARY_FUNC(square);
+IMPLEMENT_TENSOR_UNARY_FUNC(exp);
 
-Tensor *clamp(Tensor *tensor, float minVal, float maxVal, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
+Tensor *clamp(const Tensor *in, float minVal, float maxVal, Tensor *out, bool grad_op) {
+  if (out == nullptr)
+    out = new Tensor(in, in->require_grad());
+  else {
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(in->shape(), out->shape());
   }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_clamp(out_tensor->size(), minVal, maxVal, in_data, out_data);
+  const float *in_data;
+  float *out_data;
+  if (!grad_op) {
+    in_data = in->const_data();
+    out_data = out->data();
+  } else {
+    in_data = in->const_grad();
+    out_data = out->grad();
+  }
+  switch (in->state()) {
+    case stensor::CPU:stensor::cpu_clamp(in->size(), minVal, maxVal, in_data, out_data);
       break;
-    case stensor::GPU:stensor::gpu_clamp(out_tensor->size(), minVal, maxVal, in_data, out_data);
+    case stensor::GPU:stensor::gpu_clamp(in->size(), minVal, maxVal, in_data, out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
-Tensor *repeat(Tensor *tensor, int axis, int num) {
-  axis = tensor->canonical_axis_index(axis);
-  CHECK_EQ(tensor->shape(axis), 1) << "The shape of the repeat axis must be 1";
-  CHECK_GT(num, 0);
-  std::vector<int> new_shape(tensor->shape());
-  new_shape[axis] = num;
-  int num_axis = tensor->num_axes();
-  int count_row = tensor->count(0, axis);
-  int count_col = tensor->count(axis, num_axis);
 
-  Tensor *new_tensor = new Tensor(new_shape, tensor->device(), tensor->require_grad());
-  switch (tensor->state()) {
+Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
+  axis = in->canonical_axis_index(axis);
+  CHECK_EQ(in->shape(axis), 1) << "The shape of the repeat axis must be 1";
+  CHECK_GT(num, 0);
+  std::vector<int> new_shape(in->shape());
+  new_shape[axis] = num;
+  int num_axis = in->num_axes();
+  int count_row = in->count(0, axis);
+  int count_col = in->count(axis, num_axis);
+
+  if (out == nullptr)
+    out = new Tensor(new_shape, in->device(), in->require_grad());
+  else{
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(new_shape, out->shape());
+  }
+  const float *in_data;
+  float *out_data;
+  if (!grad_op) {
+    in_data = in->const_data();
+    out_data = out->data();
+  } else {
+    in_data = in->const_grad();
+    out_data = out->grad();
+  }
+
+  switch (in->state()) {
     case CPU:
       for (int i = 0; i < count_row; ++i) {
-        float *head_in = &tensor->data()[i * count_col];
-        float *head_out = &new_tensor->data()[i * count_col * num];
+        const float *head_in = &in_data[i * count_col];
+        float *head_out = &out_data[i * count_col * num];
         for (int j = 0; j < num; ++j) {
           cpu_copy(count_col, head_in, head_out);
           head_out += count_col;
@@ -91,8 +136,8 @@ Tensor *repeat(Tensor *tensor, int axis, int num) {
       break;
     case GPU:
       for (int i = 0; i < count_row; ++i) {
-        float *head_in = &tensor->data()[i * count_col];
-        float *head_out = &new_tensor->data()[i * count_col * num];
+        const float *head_in = &in_data[i * count_col];
+        float *head_out = &out_data[i * count_col * num];
         for (int j = 0; j < num; ++j) {
           gpu_copy(count_col, head_in, head_out);
           head_out += count_col;
@@ -101,129 +146,134 @@ Tensor *repeat(Tensor *tensor, int axis, int num) {
       break;
   }
 
-  return new_tensor;
+  return out;
 }
+
 /* self-op end*/
 
-void set(Tensor *tensor, float val) {
-  Tensor::Dtype *data = tensor->data();
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_set(tensor->size(), val, data);
+void set(Tensor *in, float val, bool grad_op) {
+  Tensor::Dtype *data;
+  if (!grad_op)data = in->data();
+  else data = in->grad();
+  switch (in->state()) {
+    case stensor::CPU:stensor::cpu_set(in->size(), val, data);
       break;
-    case stensor::GPU:stensor::gpu_set(tensor->size(), val, data);
+    case stensor::GPU:stensor::gpu_set(in->size(), val, data);
       break;
   }
 }
 
-Tensor *add(Tensor *tensor, float val, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
+Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
+  if (out == nullptr)
+    out = new Tensor(in, in->require_grad());
+  else{
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(in->shape(), out->shape());
   }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_add_scalar(out_tensor->size(), in_data, val, out_data);
+  const float *in_data;
+  float *out_data;
+  if (!grad_op) {
+    in_data = in->const_data();
+    out_data = out->data();
+  } else {
+    in_data = in->const_grad();
+    out_data = out->grad();
+  }
+  switch (in->state()) {
+    case stensor::CPU:stensor::cpu_add_scalar(out->size(), in_data, val, out_data);
       break;
-    case stensor::GPU:stensor::gpu_add_scalar(out_tensor->size(), in_data, val, out_data);
+    case stensor::GPU:stensor::gpu_add_scalar(out->size(), in_data, val, out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
 
-Tensor *scale(Tensor *tensor, float val, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
-  }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_scale(out_tensor->size(), in_data, val, out_data);
-      break;
-    case stensor::GPU:stensor::gpu_scale(out_tensor->size(), in_data, val, out_data);
-      break;
-  }
-  return out_tensor;
+#define IMPLEMENT_TENSOR_SCALAR_FUNC(name, base_math_func)\
+Tensor *name(const Tensor *in, float val, Tensor *out, bool grad_op) {\
+  if (out == nullptr)\
+    out = new Tensor(in, in->require_grad());\
+  else{\
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";\
+    CHECK_SHAPE(in->shape(), out->shape());\
+  }\
+  const float *in_data;\
+  float *out_data;\
+  if (!grad_op) {\
+    in_data = in->const_data();\
+    out_data = out->data();\
+  } else {\
+    in_data = in->const_grad();\
+    out_data = out->grad();\
+  }\
+  switch (in->state()) {\
+    case stensor::CPU:stensor::cpu_##base_math_func(out->size(), in_data, val, out_data);\
+      break;\
+    case stensor::GPU:stensor::gpu_##base_math_func(out->size(), in_data, val, out_data);\
+      break;\
+  }\
+  return out;\
 }
 
-Tensor *pow(Tensor *tensor, float val, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
-  }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_pow_scalar(out_tensor->size(), in_data, val, out_data);
-      break;
-    case stensor::GPU:stensor::gpu_pow_scalar(out_tensor->size(), in_data, val, out_data);
-      break;
-  }
-  return out_tensor;
-}
-
-Tensor *exp(Tensor *tensor, bool inplace) {
-  float *in_data = tensor->data();
-  float *out_data = tensor->data();
-  Tensor *out_tensor = nullptr;
-  if (!inplace) {
-    out_tensor = new Tensor(tensor, tensor->require_grad());
-    out_data = out_tensor->data();
-  }
-  switch (tensor->state()) {
-    case stensor::CPU:stensor::cpu_exp(out_tensor->size(), in_data, out_data);
-      break;
-    case stensor::GPU:stensor::gpu_exp(out_tensor->size(), in_data, out_data);
-      break;
-  }
-  return out_tensor;
-}
+IMPLEMENT_TENSOR_SCALAR_FUNC(scale, scale);
+IMPLEMENT_TENSOR_SCALAR_FUNC(pow, pow_scalar);
 
 // Tensor - Tensor
 
 #define IMPLEMENT_BINARY_FUNC_PP(name) \
-Tensor *name(const Tensor *a, const Tensor *b) {\
+Tensor *name(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){\
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";\
   bool require_grad = (a->require_grad() || b->require_grad());\
   std::vector<int> shape_a(a->shape());\
   std::vector<int> shape_b(b->shape());\
   std::vector<int> shape_out;\
+\
   float *out_data = nullptr;\
-  Tensor *out_tensor = nullptr;\
+  const float *in_data_a = nullptr;\
+  const float *in_data_b = nullptr;\
   bool broadcast = false;\
   if (a->shape_equal(b))\
     shape_out = shape_a;\
   else {\
     broadcast = true;\
     shape_out = stensor::broadcast(shape_a, shape_b);\
-  } \
-  out_tensor = new Tensor(shape_out, a->device(), require_grad);\
-  out_data = out_tensor->data();\
+  }\
+  if (out== nullptr)\
+    out = new Tensor(shape_out, a->device(), require_grad);\
+  else {\
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";\
+    CHECK_SHAPE(shape_out, out->shape());\
+  }\
+  if (!grad_op) {\
+    in_data_a =a->const_data();\
+    in_data_b =b->const_data();\
+    out_data = out->data();\
+  }else {\
+    in_data_a =a->const_grad();\
+    in_data_b =b->const_grad();\
+    out_data = out->grad();\
+  }\
+\
   switch (a->state()) {\
     case stensor::CPU:\
       if (!broadcast)\
-        stensor::cpu_##name(a->size(), a->const_data(), b->const_data(),\
+        stensor::cpu_##name(a->size(), in_data_a, in_data_b,\
                          out_data);\
       else\
-        stensor::cpu_##name##_broadcast(a->const_data(), b->const_data(),\
+        stensor::cpu_##name##_broadcast(in_data_a, in_data_b,\
                                    shape_a, shape_b,\
                                    out_data);\
       break;\
     case stensor::GPU:\
       if (!broadcast)\
-        stensor::gpu_##name(a->size(), a->const_data(), b->const_data(),\
+        stensor::gpu_##name(a->size(),in_data_a, in_data_b,\
                          out_data);\
       else\
-        stensor::gpu_##name##_broadcast(a->const_data(), b->const_data(),\
+        stensor::gpu_##name##_broadcast(in_data_a, in_data_b,\
                                    shape_a, shape_b,\
                                    out_data);\
       break;\
   }\
-  return out_tensor;\
+  return out;\
 }
 
 //IMPLEMENT_BINARY_FUNC_PP(add);
@@ -232,14 +282,16 @@ IMPLEMENT_BINARY_FUNC_PP(mul);
 IMPLEMENT_BINARY_FUNC_PP(div);
 IMPLEMENT_BINARY_FUNC_PP(pow);
 
-Tensor *add(const Tensor *a, const Tensor *b) {
+Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   bool require_grad = (a->require_grad() || b->require_grad());
   std::vector<int> shape_a(a->shape());
   std::vector<int> shape_b(b->shape());
   std::vector<int> shape_out;
+
   float *out_data = nullptr;
-  Tensor *out_tensor = nullptr;
+  const float *in_data_a = nullptr;
+  const float *in_data_b = nullptr;
   bool broadcast = false;
   if (a->shape_equal(b))
     shape_out = shape_a;
@@ -247,32 +299,47 @@ Tensor *add(const Tensor *a, const Tensor *b) {
     broadcast = true;
     shape_out = stensor::broadcast(shape_a, shape_b);
   }
-  out_tensor = new Tensor(shape_out, a->device(), require_grad);
-  out_data = out_tensor->data();
+  if (out== nullptr)
+  out = new Tensor(shape_out, a->device(), require_grad);
+  else {
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(shape_out, out->shape());
+  }
+  if (!grad_op) {
+    in_data_a =a->const_data();
+    in_data_b =b->const_data();
+    out_data = out->data();
+  }else {
+    in_data_a =a->const_grad();
+    in_data_b =b->const_grad();
+    out_data = out->grad();
+  }
+
   switch (a->state()) {
     case stensor::CPU:
       if (!broadcast)
-        stensor::cpu_add(a->size(), a->const_data(), b->const_data(),
+        stensor::cpu_add(a->size(), in_data_a, in_data_b,
                          out_data);
       else
-        stensor::cpu_add_broadcast(a->const_data(), b->const_data(),
+        stensor::cpu_add_broadcast(in_data_a, in_data_b,
                                    shape_a, shape_b,
                                    out_data);
       break;
     case stensor::GPU:
       if (!broadcast)
-        stensor::gpu_add(a->size(), a->const_data(), b->const_data(),
+        stensor::gpu_add(a->size(),in_data_a, in_data_b,
                          out_data);
       else
-        stensor::gpu_add_broadcast(a->const_data(), b->const_data(),
+        stensor::gpu_add_broadcast(in_data_a, in_data_b,
                                    shape_a, shape_b,
                                    out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
 
-Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB) {
+Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB, float beta,
+               Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   // inference shape
   int start_axis_a = a->canonical_axis_index(axis);
@@ -295,59 +362,111 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
   CHECK_EQ(Na, Mb) << "Shape mismatch";
   const CBLAS_TRANSPOSE TranA = transA ? CblasTrans : CblasNoTrans;
   const CBLAS_TRANSPOSE TranB = transB ? CblasTrans : CblasNoTrans;
-  Tensor *out_tensor = new Tensor(out_shape, a->device(), require_grad);
-
+  if (out== nullptr)
+  out = new Tensor(out_shape, a->device(), require_grad);
+  else{
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(out_shape, out->shape());
+  }
+  float *out_data = nullptr;
+  const float *in_data_a = nullptr;
+  const float *in_data_b = nullptr;
+  if (!grad_op) {
+    in_data_a =a->const_data();
+    in_data_b =b->const_data();
+    out_data = out->data();
+  }else {
+    in_data_a =a->const_grad();
+    in_data_b =b->const_grad();
+    out_data = out->grad();
+  }
   switch (a->state()) {
     case stensor::CPU:
       stensor::cpu_gemm(TranA, TranB, Ma, Nb, Mb,
-                        1.0f, a->const_data(), b->const_data(),
-                        0.0f, out_tensor->data());
+                        1.0f, in_data_a, in_data_b,
+                        beta, out_data);
 
       break;
     case stensor::GPU:
       stensor::gpu_gemm(TranA, TranB, Ma, Nb, Mb,
-                        1.0f, a->const_data(), b->const_data(),
-                        0.0f, out_tensor->data());
+                        1.0f, in_data_a, in_data_b,
+                        beta, out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
 
-Tensor *maximum(const Tensor *a, const Tensor *b) {
+
+Tensor *maximum(const Tensor *a, const Tensor *b,Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
-  Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
-  float *out_data = out_tensor->data();
+  if (out== nullptr)
+    out = new Tensor(a->shape(), a->device(), require_grad);
+  else{
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(a->shape(), out->shape());
+  }
+  float *out_data= nullptr;
+  const float *in_data_a = nullptr;
+  const float *in_data_b = nullptr;
+  if (!grad_op) {
+    in_data_a =a->const_data();
+    in_data_b =b->const_data();
+    out_data = out->data();
+  }else {
+    in_data_a =a->const_grad();
+    in_data_b =b->const_grad();
+    out_data = out->grad();
+  }
+
   switch (a->state()) {
     case stensor::CPU:
-      stensor::cpu_maximum(a->size(), a->const_data(), b->const_data(),
+      stensor::cpu_maximum(a->size(), in_data_a, in_data_b,
                            out_data);
       break;
     case stensor::GPU:
-      stensor::gpu_maximum(a->size(), a->const_data(), b->const_data(),
+      stensor::gpu_maximum(a->size(),  in_data_a, in_data_b,
                            out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
-Tensor *minimum(const Tensor *a, const Tensor *b) {
+
+Tensor *minimum(const Tensor *a, const Tensor *b,Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
-  Tensor *out_tensor = new Tensor(a->shape(), a->device(), require_grad);
-  float *out_data = out_tensor->data();
+  if (out== nullptr)
+  out = new Tensor(a->shape(), a->device(), require_grad);
+  else{
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(a->shape(), out->shape());
+  }
+  float *out_data= nullptr;
+  const float *in_data_a = nullptr;
+  const float *in_data_b = nullptr;
+  if (!grad_op) {
+    in_data_a =a->const_data();
+    in_data_b =b->const_data();
+    out_data = out->data();
+  }else {
+    in_data_a =a->const_grad();
+    in_data_b =b->const_grad();
+    out_data = out->grad();
+  }
+
   switch (a->state()) {
     case stensor::CPU:
-      stensor::cpu_minimum(a->size(), a->const_data(), b->const_data(),
+      stensor::cpu_minimum(a->size(), in_data_a, in_data_b,
                            out_data);
       break;
     case stensor::GPU:
-      stensor::gpu_minimum(a->size(), a->const_data(), b->const_data(),
+      stensor::gpu_minimum(a->size(), in_data_a, in_data_b,
                            out_data);
       break;
   }
-  return out_tensor;
+  return out;
 }
 
 
@@ -406,4 +525,37 @@ Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, i
   return new_t;
 }
 
+// reduction
+Tensor *sum(const Tensor *a, int axis, Tensor *out) {
+  CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  CHECK(a->size()) << "tensors must be at same shape";
+  int size = 1;
+  int caxis = a->canonical_axis_index(axis);
+
+  int num = a->count(0, caxis);
+  int dim = a->count(caxis, a->num_axes());
+  CHECK_EQ(num, out->size());
+  Tensor *sum_multiplier = stensor::ones({dim}, a->device(), false);
+  float *top_data = out->data();
+  const float *bottom_data = a->const_data();
+  switch (a->state()) {
+    case CPU:
+      for (int i = 0; i < num; ++i) {
+        *top_data = cpu_dot(dim, sum_multiplier->data(), bottom_data);
+        ++top_data;
+        bottom_data += dim;
+      }
+      break;
+    case GPU:
+      for (int i = 0; i < num; ++i) {
+        gpu_dot(dim, sum_multiplier->data(), bottom_data, top_data);
+        ++top_data;
+        bottom_data += dim;
+      }
+      break;
+  }
+
+  return out;
 }
+
+}//namespace stensor

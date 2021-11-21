@@ -132,7 +132,7 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-      if (copy_grad)
+      if (copy_grad && source->require_grad())
         cpu_copy(_size, source->const_grad(), grad());
       cpu_copy(_size, source->const_data(), data());
 
@@ -141,7 +141,7 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-      if (copy_grad)
+      if (copy_grad && source->require_grad())
         gpu_copy(_size, source->const_grad(), grad());
       gpu_copy(_size, source->const_data(), data());
 
@@ -190,19 +190,19 @@ void Tensor::reshape(const ShapeType &shape) {
 
 }
 
-bool Tensor::shape_equal(const Tensor &other) const {
+//bool Tensor::shape_equal(const Tensor &other) const {
+//  ShapeType shapeOther;
+//  stensor::RepeatTypeToVector(other.shape(), shapeOther);
+//  if (_shape.size() != shapeOther.size()) return false;
+//  for (int i = 0; i < _shape.size(); ++i) {
+//    if (_shape[i] != shapeOther[i]) return false;
+//  }
+//  return true;
+//}
+//
+bool Tensor::shape_equal(const TensorProto *other) const {
   ShapeType shapeOther;
-  stensor::RepeatTypeToVector(other.shape(), shapeOther);
-  if (_shape.size() != shapeOther.size()) return false;
-  for (int i = 0; i < _shape.size(); ++i) {
-    if (_shape[i] != shapeOther[i]) return false;
-  }
-  return true;
-}
-
-bool Tensor::shape_equal(const TensorProto &other) const {
-  ShapeType shapeOther;
-  stensor::RepeatTypeToVector(other.shape(), shapeOther);
+  stensor::RepeatTypeToVector(other->shape(), shapeOther);
   if (_shape.size() != shapeOther.size()) return false;
   for (int i = 0; i < _shape.size(); ++i) {
     if (_shape[i] != shapeOther[i]) return false;
@@ -237,8 +237,8 @@ void Tensor::to_proto(TensorProto &proto, bool write_grad) const {
   // 5. neighbor & operations
   proto.clear_neighbors();
   proto.clear_operations();
-  for (int i = 0; i < _neighbors.size(); ++i) {
-    proto.add_neighbors(_neighbors[i]);
+  for (int i = 0; i < _children_name.size(); ++i) {
+    proto.add_neighbors(_children_name[i]);
     proto.add_operations(_operations[i]);
   }
 }
@@ -253,7 +253,7 @@ void Tensor::from_proto(const TensorProto &proto, bool reset) {
     stensor::RepeatTypeToVector(proto.shape(), new_shape);
     Reset(new_shape);
   } else {
-    CHECK(shape_equal(proto)) << "shape mismatch.";
+    CHECK(shape_equal(&proto)) << "shape mismatch.";
   }
   // 2. copy data
   switch (state()) {
@@ -280,7 +280,7 @@ void Tensor::from_proto(const TensorProto &proto, bool reset) {
       break;
   }
   // 4. neighbors & operations
-  stensor::RepeatTypeToVector(proto.neighbors(), _neighbors);
+  stensor::RepeatTypeToVector(proto.neighbors(), _children_name);
   stensor::RepeatTypeToVector(proto.operations(), _operations);
 }
 
