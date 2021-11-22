@@ -109,7 +109,7 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
 
   if (out == nullptr)
     out = new Tensor(new_shape, in->device(), in->require_grad());
-  else{
+  else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(new_shape, out->shape());
   }
@@ -166,7 +166,7 @@ void set(Tensor *in, float val, bool grad_op) {
 Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
   if (out == nullptr)
     out = new Tensor(in, in->require_grad());
-  else{
+  else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
   }
@@ -282,7 +282,7 @@ IMPLEMENT_BINARY_FUNC_PP(mul);
 IMPLEMENT_BINARY_FUNC_PP(div);
 IMPLEMENT_BINARY_FUNC_PP(pow);
 
-Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){
+Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   bool require_grad = (a->require_grad() || b->require_grad());
   std::vector<int> shape_a(a->shape());
@@ -299,19 +299,19 @@ Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){
     broadcast = true;
     shape_out = stensor::broadcast(shape_a, shape_b);
   }
-  if (out== nullptr)
-  out = new Tensor(shape_out, a->device(), require_grad);
+  if (out == nullptr)
+    out = new Tensor(shape_out, a->device(), require_grad);
   else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(shape_out, out->shape());
   }
   if (!grad_op) {
-    in_data_a =a->const_data();
-    in_data_b =b->const_data();
+    in_data_a = a->const_data();
+    in_data_b = b->const_data();
     out_data = out->data();
-  }else {
-    in_data_a =a->const_grad();
-    in_data_b =b->const_grad();
+  } else {
+    in_data_a = a->const_grad();
+    in_data_b = b->const_grad();
     out_data = out->grad();
   }
 
@@ -327,7 +327,7 @@ Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){
       break;
     case stensor::GPU:
       if (!broadcast)
-        stensor::gpu_add(a->size(),in_data_a, in_data_b,
+        stensor::gpu_add(a->size(), in_data_a, in_data_b,
                          out_data);
       else
         stensor::gpu_add_broadcast(in_data_a, in_data_b,
@@ -360,9 +360,9 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
     out_shape.push_back(b->shape(i));
 
   CHECK_EQ(Na, Mb) << "Shape mismatch";
-  if (out== nullptr)
-  out = new Tensor(out_shape, a->device(), require_grad);
-  else{
+  if (out == nullptr)
+    out = new Tensor(out_shape, a->device(), require_grad);
+  else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(out_shape, out->shape());
   }
@@ -370,12 +370,12 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
   const float *in_data_a = nullptr;
   const float *in_data_b = nullptr;
   if (!grad_op) {
-    in_data_a =a->const_data();
-    in_data_b =b->const_data();
+    in_data_a = a->const_data();
+    in_data_b = b->const_data();
     out_data = out->data();
-  }else {
-    in_data_a =a->const_grad();
-    in_data_b =b->const_grad();
+  } else {
+    in_data_a = a->const_grad();
+    in_data_b = b->const_grad();
     out_data = out->grad();
   }
   switch (a->state()) {
@@ -394,27 +394,26 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
   return out;
 }
 
-
-Tensor *maximum(const Tensor *a, const Tensor *b,Tensor *out, bool grad_op) {
+Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
-  if (out== nullptr)
+  if (out == nullptr)
     out = new Tensor(a->shape(), a->device(), require_grad);
-  else{
+  else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(a->shape(), out->shape());
   }
-  float *out_data= nullptr;
+  float *out_data = nullptr;
   const float *in_data_a = nullptr;
   const float *in_data_b = nullptr;
   if (!grad_op) {
-    in_data_a =a->const_data();
-    in_data_b =b->const_data();
+    in_data_a = a->const_data();
+    in_data_b = b->const_data();
     out_data = out->data();
-  }else {
-    in_data_a =a->const_grad();
-    in_data_b =b->const_grad();
+  } else {
+    in_data_a = a->const_grad();
+    in_data_b = b->const_grad();
     out_data = out->grad();
   }
 
@@ -424,33 +423,33 @@ Tensor *maximum(const Tensor *a, const Tensor *b,Tensor *out, bool grad_op) {
                            out_data);
       break;
     case stensor::GPU:
-      stensor::gpu_maximum(a->size(),  in_data_a, in_data_b,
+      stensor::gpu_maximum(a->size(), in_data_a, in_data_b,
                            out_data);
       break;
   }
   return out;
 }
 
-Tensor *minimum(const Tensor *a, const Tensor *b,Tensor *out, bool grad_op) {
+Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
-  if (out== nullptr)
-  out = new Tensor(a->shape(), a->device(), require_grad);
-  else{
+  if (out == nullptr)
+    out = new Tensor(a->shape(), a->device(), require_grad);
+  else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(a->shape(), out->shape());
   }
-  float *out_data= nullptr;
+  float *out_data = nullptr;
   const float *in_data_a = nullptr;
   const float *in_data_b = nullptr;
   if (!grad_op) {
-    in_data_a =a->const_data();
-    in_data_b =b->const_data();
+    in_data_a = a->const_data();
+    in_data_b = b->const_data();
     out_data = out->data();
-  }else {
-    in_data_a =a->const_grad();
-    in_data_b =b->const_grad();
+  } else {
+    in_data_a = a->const_grad();
+    in_data_b = b->const_grad();
     out_data = out->grad();
   }
 
@@ -523,36 +522,57 @@ Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, i
   return new_t;
 }
 
-// reduction
-Tensor *sum(const Tensor *a, int axis, Tensor *out) {
-  CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
-  CHECK(a->size()) << "tensors must be at same shape";
-  int size = 1;
+// reduction sum of axis
+Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  else {
+    std::vector<int> new_shape(a->shape());
+    new_shape[caxis] = 1;
+    out = new Tensor(new_shape, a->device(), a->require_grad());
+  }
+  int size = 1;
 
-  int num = a->count(0, caxis);
-  int dim = a->count(caxis, a->num_axes());
-  CHECK_EQ(num, out->size());
-  Tensor *sum_multiplier = stensor::ones({dim}, a->device(), false);
-  float *top_data = out->data();
-  const float *bottom_data = a->const_data();
+  int M = a->count(0, caxis);
+  int N = a->count(caxis + 1, a->num_axes());
+  int D = a->shape(caxis);
+  CHECK_EQ(M * N, out->size());
+  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = a->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = a->const_grad();
+  }
   switch (a->state()) {
     case CPU:
-      for (int i = 0; i < num; ++i) {
-        *top_data = cpu_dot(dim, sum_multiplier->data(), bottom_data);
-        ++top_data;
-        bottom_data += dim;
+      for (int i = 0; i < M; ++i) {
+        for (int j = 0; j < N; ++j) {
+          *out_data = 0;
+          for (int k = 0; k < D; ++k) {
+            *out_data += *in_data;
+            in_data++;
+          }
+          out_data++;
+        }
+//        cpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
+//        out_data += N;
+//        in_data += D * N;
       }
       break;
     case GPU:
-      for (int i = 0; i < num; ++i) {
-        gpu_dot(dim, sum_multiplier->data(), bottom_data, top_data);
-        ++top_data;
-        bottom_data += dim;
+      for (int i = 0; i < M; ++i) {
+        gpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
+        out_data += N;
+        in_data += D * N;
       }
       break;
   }
-
+  delete sum_multiplier;
   return out;
 }
 

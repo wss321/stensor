@@ -337,4 +337,18 @@ TEST_F(MathTensorTest, TransposeGPU) {
   delete f;
 }
 
+TEST_F(MathTensorTest, SumGPU) {
+  Tensor::ShapeType shape1{4, 2};
+  Tensor *d = stensor::random(shape1, -1);
+  Tensor *e = stensor::sum(d, -1);
+
+  std::cout<<d<<std::endl;
+  std::cout<<e<<std::endl;
+  std::cout<<d->shape_string()<<std::endl;
+  std::cout<<e->shape_string()<<std::endl;
+  delete d;
+  delete e;
+}
+
+
 }

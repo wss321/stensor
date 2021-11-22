@@ -108,7 +108,7 @@ inline Tensor *ones_like(Tensor *other, bool require_grad = false) {
 /* Tensor Generator end*/
 
 /*reduction*/
-Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr);
+Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
 
 }
 
