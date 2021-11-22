@@ -28,7 +28,7 @@ class SynMem {
   SynMem() :
       cpu_ptr_(nullptr), gpu_ptr_(nullptr),
       size_(0), gpu_device_(-1) {}
-  explicit SynMem(int size, int device_id = -1) :
+  explicit SynMem(uint32_t size, int device_id = -1) :
       cpu_ptr_(nullptr), gpu_ptr_(nullptr),
       size_(size), gpu_device_(device_id) {
     if (device_id > -1) alloc_gpu();
@@ -38,7 +38,7 @@ class SynMem {
     free_cpu();
     free_gpu();
   }
-  inline int size() const { return size_; }
+  inline uint32_t size() const { return size_; }
   inline int device() const { return gpu_device_; }
   inline void *cpu_data() {
     return cpu_ptr_;
@@ -107,7 +107,7 @@ class SynMem {
  private:
   void *cpu_ptr_;
   void *gpu_ptr_;
-  int size_;
+  uint32_t size_;
   int gpu_device_;
 
  DISABLE_COPY_AND_ASSIGN(SynMem);

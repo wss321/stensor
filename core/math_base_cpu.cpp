@@ -65,6 +65,70 @@ template void cpu_clamp<int>(const int n, const int min, const int max, const in
 template void cpu_clamp<float>(const int n, const float min, const float max, const float *a, float *y);
 template void cpu_clamp<double>(const int n, const double min, const double max, const double *a, double *y);
 
+template<typename Dtype>
+void cpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype sum=0;
+      for (int d = 0; d < D; ++d) {
+        sum += in_data[d * N + n];
+      }
+      if (beta==0) *out_data = sum;
+      else *out_data = sum + beta*(*out_data);
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+
+template void cpu_reduce_sum<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void cpu_reduce_sum<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_reduce_sum<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype sum=0;
+      for (int d = 0; d < D; ++d) {
+        sum += in_data[d * N + n];
+      }
+      if (beta==0) *out_data = sum/D;
+      else *out_data = sum/D + beta*(*out_data);
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+template void cpu_reduce_mean<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void cpu_reduce_mean<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_reduce_mean<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype sum=0;
+      for (int d = 0; d < D; ++d) {
+        sum += abs(in_data[d * N + n]);
+      }
+      if (beta==0) *out_data = sum;
+      else *out_data = sum + beta*(*out_data);
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+template void cpu_reduce_asum<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void cpu_reduce_asum<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_reduce_asum<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
 
 /* self op end*/
 

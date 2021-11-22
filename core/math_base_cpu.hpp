@@ -59,6 +59,14 @@ void cpu_gelu(const int n, const Dtype *x, Dtype *y);
 template<typename Dtype>
 void cpu_leakyrelu(const int n, const Dtype *x, Dtype *y);
 
+template<typename Dtype>
+void cpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
+template<typename Dtype>
+void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
+template<typename Dtype>
+void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 /* self op end*/
 
 /* vector scalar start*/

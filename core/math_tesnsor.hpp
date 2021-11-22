@@ -109,7 +109,8 @@ inline Tensor *ones_like(Tensor *other, bool require_grad = false) {
 
 /*reduction*/
 Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
-
+Tensor *mean(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
+Tensor *asum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
 }
 
 #endif //STENSOR_CORE_MATH_TESNSOR_HPP_

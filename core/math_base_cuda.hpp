@@ -66,6 +66,14 @@ void gpu_gelu(const int n, const Dtype *x, Dtype *y);
 template<typename Dtype>
 void gpu_leakyrelu(const int n, const Dtype *x, Dtype *y);
 
+template<typename Dtype>
+void gpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
+template<typename Dtype>
+void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
+template<typename Dtype>
+void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 /* self-op end*/
 
 /* vector-scalar start*/

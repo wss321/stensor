@@ -75,6 +75,84 @@ template void gpu_clamp<int>(const int n, const int min, const int max, const in
 template void gpu_clamp<float>(const int n, const float min, const float max, const float *x, float *y);
 template void gpu_clamp<double>(const int n, const double min, const double max, const double *x, double *y);
 
+template<typename Dtype>
+__global__ void reduce_sum_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    Dtype sum = 0;
+    for (int d = 0; d < D; ++d) {
+      sum += x[m * D * N + d * N + n];
+    }
+    if (beta == 0) y[index] = sum;
+    else y[index] = sum + beta * y[index];
+  }
+}
+
+template<typename Dtype>
+void gpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  reduce_sum_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_reduce_sum<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void gpu_reduce_sum<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void gpu_reduce_sum<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+
+template<typename Dtype>
+__global__ void reduce_mean_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    Dtype sum = 0;
+    for (int d = 0; d < D; ++d) {
+      sum += x[m * D * N + d * N + n];
+    }
+    if (beta == 0) y[index] = sum/D;
+    else y[index] = sum/D + beta * y[index];
+  }
+}
+
+template<typename Dtype>
+void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  reduce_mean_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_reduce_mean<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void gpu_reduce_mean<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void gpu_reduce_mean<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+
+template<typename Dtype>
+__global__ void reduce_asum_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    Dtype sum = 0;
+    for (int d = 0; d < D; ++d) {
+      sum += x[m * D * N + d * N + n];
+    }
+    if (beta == 0) y[index] = abs(sum);
+    else y[index] = abs(sum) + beta * y[index];
+  }
+}
+
+template<typename Dtype>
+void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  reduce_asum_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_reduce_asum<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void gpu_reduce_asum<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void gpu_reduce_asum<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+
 /* self-op end*/
 
 /* vector-scalar start*/

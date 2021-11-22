@@ -14,7 +14,7 @@ void Tensor::update_state() {
       _current_data = static_cast<Dtype *>(_data->cpu_data());
       _device = -1;
     }
-    _size = _data->size() / sizeof(float);
+    _size = _data->size() / sizeof(Dtype);
   } else {
     _current_data = nullptr;
     _capacity = 0;
@@ -27,7 +27,7 @@ void Tensor::update_state() {
       _current_grad = static_cast<Dtype *>(_grad->cpu_data());
       _device = -1;
     }
-    if (size() == 0) _size = _grad->size() / sizeof(float);
+    if (size() == 0) _size = _grad->size() / sizeof(Dtype);
   } else _current_grad = nullptr;
 }
 

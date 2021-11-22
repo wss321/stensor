@@ -532,7 +532,6 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
     new_shape[caxis] = 1;
     out = new Tensor(new_shape, a->device(), a->require_grad());
   }
-  int size = 1;
 
   int M = a->count(0, caxis);
   int N = a->count(caxis + 1, a->num_axes());
@@ -549,31 +548,86 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
     in_data = a->const_grad();
   }
   switch (a->state()) {
-    case CPU:
-      for (int i = 0; i < M; ++i) {
-        for (int j = 0; j < N; ++j) {
-          *out_data = 0;
-          for (int k = 0; k < D; ++k) {
-            *out_data += *in_data;
-            in_data++;
-          }
-          out_data++;
-        }
-//        cpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
-//        out_data += N;
-//        in_data += D * N;
-      }
+    case CPU:cpu_reduce_sum(M, D, N, in_data, 0.0f, out_data);
       break;
     case GPU:
-      for (int i = 0; i < M; ++i) {
-        gpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
-        out_data += N;
-        in_data += D * N;
-      }
+      gpu_reduce_sum(M, D, N, in_data, 0.0f, out_data);
+//      for (int i = 0; i < M; ++i) {
+//        gpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
+//        out_data += N;
+//        in_data += D * N;
+//      }
       break;
   }
-  delete sum_multiplier;
   return out;
 }
 
+Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+  int caxis = a->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  else {
+    std::vector<int> new_shape(a->shape());
+    new_shape[caxis] = 1;
+    out = new Tensor(new_shape, a->device(), a->require_grad());
+  }
+
+  int M = a->count(0, caxis);
+  int N = a->count(caxis + 1, a->num_axes());
+  int D = a->shape(caxis);
+  CHECK_EQ(M * N, out->size());
+  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = a->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = a->const_grad();
+  }
+  switch (a->state()) {
+    case CPU:cpu_reduce_mean(M, D, N, in_data, 0.0f, out_data);
+      break;
+    case GPU:
+      gpu_reduce_mean(M, D, N, in_data, 0.0f, out_data);
+      break;
+  }
+  return out;
+}
+
+
+Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+  int caxis = a->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  else {
+    std::vector<int> new_shape(a->shape());
+    new_shape[caxis] = 1;
+    out = new Tensor(new_shape, a->device(), a->require_grad());
+  }
+
+  int M = a->count(0, caxis);
+  int N = a->count(caxis + 1, a->num_axes());
+  int D = a->shape(caxis);
+  CHECK_EQ(M * N, out->size());
+  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = a->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = a->const_grad();
+  }
+  switch (a->state()) {
+    case CPU:cpu_reduce_asum(M, D, N, in_data, 0.0f, out_data);
+      break;
+    case GPU:
+      gpu_reduce_asum(M, D, N, in_data, 0.0f, out_data);
+      break;
+  }
+  return out;
+}
 }//namespace stensor

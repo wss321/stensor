@@ -325,7 +325,7 @@ TEST_F(MathTensorTest, TransposeCPU) {
   delete c;
 }
 TEST_F(MathTensorTest, TransposeGPU) {
-  Tensor::ShapeType shape1{200, 300, 400};
+  Tensor::ShapeType shape1{200, 30, 400};
   Tensor *d = stensor::random(shape1, 0);
   Tensor *e = stensor::transpose(d, {1, 0, 2});
   Tensor *f = stensor::transpose(e, {1, 0, 2});
@@ -337,18 +337,58 @@ TEST_F(MathTensorTest, TransposeGPU) {
   delete f;
 }
 
-TEST_F(MathTensorTest, SumGPU) {
-  Tensor::ShapeType shape1{4, 2};
-  Tensor *d = stensor::random(shape1, -1);
-  Tensor *e = stensor::sum(d, -1);
+TEST_F(MathTensorTest, Sum) {
+  Tensor::ShapeType shape1{500, 200, 400};
+//  Tensor *d = stensor::random(shape1, -1);
+  int axis = 1;
+  Tensor *d = stensor::ones(shape1, -1);
+  long long start = systemtime_ms();
+  Tensor *e = stensor::sum(d, axis);
+  LOG(INFO) << "CPU sum operation time:" << systemtime_ms() - start << "ms";
+  std::cout << d->shape_string() << std::endl;
+  std::cout << e->shape_string() << std::endl;
+  for (int i = 0; i < e->size(); ++i) {
+    if (i>10000) break;
+    EXPECT_EQ(e->data_at(i), d->shape(axis));
+  }
+  d->to_gpu();
+  start = systemtime_ms();
+  Tensor *f = stensor::sum(d, axis);
+  LOG(INFO) << "GPU sum operation time:" << systemtime_ms() - start << "ms";
+  delete d;
+  delete e;
+  delete f;
+}
 
-  std::cout<<d<<std::endl;
-  std::cout<<e<<std::endl;
-  std::cout<<d->shape_string()<<std::endl;
-  std::cout<<e->shape_string()<<std::endl;
+TEST_F(MathTensorTest, mean) {
+  Tensor::ShapeType shape1{500, 20, 400};
+//  Tensor *d = stensor::random(shape1, -1);
+  int axis = 1;
+  Tensor *d = stensor::ones(shape1, -1);
+  Tensor *e = stensor::mean(d, axis);
+  std::cout << d->shape_string() << std::endl;
+  std::cout << e->shape_string() << std::endl;
+  for (int i = 0; i < e->size(); ++i) {
+    if (i>10000) break;
+    EXPECT_EQ(e->data_at(i), 1);
+  }
   delete d;
   delete e;
 }
 
-
+TEST_F(MathTensorTest, asum) {
+  Tensor::ShapeType shape1{500, 20, 400};
+//  Tensor *d = stensor::random(shape1, -1);
+  int axis = 1;
+  Tensor *d = stensor::ones(shape1, 0);
+  Tensor *e = stensor::asum(d, axis);
+  std::cout << d->shape_string() << std::endl;
+  std::cout << e->shape_string() << std::endl;
+  for (int i = 0; i < e->size(); ++i) {
+    if (i>10000) break;
+    EXPECT_EQ(e->data_at(i), d->shape(axis));
+  }
+  delete d;
+  delete e;
+}
 }
