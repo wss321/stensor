@@ -360,8 +360,6 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
     out_shape.push_back(b->shape(i));
 
   CHECK_EQ(Na, Mb) << "Shape mismatch";
-  const CBLAS_TRANSPOSE TranA = transA ? CblasTrans : CblasNoTrans;
-  const CBLAS_TRANSPOSE TranB = transB ? CblasTrans : CblasNoTrans;
   if (out== nullptr)
   out = new Tensor(out_shape, a->device(), require_grad);
   else{
@@ -382,13 +380,13 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
   }
   switch (a->state()) {
     case stensor::CPU:
-      stensor::cpu_gemm(TranA, TranB, Ma, Nb, Mb,
+      stensor::cpu_gemm(transA, transB, Ma, Nb, Mb,
                         1.0f, in_data_a, in_data_b,
                         beta, out_data);
 
       break;
     case stensor::GPU:
-      stensor::gpu_gemm(TranA, TranB, Ma, Nb, Mb,
+      stensor::gpu_gemm(transA, transB, Ma, Nb, Mb,
                         1.0f, in_data_a, in_data_b,
                         beta, out_data);
       break;

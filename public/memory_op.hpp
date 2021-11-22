@@ -48,8 +48,8 @@ inline int getMaxThreadNum() {
   return prop.maxThreadsPerBlock;
 }
 
-#define CUDA_NUM_THREADS getMaxThreadNum()
-//#define CUDA_NUM_THREADS 1024
+//#define CUDA_NUM_THREADS getMaxThreadNum()
+#define CUDA_NUM_THREADS 256
 
 inline int GET_BLOCKS(const int N) {
   return (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;

@@ -45,19 +45,17 @@ void matmul_backward(Tensor *a, Tensor *b, const Tensor *y,
     out_shape.push_back(b->shape(i));
 
   CHECK_EQ(Na, Mb) << "Shape mismatch";
-  const CBLAS_TRANSPOSE TranA = !transA ? CblasTrans : CblasNoTrans;
-  const CBLAS_TRANSPOSE TranB = !transB ? CblasTrans : CblasNoTrans;
 
   switch (a->state()) {
     case stensor::CPU:
       // D/a
       if (a->require_grad())
-        stensor::cpu_gemm(CblasNoTrans, TranB, Ma, Mb, Nb,
+        stensor::cpu_gemm(false, !transB, Ma, Mb, Nb,
                           1.0f, y->const_grad(), b->const_data(),
                           1.0f, a->grad());
       // D/b
       if (b->require_grad())
-        stensor::cpu_gemm(TranA, CblasNoTrans, Mb, Nb, Ma,
+        stensor::cpu_gemm(!transA, false, Mb, Nb, Ma,
                           1.0f, a->const_data(), y->const_grad(),
                           1.0f, b->grad());
 
@@ -65,12 +63,12 @@ void matmul_backward(Tensor *a, Tensor *b, const Tensor *y,
     case stensor::GPU:
       // D/a
       if (a->require_grad())
-        stensor::gpu_gemm(CblasNoTrans, TranB, Ma, Mb, Nb,
+        stensor::gpu_gemm(false, !transB, Ma, Mb, Nb,
                           1.0f, y->const_grad(), b->const_data(),
                           1.0f, a->grad());
       // D/b
       if (b->require_grad())
-        stensor::gpu_gemm(TranA, CblasNoTrans, Mb, Nb, Ma,
+        stensor::gpu_gemm(!transA, false, Mb, Nb, Ma,
                           1.0f, a->const_data(), y->const_grad(),
                           1.0f, b->grad());
       break;

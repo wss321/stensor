@@ -92,8 +92,8 @@ void cpu_pow_scalar(const int n,
 /* vector vector start*/
 template<typename Dtype>
 bool cpu_equal(const int n,
-              const Dtype *a,
-              const Dtype *b);
+               const Dtype *a,
+               const Dtype *b);
 
 template<typename Dtype>
 void cpu_copy(const int n,
@@ -155,8 +155,8 @@ void cpu_pow_broadcast(const Dtype *a, const Dtype *b,
 
 template<typename Dtype>
 void cpu_maximum(const int n,
-             const Dtype *a, const Dtype *b,
-             Dtype *y);
+                 const Dtype *a, const Dtype *b,
+                 Dtype *y);
 
 template<typename Dtype>
 void cpu_minimum(const int n,
@@ -177,7 +177,7 @@ Dtype cpu_stride_dot(int n,
 
 /* matrix vector start*/
 template<typename Dtype>
-void cpu_gemv(const CBLAS_TRANSPOSE TransA,
+void cpu_gemv(const bool TransA,
               const int M, const int N,
               const Dtype alpha, const Dtype *A, const Dtype *a,
               const Dtype beta, Dtype *y);
@@ -186,8 +186,8 @@ void cpu_gemv(const CBLAS_TRANSPOSE TransA,
 
 /* matrix-matrix start*/
 template<typename Dtype>
-void cpu_gemm(const CBLAS_TRANSPOSE TransA,
-              const CBLAS_TRANSPOSE TransB,
+void cpu_gemm(const bool TransA,
+              const bool TransB,
               const int M, const int N, const int K,
               const Dtype alpha, const Dtype *A, const Dtype *B,
               const Dtype beta, Dtype *C);

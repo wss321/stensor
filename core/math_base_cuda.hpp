@@ -166,15 +166,15 @@ void gpu_minimum(const int n,
 
 /* matrix-vector start*/
 template<typename Dtype>
-void gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
+void gpu_gemv(const bool TransA, const int M, const int N,
               const Dtype alpha, const Dtype *A, const Dtype *x, const Dtype beta,
               Dtype *y);
 /* matrix-vector end*/
 
 /* matrix-matrix start*/
 template<typename Dtype>
-void gpu_gemm(const CBLAS_TRANSPOSE TransA,
-              const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+void gpu_gemm(const bool TransA,
+              const bool TransB, const int M, const int N, const int K,
               const Dtype alpha, const Dtype *A, const Dtype *B, const Dtype beta,
               Dtype *C);
 template<typename Dtype>

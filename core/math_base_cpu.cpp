@@ -247,19 +247,21 @@ float cpu_stride_dot<float>(const int n, const float *x, const int incx,
 
 /* matrix vector start*/
 template<>
-void cpu_gemv<float>(const CBLAS_TRANSPOSE TransA,
+void cpu_gemv<float>(const bool TransA,
                      const int M, const int N,
                      const float alpha, const float *A, const float *a,
                      const float beta, float *y) {
-  cblas_sgemv(CblasRowMajor, TransA, M, N,
+  CBLAS_TRANSPOSE transA = TransA ? CblasTrans : CblasNoTrans;
+  cblas_sgemv(CblasRowMajor, transA, M, N,
               alpha, A, N, a, 1, beta, y, 1);
 }
 template<>
-void cpu_gemv<double>(const CBLAS_TRANSPOSE TransA,
+void cpu_gemv<double>(const bool TransA,
                       const int M, const int N,
                       const double alpha, const double *A, const double *a,
                       const double beta, double *y) {
-  cblas_dgemv(CblasRowMajor, TransA, M, N,
+  CBLAS_TRANSPOSE transA = TransA ? CblasTrans : CblasNoTrans;
+  cblas_dgemv(CblasRowMajor, transA, M, N,
               alpha, A, N, a, 1, beta, y, 1);
 }
 
@@ -280,26 +282,30 @@ void cpu_axpy<double>(const int N,
 }
 
 template<>
-void cpu_gemm<float>(const CBLAS_TRANSPOSE TransA,
-                     const CBLAS_TRANSPOSE TransB,
+void cpu_gemm<float>(const bool TransA,
+                     const bool TransB,
                      const int M, const int N, const int K,
                      const float alpha, const float *A, const float *B,
                      const float beta, float *C) {
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cblas_sgemm(CblasRowMajor, TransA, TransB, M,
+  CBLAS_TRANSPOSE transA = TransA ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = TransB ? CblasTrans : CblasNoTrans;
+  int lda = !TransA ? K : M;
+  int ldb = !TransB ? N : K;
+  cblas_sgemm(CblasRowMajor, transA, transB, M,
               N, K, alpha, A, lda, B, ldb,
               beta, C, N);
 }
 template<>
-void cpu_gemm<double>(const CBLAS_TRANSPOSE TransA,
-                      const CBLAS_TRANSPOSE TransB,
+void cpu_gemm<double>(const bool TransA,
+                      const bool TransB,
                       const int M, const int N, const int K,
                       const double alpha, const double *A, const double *B,
                       const double beta, double *C) {
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cblas_dgemm(CblasRowMajor, TransA, TransB, M,
+  CBLAS_TRANSPOSE transA = TransA ? CblasTrans : CblasNoTrans;
+  CBLAS_TRANSPOSE transB = TransB ? CblasTrans : CblasNoTrans;
+  int lda = !TransA ? K : M;
+  int ldb = !TransB ? N : K;
+  cblas_dgemm(CblasRowMajor, transA, transB, M,
               N, K, alpha, A, lda, B, ldb,
               beta, C, N);
 }
