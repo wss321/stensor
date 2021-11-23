@@ -4,7 +4,7 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include <cmath>
+//#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <fstream>

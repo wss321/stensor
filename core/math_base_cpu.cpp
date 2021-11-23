@@ -71,12 +71,12 @@ void cpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype
   Dtype *out_data = y;
   for (int m = 0; m < M; ++m) {
     for (int n = 0; n < N; ++n) {
-      Dtype sum=0;
+      Dtype sum = 0;
       for (int d = 0; d < D; ++d) {
         sum += in_data[d * N + n];
       }
-      if (beta==0) *out_data = sum;
-      else *out_data = sum + beta*(*out_data);
+      if (beta == 0) *out_data = sum;
+      else *out_data = sum + beta * (*out_data);
       out_data++;
     }
     in_data += D * N;
@@ -88,17 +88,48 @@ template void cpu_reduce_sum<float>(const int M, const int D, const int N, const
 template void cpu_reduce_sum<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
+void cpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      // calc denominator
+      Dtype denominator = 0;
+      for (int d = 0; d < D; ++d) {
+        denominator += exp(in_data[d * N + n]);
+      }
+
+      if (beta == 0) {
+        for (int d = 0; d < D; ++d) {
+          out_data[d * N + n] = exp(in_data[d * N + n]) / denominator;
+        }
+      } else {
+        for (int d = 0; d < D; ++d) {
+          out_data[d * N + n] = beta * (*out_data) + exp(in_data[d * N + n]) / denominator;
+        }
+      }
+    }
+    in_data += D * N;
+    out_data += D * N;
+  }
+}
+
+template void cpu_softmax<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
+template void cpu_softmax<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_softmax<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
 void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   const Dtype *in_data = x;
   Dtype *out_data = y;
   for (int m = 0; m < M; ++m) {
     for (int n = 0; n < N; ++n) {
-      Dtype sum=0;
+      Dtype sum = 0;
       for (int d = 0; d < D; ++d) {
         sum += in_data[d * N + n];
       }
-      if (beta==0) *out_data = sum/D;
-      else *out_data = sum/D + beta*(*out_data);
+      if (beta == 0) *out_data = sum / D;
+      else *out_data = sum / D + beta * (*out_data);
       out_data++;
     }
     in_data += D * N;
@@ -114,12 +145,12 @@ void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtyp
   Dtype *out_data = y;
   for (int m = 0; m < M; ++m) {
     for (int n = 0; n < N; ++n) {
-      Dtype sum=0;
+      Dtype sum = 0;
       for (int d = 0; d < D; ++d) {
         sum += abs(in_data[d * N + n]);
       }
-      if (beta==0) *out_data = sum;
-      else *out_data = sum + beta*(*out_data);
+      if (beta == 0) *out_data = sum;
+      else *out_data = sum + beta * (*out_data);
       out_data++;
     }
     in_data += D * N;

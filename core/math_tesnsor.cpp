@@ -61,7 +61,8 @@ Tensor *name(const Tensor *in, Tensor *out, bool grad_op) {\
   }\
   return out;\
 }
-
+IMPLEMENT_TENSOR_UNARY_FUNC(abs);
+IMPLEMENT_TENSOR_UNARY_FUNC(log);
 IMPLEMENT_TENSOR_UNARY_FUNC(tanh);
 IMPLEMENT_TENSOR_UNARY_FUNC(relu);
 IMPLEMENT_TENSOR_UNARY_FUNC(elu);
@@ -146,6 +147,35 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
       break;
   }
 
+  return out;
+}
+
+Tensor *softmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
+  int caxis = in->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+  else
+    out = new Tensor(in->shape(), in->device(), in->require_grad());
+
+  int M = in->count(0, caxis);
+  int N = in->count(caxis + 1, in->num_axes());
+  int D = in->shape(caxis);
+  CHECK_EQ(in->size(), out->size());
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = in->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = in->const_grad();
+  }
+  switch (in->state()) {
+    case CPU:cpu_softmax(M, D, N, in_data, 0.0f, out_data);
+      break;
+    case GPU:gpu_softmax(M, D, N, in_data, 0.0f, out_data);
+      break;
+  }
   return out;
 }
 
@@ -519,7 +549,8 @@ Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out) {
 
       }
       break;
-    case stensor::GPU:for (int m = 0; m < M; ++m) {
+    case stensor::GPU:
+      for (int m = 0; m < M; ++m) {
         for (int l = 0; l < inputs.size(); ++l) {
           int N = inputs[l]->count(caxis, inputs[l]->num_axes());
           stensor::gpu_copy(N, data_heads[l], out_data);

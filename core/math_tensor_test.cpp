@@ -396,7 +396,7 @@ TEST_F(MathTensorTest, Concat) {
   Tensor::ShapeType shape1{50, 200, 400};
   Tensor::ShapeType shape2{10, 200, 400};
 
-  int axis = 0;
+  int axis = 3;
   int device = 0;
 
   Tensor *a = stensor::ones(shape1, device);
@@ -404,11 +404,41 @@ TEST_F(MathTensorTest, Concat) {
   long long start = systemtime_ms();
   Tensor *e = stensor::concat({a, b}, axis);
   std::cout << e->shape_string() << std::endl;
-  LOG(INFO) << "GPU sum operation time:" << systemtime_ms() - start << "ms";
-//  std::cout << e << std::endl;
+  LOG(INFO) << "GPU concat operation time:" << systemtime_ms() - start << "ms";
+
+  a->to_cpu();
+  start = systemtime_ms();
+  Tensor *f = stensor::concat({a, b}, axis);
+  std::cout << f->shape_string() << std::endl;
+  LOG(INFO) << "CPU concat operation time:" << systemtime_ms() - start << "ms";
 
   delete a;
   delete b;
   delete e;
+  delete f;
 }
+
+TEST_F(MathTensorTest, Softmax) {
+  Tensor::ShapeType shape1{50, 20, 400};
+
+  int axis = 2;
+  int device = 0;
+
+  Tensor *a = stensor::ones(shape1, device);
+  long long start = systemtime_ms();
+  Tensor *e = stensor::softmax(a, axis);
+  std::cout << e->shape_string() << std::endl;
+  LOG(INFO) << "GPU softmax operation time:" << systemtime_ms() - start << "ms";
+
+  a->to_cpu();
+  start = systemtime_ms();
+  e = stensor::softmax(a, axis);
+  std::cout << e->shape_string() << std::endl;
+  LOG(INFO) << "CPU softmax operation time:" << systemtime_ms() - start << "ms";
+  //  std::cout << e << std::endl;
+
+  delete a;
+  delete e;
+}
+
 }

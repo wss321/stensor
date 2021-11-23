@@ -11,8 +11,6 @@
 #include <cuda_runtime.h>
 #include <driver_types.h>
 #include <cudnn.h>
-#include <cstdint>
-#include <cmath>
 #include <cblas-atlas.h>
 #include "memory_op.hpp"
 #include "stensor_random.hpp"
@@ -74,6 +72,9 @@ void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtyp
 
 template<typename Dtype>
 void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
+template<typename Dtype>
+void gpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 /* self-op end*/
 
 /* vector-scalar start*/
