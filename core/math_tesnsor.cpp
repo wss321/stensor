@@ -466,6 +466,78 @@ Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   return out;
 }
 
+Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out) {
+  CHECK_GE(inputs.size(), 1);
+  int caxis = inputs[0]->canonical_axis_index(axis);
+  std::vector<int> shape_ref(inputs[0]->shape());
+  shape_ref[caxis] = 1;
+  int new_dim = 0;
+  bool require_grad = false;
+  std::vector<float *> data_heads(inputs.size());
+  std::vector<float *> grad_heads(inputs.size());
+
+  for (int i = 0; i < inputs.size(); ++i) {
+    std::vector<int> shape_cur(inputs[i]->shape());
+    shape_cur[caxis] = 1;
+    CHECK_SHAPE(shape_ref, shape_cur);
+    CHECK_EQ(inputs[0]->device(), inputs[i]->device()) << "tensors must be at same device";
+    require_grad = inputs[i]->require_grad() || require_grad;
+    new_dim += inputs[i]->shape(caxis);
+    data_heads[i] = inputs[i]->data();
+    if (inputs[i]->require_grad())
+      grad_heads[i] = inputs[i]->grad();
+    else grad_heads[i] = nullptr;
+  }
+  shape_ref[caxis] = new_dim;
+  if (out == nullptr)
+    out = new Tensor(shape_ref, inputs[0]->device(), require_grad);
+  else {
+    CHECK_EQ(inputs[0]->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(shape_ref, out->shape());
+  }
+  int M = inputs[0]->count(0, caxis);
+
+  float *out_data = out->data();
+  float *out_grad = nullptr;
+  if (out->require_grad())
+    out_grad = out->grad();
+  switch (inputs[0]->state()) {
+    case stensor::CPU:
+      for (int m = 0; m < M; ++m) {
+        for (int l = 0; l < inputs.size(); ++l) {
+          int N = inputs[l]->count(caxis, inputs[l]->num_axes());
+          stensor::cpu_copy(N, data_heads[l], out_data);
+          out_data += N;
+          data_heads[l] += N;
+          // copy grad
+          if (out_grad != nullptr && grad_heads[l] != nullptr) {
+            stensor::cpu_copy(N, grad_heads[l], out_grad);
+            out_grad += N;
+            grad_heads[l] += N;
+          }
+        }
+
+      }
+      break;
+    case stensor::GPU:for (int m = 0; m < M; ++m) {
+        for (int l = 0; l < inputs.size(); ++l) {
+          int N = inputs[l]->count(caxis, inputs[l]->num_axes());
+          stensor::gpu_copy(N, data_heads[l], out_data);
+          out_data += N;
+          data_heads[l] += N;
+          // copy grad
+          if (out_grad != nullptr && grad_heads[l] != nullptr) {
+            stensor::gpu_copy(N, grad_heads[l], out_grad);
+            out_grad += N;
+            grad_heads[l] += N;
+          }
+        }
+
+      }
+      break;
+  }
+  return out;
+}
 
 /* math of Tensor end */
 
@@ -537,7 +609,6 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int N = a->count(caxis + 1, a->num_axes());
   int D = a->shape(caxis);
   CHECK_EQ(M * N, out->size());
-  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
   float *out_data = nullptr;
   const float *in_data = nullptr;
   if (!grad_op) {
@@ -550,8 +621,7 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   switch (a->state()) {
     case CPU:cpu_reduce_sum(M, D, N, in_data, 0.0f, out_data);
       break;
-    case GPU:
-      gpu_reduce_sum(M, D, N, in_data, 0.0f, out_data);
+    case GPU:gpu_reduce_sum(M, D, N, in_data, 0.0f, out_data);
 //      for (int i = 0; i < M; ++i) {
 //        gpu_gemm(false, false, 1, N, D, 1.0f, sum_multiplier->data(), in_data, 0.0f, out_data);
 //        out_data += N;
@@ -576,7 +646,6 @@ Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int N = a->count(caxis + 1, a->num_axes());
   int D = a->shape(caxis);
   CHECK_EQ(M * N, out->size());
-  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
   float *out_data = nullptr;
   const float *in_data = nullptr;
   if (!grad_op) {
@@ -589,13 +658,11 @@ Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   switch (a->state()) {
     case CPU:cpu_reduce_mean(M, D, N, in_data, 0.0f, out_data);
       break;
-    case GPU:
-      gpu_reduce_mean(M, D, N, in_data, 0.0f, out_data);
+    case GPU:gpu_reduce_mean(M, D, N, in_data, 0.0f, out_data);
       break;
   }
   return out;
 }
-
 
 Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
@@ -624,8 +691,7 @@ Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   switch (a->state()) {
     case CPU:cpu_reduce_asum(M, D, N, in_data, 0.0f, out_data);
       break;
-    case GPU:
-      gpu_reduce_asum(M, D, N, in_data, 0.0f, out_data);
+    case GPU:gpu_reduce_asum(M, D, N, in_data, 0.0f, out_data);
       break;
   }
   return out;

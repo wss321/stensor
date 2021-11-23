@@ -391,4 +391,24 @@ TEST_F(MathTensorTest, asum) {
   delete d;
   delete e;
 }
+
+TEST_F(MathTensorTest, Concat) {
+  Tensor::ShapeType shape1{50, 200, 400};
+  Tensor::ShapeType shape2{10, 200, 400};
+
+  int axis = 0;
+  int device = 0;
+
+  Tensor *a = stensor::ones(shape1, device);
+  Tensor *b = stensor::constants(shape2, 2,device);
+  long long start = systemtime_ms();
+  Tensor *e = stensor::concat({a, b}, axis);
+  std::cout << e->shape_string() << std::endl;
+  LOG(INFO) << "GPU sum operation time:" << systemtime_ms() - start << "ms";
+//  std::cout << e << std::endl;
+
+  delete a;
+  delete b;
+  delete e;
+}
 }

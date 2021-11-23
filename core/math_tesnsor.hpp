@@ -53,8 +53,8 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1,
                Tensor *out = nullptr, bool grad_op = false);
 Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
 Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
-
-/* Tensor-Tensor start*/
+Tensor *concat(const std::vector<Tensor*>& inputs, int axis, Tensor *out = nullptr);
+/* Tensor-Tensor end*/
 
 /* math of Tensor end */
 
