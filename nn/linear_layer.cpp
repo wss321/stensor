@@ -7,45 +7,51 @@
 namespace stensor {
 
 namespace nn {
-LinearLayer::LinearLayer(int dim_in, int dim_out, int axis, int device, bool bias) {
+
+LinearLayer::LinearLayer(int dim_in,
+                         int dim_out,
+                         int axis,
+                         int device,
+                         bool bias) {
   CHECK_GT(dim_in, 0);
   CHECK_GT(dim_out, 0);
   axis_ = axis;
   has_bias_ = bias;
+  parameters_.resize(2);
   Tensor *W = stensor::random({dim_in, dim_out}, device, true);
   W->set_name("weight");
+  W_.reset(W);
+  parameters_[0] = W_;
   if (has_bias_) {
     Tensor *b = stensor::random({1, dim_out}, device, true);
     b_.reset(b);
+    parameters_[1] = b_;
   }
-  W_.reset(W);
 
 }
 
 TensorVec LinearLayer::forward(TensorVec &inputs) {
-  TensorVec output(inputs.size());
+  outputs_.resize(inputs.size());
+  inputs_ = inputs;
   Tensor *m;
   Tensor *m1;
   for (int i = 0; i < inputs.size(); ++i) {
-    m = stensor::matmul(inputs[i].get(), W_.get());
+    m = stensor::matmul(inputs[i].get(), W_.get(), axis_);
     if (has_bias_) {
       m1 = stensor::add(m, b_.get());
       delete m;
       m = m1;
     }
-    output[i].reset(m);
-    bottom_.push_back(inputs[i]);
-    top_.push_back(output[i]);
+    outputs_[i].reset(m);
   }
-
-  return output;
+  return outputs_;
 }
 
 void LinearLayer::backward() {
-  for (int i = 0; i < bottom_.size(); ++i) {
+  for (int i = 0; i < inputs_.size(); ++i) {
 
   }
-  bottom_.clear();
+  inputs_.clear();
 }
 
 }//namespace nn

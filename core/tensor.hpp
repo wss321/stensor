@@ -234,7 +234,7 @@ class Tensor {
 
 //  const std::pair<Tensor *, std::string> neighbors() const;
   void from_proto(const TensorProto &proto, bool reset = true);
-  void to_proto(TensorProto &proto, bool write_grad = false) const;
+  void to_proto(TensorProto *proto, bool write_grad = false) const;
 
   Tensor &operator=(const Tensor &other);
   Tensor &operator=(const Tensor *other);

@@ -59,17 +59,22 @@ void cpu_gelu(const int n, const Dtype *x, Dtype *y);
 template<typename Dtype>
 void cpu_leakyrelu(const int n, const Dtype *x, Dtype *y);
 
+// x:MxDxN -> y:Mx1xN (sum at the second axis)
 template<typename Dtype>
 void cpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 
+// x:MxDxN -> y:Mx1xN (mean at the second axis)
 template<typename Dtype>
 void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 
+// x:MxDxN -> y:Mx1xN (asum at the second axis)
 template<typename Dtype>
 void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 
+// x:MxDxN -> y:MxDxN (softmax at the second axis)
 template<typename Dtype>
 void cpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+
 /* self op end*/
 
 /* vector scalar start*/
@@ -232,6 +237,10 @@ void cpu_rng_bernoulli(int n,
                        int *r);
 /* random generator end*/
 
+// loss
+// x:n -> y:n
+template<typename Dtype>
+void cpu_nll(const int n, const Dtype *pred, const Dtype *ground_truth, Dtype *y);
 
 }
 #endif //STENSOR_CORE_MATH_BASE_CPU_HPP_

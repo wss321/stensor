@@ -1,0 +1,10 @@
+syntax = "proto3";
+import "tensor.proto";
+package stensor;
+
+message ModuleParameter{
+  optional string name=1;
+  optional string type=2;
+  repeated ModuleParameter submodule=3;
+  repeated TensorProto param=4;
+}

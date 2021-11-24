@@ -12,7 +12,12 @@ namespace stensor {
 namespace nn {
 class LinearLayer : public Module {
  public:
-  LinearLayer(int dim_in, int dim_out, int axis=-1, int device=-1, bool bias=true);
+  explicit LinearLayer(int dim_in,
+              int dim_out,
+              int axis,
+              int device,
+              bool bias);
+  ~LinearLayer(){};
   TensorVec forward(TensorVec &inputs);
   void backward();
  private:
@@ -20,8 +25,6 @@ class LinearLayer : public Module {
   SharedTensor b_;
   int axis_;
   bool has_bias_;
-  TensorVec bottom_;
-  TensorVec top_;
 
 };
 }//namespace nn

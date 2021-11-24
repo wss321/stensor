@@ -210,49 +210,51 @@ bool Tensor::shape_equal(const TensorProto *other) const {
   return true;
 }
 
-void Tensor::to_proto(TensorProto &proto, bool write_grad) const {
-  proto.clear_shape();
+void Tensor::to_proto(TensorProto *proto, bool write_grad) const {
+  proto->clear_shape();
   // 1. shape
   for (int i = 0; i < _shape.size(); ++i) {
-    proto.add_shape(_shape[i]);
+    proto->add_shape(_shape[i]);
   }
-  proto.clear_data();
-  proto.clear_grad();
+  proto->clear_data();
+  proto->clear_grad();
   // 2. data
   const float *data_vec = const_data();
   for (int i = 0; i < _size; ++i) {
-    proto.add_data(data_vec[i]);
+    proto->add_data(data_vec[i]);
   }
   // 3. grad
   if (write_grad) {
     const float *grad_vec = const_grad();
     for (int i = 0; i < _size; ++i) {
-      proto.add_grad(grad_vec[i]);
+      proto->add_grad(grad_vec[i]);
     }
   }
   // 4. size & name & isparam
-  proto.set_size(_size);
-  proto.set_name(_name);
-  proto.set_require_grad(_require_grad);
+  proto->set_size(_size);
+  proto->set_name(_name);
+  proto->set_require_grad(_require_grad);
   // 5. neighbor & operations
-  proto.clear_neighbors();
-  proto.clear_operations();
+  proto->clear_neighbors();
+  proto->clear_operations();
   for (int i = 0; i < _children_name.size(); ++i) {
-    proto.add_neighbors(_children_name[i]);
-    proto.add_operations(_operations[i]);
+    proto->add_neighbors(_children_name[i]);
+    proto->add_operations(_operations[i]);
   }
 }
 
 void Tensor::from_proto(const TensorProto &proto, bool reset) {
   // 1. reshape
-  _size = proto.size();
-  _require_grad = proto.require_grad();
-  _name = proto.name();
   if (reset) {
     Tensor::ShapeType new_shape;
     stensor::RepeatTypeToVector(proto.shape(), new_shape);
     Reset(new_shape);
+    _size = proto.size();
+    _require_grad = proto.require_grad();
+    _name = proto.name();
   } else {
+    CHECK_EQ(_size, proto.size());
+    CHECK_EQ(_name, proto.name());
     CHECK(shape_equal(&proto)) << "shape mismatch.";
   }
   // 2. copy data
@@ -405,7 +407,7 @@ Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
 /* save and load*/
 void save(const Tensor *tensor, const std::string &path) {
   TensorProto proto;
-  tensor->to_proto(proto);
+  tensor->to_proto(&proto);
   std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
   bool success = proto.SerializeToOstream(&output);
   CHECK(success) << "Failed to save tensor to " << path;
