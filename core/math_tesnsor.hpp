@@ -28,6 +28,9 @@ Tensor *square(const Tensor *tensor, Tensor *out = nullptr, bool grad_op = false
 Tensor *clamp(const Tensor *tensor, float minVal, float maxVal, Tensor *out = nullptr, bool grad_op = false);
 Tensor *repeat(const Tensor *tensor, int axis, int num, Tensor *out = nullptr, bool grad_op = false);
 Tensor *softmax(const Tensor *tensor, int axis, Tensor *out = nullptr, bool grad_op = false);
+
+Tensor *one_hot(const Tensor *tensor, int num_class, Tensor *out = nullptr, bool grad_op = false);
+
 /* self-op end*/
 
 /* Tensor-scalar start*/
@@ -54,7 +57,7 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis = -1,
                Tensor *out = nullptr, bool grad_op = false);
 Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
 Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out = nullptr, bool grad_op = false);
-Tensor *concat(const std::vector<Tensor*>& inputs, int axis, Tensor *out = nullptr);
+Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out = nullptr);
 /* Tensor-Tensor end*/
 
 /* math of Tensor end */

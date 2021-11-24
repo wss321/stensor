@@ -182,6 +182,47 @@ void gpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype be
 template void gpu_softmax<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
 template void gpu_softmax<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
+template<typename Dtype>
+__global__ void one_hot_kernel(const int M, const int C, const Dtype *x, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * C) {
+    int m = index / C;
+    int c = index % C;
+    if (x[m]==c) y[index]=Dtype(1);
+    else y[index]=Dtype(0);
+  }
+}
+template<typename Dtype>
+__global__ void one_hot_kernel(const int M, const int C, const int *x, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * C) {
+    int m = index / C;
+    int c = index % C;
+    if (x[m]==c) y[index]=Dtype(1);
+    else y[index]=Dtype(0);
+  }
+}
+
+template<typename Dtype>
+void gpu_one_hot(const int M, const int C, const Dtype *x, Dtype *y) {
+  one_hot_kernel<Dtype><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_one_hot<float>(const int M, const int C, const float *x, float *y);
+template void gpu_one_hot<double>(const int M, const int C, const double *x, double *y);
+
+template<typename Dtype>
+void gpu_one_hot(const int M, const int C, const int *x, Dtype *y) {
+  one_hot_kernel<Dtype><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_one_hot<float>(const int M, const int C, const int *x, float *y);
+template void gpu_one_hot<double>(const int M, const int C, const int *x, double *y);
+
+
+
 /* self-op end*/
 
 /* vector-scalar start*/

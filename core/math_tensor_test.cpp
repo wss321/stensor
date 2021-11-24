@@ -441,4 +441,26 @@ TEST_F(MathTensorTest, Softmax) {
   delete e;
 }
 
+TEST_F(MathTensorTest, OneHot) {
+  Tensor::ShapeType shape1{10};
+
+  int device = 0;
+
+  Tensor *a = stensor::zeros(shape1, device);
+  for (int i = 0; i < a->size(); ++i) {
+    (*a)[i] = float(i);
+  }
+  std::cout << a << std::endl;
+  Tensor *e = stensor::one_hot(a, 10);
+  std::cout << e << std::endl;
+
+  a->to_cpu();
+  e = stensor::one_hot(a, 10);
+  std::cout << e << std::endl;
+
+
+  delete a;
+  delete e;
+}
+
 }

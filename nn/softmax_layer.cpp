@@ -10,7 +10,7 @@ namespace nn {
 SoftmaxLayer::SoftmaxLayer(const std::string &name, int axis, int device) : axis_(axis) {
   if (device > -1) state_ = GPU;
   else state_ = CPU;
-  type_ = "Linear";
+  type_ = "Softmax";
   name_ = name;
   parameters_.resize(0);
 
