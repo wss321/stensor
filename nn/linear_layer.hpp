@@ -12,7 +12,7 @@ namespace stensor {
 namespace nn {
 class LinearLayer : public Module {
  public:
-  explicit LinearLayer(int dim_in,
+  explicit LinearLayer(const std::string &name, int dim_in,
               int dim_out,
               int axis,
               int device,
@@ -25,7 +25,7 @@ class LinearLayer : public Module {
   SharedTensor b_;
   int axis_;
   bool has_bias_;
-
+ DISABLE_COPY_AND_ASSIGN(LinearLayer);
 };
 }//namespace nn
 

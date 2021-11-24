@@ -12,7 +12,7 @@ TEST_F(LinearLayerTest, Forward) {
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
   nn::TensorVec input;
   input.push_back(a);
-  nn::LinearLayer linear(2, 2, -1, device_id, true);
+  nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
   nn::TensorVec output1 = linear.forward(input);
   nn::TensorVec output2 = linear.forward(input);
@@ -39,7 +39,7 @@ TEST_F(LinearLayerTest, save) {
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
   nn::TensorVec input;
   input.push_back(a);
-  nn::LinearLayer linear(2, 2, -1, device_id, true);
+  nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
   nn::TensorVec output1 = linear.forward(input);
   nn::TensorVec output2 = linear.forward(input);
@@ -62,7 +62,7 @@ TEST_F(LinearLayerTest, save) {
 TEST_F(LinearLayerTest, load) {
 
   int device_id = 0;
-  nn::LinearLayer linear(2, 2, -1, device_id, true);
+  nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
 //  stensor::Config::set_random_seed(123);
   nn::SharedTensor a(stensor::ones({2, 2}, device_id));

@@ -41,7 +41,7 @@ class Module {
 
   }
   virtual void from_proto(const ModuleParameter &param) {
-    CHECK_EQ(name_, param.name());
+    CHECK_EQ(name_, param.name())<<"name mismatch";
     CHECK_EQ(type_, param.type());
     for (int i = 0; i < param.param_size(); ++i)
       parameters_[i]->from_proto(param.param(i));
@@ -56,6 +56,7 @@ class Module {
   TensorVec inputs_;
   TensorVec outputs_;
   std::vector<std::shared_ptr<Module>> submodules_;
+ DISABLE_COPY_AND_ASSIGN(Module);
 };
 }//namespace nn
 /* save and load*/
