@@ -87,7 +87,7 @@ TEST_F(LinearLayerTest, load) {
 }
 
 TEST_F(LinearLayerTest, Backward) {
-  int device_id = 0;
+  int device_id = -1;
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
   nn::TensorVec input;
   input.push_back(a);

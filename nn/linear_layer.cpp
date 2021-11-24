@@ -19,6 +19,8 @@ LinearLayer::LinearLayer(const std::string &name,
   type_ = "Linear";
   name_ = name;
   axis_ = axis;
+  if (device > -1) state_ = GPU;
+  else state_ = CPU;
   has_bias_ = bias;
   parameters_.resize(2);
   Tensor *W = stensor::random({dim_in, dim_out}, device, true);
@@ -65,7 +67,7 @@ void LinearLayer::backward_cpu() {
 }
 
 void LinearLayer::backward() {
-  if (LinearLayer::W_->state() == GPU)
+  if (state_ == GPU)
     backward_gpu();
   else
     backward_cpu();

@@ -170,6 +170,9 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
     _grad.reset(new SynMem(_capacity * sizeof(Dtype), device_id));
   }
   update_state();
+  zero_data();
+  if (_require_grad)
+    zero_grad();
 }
 
 void Tensor::reshape(const ShapeType &shape) {

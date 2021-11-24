@@ -52,6 +52,7 @@ class Module {
  protected:
   std::string name_;
   std::string type_;
+  Mode state_;
   TensorVec parameters_;
   TensorVec inputs_;
   TensorVec outputs_;

@@ -118,35 +118,35 @@ template void cpu_softmax<float>(const int M, const int D, const int N, const fl
 template void cpu_softmax<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 
-template<typename Dtype>
-void cpu_cross_entropy(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
-  const Dtype *in_data = x;
-  Dtype *out_data = y;
-  for (int m = 0; m < M; ++m) {
-    for (int n = 0; n < N; ++n) {
-      // calc denominator
-      Dtype denominator = 0;
-      for (int d = 0; d < D; ++d) {
-        denominator += exp(in_data[d * N + n]);
-      }
-
-      if (beta == 0) {
-        for (int d = 0; d < D; ++d) {
-          out_data[d * N + n] = exp(in_data[d * N + n]) / denominator;
-        }
-      } else {
-        for (int d = 0; d < D; ++d) {
-          out_data[d * N + n] = beta * (*out_data) + exp(in_data[d * N + n]) / denominator;
-        }
-      }
-    }
-    in_data += D * N;
-    out_data += D * N;
-  }
-}
-
-template void cpu_cross_entropy<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
-template void cpu_cross_entropy<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+//template<typename Dtype>
+//void cpu_cross_entropy(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+//  const Dtype *in_data = x;
+//  Dtype *out_data = y;
+//  for (int m = 0; m < M; ++m) {
+//    for (int n = 0; n < N; ++n) {
+//      // calc denominator
+//      Dtype denominator = 0;
+//      for (int d = 0; d < D; ++d) {
+//        denominator += exp(in_data[d * N + n]);
+//      }
+//
+//      if (beta == 0) {
+//        for (int d = 0; d < D; ++d) {
+//          out_data[d * N + n] = exp(in_data[d * N + n]) / denominator;
+//        }
+//      } else {
+//        for (int d = 0; d < D; ++d) {
+//          out_data[d * N + n] = beta * (*out_data) + exp(in_data[d * N + n]) / denominator;
+//        }
+//      }
+//    }
+//    in_data += D * N;
+//    out_data += D * N;
+//  }
+//}
+//
+//template void cpu_cross_entropy<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+//template void cpu_cross_entropy<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
 void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
