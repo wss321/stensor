@@ -102,7 +102,7 @@ class Tensor {
   }
   inline const Dtype *const_grad() const {
     check_grad();
-    return _current_data;
+    return _current_grad;
   }
 
   inline Mode state() const {

@@ -7,6 +7,7 @@ namespace stensor {
 
 namespace backward {
 
+//
 void add_backward(Tensor *a, Tensor *b, const Tensor *y) {
   std::vector<int> shape_a(a->shape());
   std::vector<int> shape_b(b->shape());
@@ -23,6 +24,7 @@ void add_backward(Tensor *a, Tensor *b, const Tensor *y) {
     case stensor::GPU:break;
   }
 }
+//y=ab
 void matmul_backward(Tensor *a, Tensor *b, const Tensor *y,
                      int axis, bool transA, bool transB) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";

@@ -85,4 +85,15 @@ TEST_F(LinearLayerTest, load) {
   std::cout << output1[0] << std::endl;
   std::cout << output2[0] << std::endl;
 }
+
+TEST_F(LinearLayerTest, Backward) {
+  int device_id = 0;
+  nn::SharedTensor a(stensor::random({2, 2}, device_id));
+  nn::TensorVec input;
+  input.push_back(a);
+  nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
+
+  nn::TensorVec output1 = linear.forward(input);
+  linear.backward();
+}
 }

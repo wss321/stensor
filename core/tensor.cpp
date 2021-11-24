@@ -353,9 +353,7 @@ std::string Tensor::grad_string() const {
   std::ostringstream out;
   const Tensor::ShapeType shape = this->shape();
   out << memoryTostring<Tensor::Dtype>(const_grad(), shape);
-  out << "{shape:" << shape_string() << ", dtype:"
-      << abi::__cxa_demangle(typeid(Dtype).name(), nullptr, nullptr, nullptr)
-      << "}" << std::endl;
+  out << shape_string()<<std::endl;
   return out.str();
 }
 

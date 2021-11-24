@@ -7,6 +7,19 @@ set(CORE_SRCS ${CORE_SRCS} ${tmp})
 
 file(GLOB TEST_SRCS *_test.cpp)
 file(GLOB CU_SRCS *.cu)
+cuda_add_library(nn_cuda SHARED ${CU_SRCS})
+target_include_directories(nn_cuda
+        PRIVATE ${PROJECT_SOURCE_DIR}
+        PRIVATE ${stensor_SOURCE_DIR}/public
+        #        PRIVATE ${CUBLAS_INCLUDE_DIRS}
+        )
+target_link_libraries(nn_cuda
+        lib::public
+        lib::tensor
+        ${CUBLAS_LIBRARIES}
+        #        ${CUDA_curand_LIBRARY}
+        )
+
 add_library(${PROJECT_NAME} STATIC
         ${CORE_SRCS}
         )
@@ -20,6 +33,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
         lib::public
         lib::tensor
+        nn_cuda
         )
 enable_testing()
 include(GoogleTest)
@@ -36,6 +50,7 @@ foreach(test_src ${TEST_SRCS})
             lib::public
             lib::tensor
             lib::nn
+            nn_cuda
             )
     gtest_discover_tests(${test_target})
 endforeach()

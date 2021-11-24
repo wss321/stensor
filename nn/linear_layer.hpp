@@ -6,6 +6,7 @@
 #define STENSOR_NN_LINEAR_LAYER_HPP_
 #include "module.hpp"
 #include "math_tensor_backward.hpp"
+#include "math_base_cuda.hpp"
 
 namespace stensor {
 
@@ -21,6 +22,10 @@ class LinearLayer : public Module {
   TensorVec forward(TensorVec &inputs);
   void backward();
  private:
+//  TensorVec forward_cpu(TensorVec &inputs);
+//  TensorVec forward_gpu(TensorVec &inputs);
+  void backward_cpu();
+  void backward_gpu();
   SharedTensor W_;
   SharedTensor b_;
   int axis_;
