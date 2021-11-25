@@ -67,6 +67,11 @@ class Module {
   virtual inline Mode state(){return state_;}
   virtual inline std::string name(){return name_;}
   virtual inline std::string type(){return type_;}
+  virtual inline void zero_output(){
+    for (int i = 0; i < outputs_.size(); ++i) {
+      outputs_[i]->zero_grad();
+    }
+  }
  protected:
   std::string name_;
   std::string type_;

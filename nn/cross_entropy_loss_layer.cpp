@@ -20,8 +20,8 @@ CrossEntropyLossLayer::CrossEntropyLossLayer(const std::string &name, int axis, 
 std::vector<Tensor*> CrossEntropyLossLayer::forward(std::vector<Tensor*> &inputs) {
   CHECK_EQ(inputs.size(), 2) << "inputs must be two tensor:prediction & ground-truth";
   inputs_ = inputs;
-  Tensor* pred = inputs_[0]; // float:e.g 64x100 (batch size:64, num class:100)
-  Tensor* gt = inputs_[1]; // int :64, 0~99
+  Tensor* pred = inputs[0]; // float:e.g 64x100 (batch size:64, num class:100)
+  Tensor* gt = inputs[1]; // int :64, 0~99
 
   int caxis = inputs[0]->canonical_axis_index(axis_);
   int M = pred->count(0, caxis);

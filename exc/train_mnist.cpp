@@ -180,7 +180,7 @@ class SimpleNet : public nn::Module {
 
 int main() {
   stensor::Config::set_random_seed(1234);
-  int device_id = -1;
+  int device_id = 0;
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLossLayer loss("loss", -1, device_id);
 

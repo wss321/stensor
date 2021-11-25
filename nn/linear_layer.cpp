@@ -48,9 +48,11 @@ std::vector<Tensor *> LinearLayer::forward(std::vector<Tensor *> &inputs) {
     result_->set_name(name()+"/output");
     outputs_[0] = result_.get();
   }
-//  std::cout<<outputs_[0].get();
+  this->zero_output();
+
   inputs_ = inputs;
-  Tensor* m=stensor::matmul(in, W_.get(), axis_);
+//  Tensor* m=stensor::matmul(in, W_.get(), axis_);
+  Tensor* m=stensor::matmul(in, W_.get(), axis_, false, false, 0.0f, outputs_[0]);
 //  stensor::matmul(in.get(), W_.get(), axis_,
 //                  false, false, 0.0, result_.get());
 
@@ -60,42 +62,24 @@ std::vector<Tensor *> LinearLayer::forward(std::vector<Tensor *> &inputs) {
   if (outputs_.empty())
     outputs_.push_back(m);
   else outputs_[0] = m;
-  result_.reset(m);
+//  result_.reset(m);
   return outputs_;
-
-//  if (result_.get() == nullptr || out_shape != result_->shape()) {
-//    outputs_.resize(1);
-//    result_.reset(new Tensor(out_shape, in->device(), W_->require_grad() || in->require_grad()));
-//    result_->set_name(name() + "/output");
-//    outputs_[0] = result_.get();
-//  }
-////  std::cout<<outputs_[0].use_count()<<"\n";
-//
-//  inputs_ = inputs;
-////  SharedTensor m(stensor::matmul(in.get(), W_.get(), axis_));
-//  std::cout << result_.get();
-//  stensor::matmul(in, W_.get(), axis_,
-//                  false, false, 0.0, result_.get());
-//
-//  if (has_bias_)
-//    stensor::add(result_.get(), b_.get(), result_.get());
-//
-//  return std::vector<Tensor *>({result_.get()});
 }
 void LinearLayer::backward_cpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
     Tensor *x = inputs_[0];
     int caxis = x->canonical_axis_index(axis_);
-    stensor::backward::matmul_backward(x, W_.get(), result_.get());
+    stensor::backward::matmul_backward(x, W_.get(), outputs_[0]);
     if (has_bias_) {
-      int M = result_->count(0, caxis - 1);
-      int N = result_->count(caxis, result_->num_axes());
-      int D = result_->shape(caxis - 1);
+      int M = outputs_[0]->count(0, caxis - 1);
+      int N = outputs_[0]->count(caxis, outputs_[0]->num_axes());
+      int D = outputs_[0]->shape(caxis - 1);
       stensor::cpu_reduce_sum(M, D, N,
-                              result_->const_grad(), 1.0f, b_->grad());
+                              outputs_[0]->const_grad(), 1.0f, b_->grad());
     }
 
   }
+//  std::cout<<b_->grad_string()<<"\n";
   inputs_.clear();
 }
 
