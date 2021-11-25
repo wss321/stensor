@@ -14,7 +14,7 @@ void LinearLayer::backward_gpu() {
     SharedTensor y(outputs_[i]);
     int caxis = x->canonical_axis_index(axis_);
     stensor::backward::matmul_backward(x.get(), W_.get(), y.get());
-    if (has_bias_){
+    if (has_bias_) {
       int M = y->count(0, caxis - 1);
       int N = y->count(caxis, y->num_axes());
       int D = y->shape(caxis - 1);

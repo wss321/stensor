@@ -28,6 +28,10 @@ class CrossEntropyLossLayer : public Module {
   }
   inline float get_loss() { return loss_; }
  private:
+  inline void zero_temp_grad() {
+    if (softmax_out_.get() && softmax_out_->require_grad())
+      softmax_out_->zero_grad();
+  }
   void backward_cpu();
   void backward_gpu();
   int axis_;

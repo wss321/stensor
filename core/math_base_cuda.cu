@@ -92,6 +92,7 @@ __global__ void reduce_sum_kernel(const int M, const int D, const int N, const D
 template<typename Dtype>
 void gpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_sum_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -172,6 +173,7 @@ __global__ void softmax_kernel(const int M, const int D, const int N, const Dtyp
 template<typename Dtype>
 void gpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   softmax_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 

@@ -36,7 +36,6 @@ LinearLayer::LinearLayer(const std::string &name,
   }
 }
 
-//TODO:fix matmul (a,b,c) err
 TensorVec LinearLayer::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
   this->zero_output_grad();
@@ -49,7 +48,6 @@ TensorVec LinearLayer::forward(TensorVec &inputs) {
     result_->set_name(name()+"/output");
   }
   inputs_ = inputs;
-//  SharedTensor m(stensor::matmul(in.get(), W_.get(), axis_));
   stensor::matmul(in.get(), W_.get(), axis_,
                   false, false, 0.0, result_.get());
 

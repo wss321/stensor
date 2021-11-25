@@ -27,7 +27,7 @@ class Module {
       submodules_[i]->from_proto(param.submodule(i));
   };
   virtual ~Module() {};
-  virtual TensorVec forward(TensorVec &inputs)=0;
+  virtual TensorVec forward(TensorVec &inputs) = 0;
   virtual void backward() = 0;
   virtual void to_proto(ModuleParameter *param, bool save_grad = false) const {
     param->Clear();
@@ -64,13 +64,13 @@ class Module {
     }
     return learnable_params;
   }
-  virtual inline Mode state(){return state_;}
-  virtual inline std::string name(){return name_;}
-  virtual inline std::string type(){return type_;}
-  virtual inline void zero_output_grad(){
+  virtual inline Mode state() { return state_; }
+  virtual inline std::string name() { return name_; }
+  virtual inline std::string type() { return type_; }
+  virtual inline void zero_output_grad() {
     for (int i = 0; i < outputs_.size(); ++i) {
-      if (outputs_[i])
-      outputs_[i]->zero_grad();
+      if (outputs_[i] && outputs_[i]->require_grad())
+        outputs_[i]->zero_grad();
     }
   }
  protected:

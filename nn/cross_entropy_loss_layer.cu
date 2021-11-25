@@ -23,13 +23,17 @@ void CrossEntropyLossLayer::backward_gpu() {
   SharedTensor sm = softmax_out_;
   SharedTensor gt = inputs_[1];
   CHECK(in->shape_equal(sm.get()));
+
   if (!in->require_grad()) return;
   int caxis = in->canonical_axis_index(axis_);
+//  int M = in->count(0, caxis);
+//  int N = in->count(caxis + 1, in->num_axes());
   int num_class = in->shape(caxis);
+//  stensor::one_hot(gt.get(), num_class, one_hot_.get());
   Tensor *one_hot = stensor::one_hot(gt.get(), num_class);
   one_hot_.reset(one_hot);
   const float *data_sm = sm->const_data();
-  const float *data_gt = one_hot->const_data();
+  const float *data_oh = one_hot_->const_data();
   float *grad_in = in->grad();
 
   if (caxis != sm->num_axes() - 1) {
@@ -39,11 +43,12 @@ void CrossEntropyLossLayer::backward_gpu() {
       new_order.push_back(i);
     new_order[sm->num_axes() - 1] = caxis;
     new_order[caxis] = sm->num_axes() - 1;
-    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);
+    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);//TODO inplace transpose
     data_sm = transpose_sm->const_data();
   }
+
   cross_entropy_backward_kernel<float>
-  <<<GET_BLOCKS(in->size()), CUDA_NUM_THREADS>>>(in->size(), data_sm, data_gt, 1.0f, grad_in);
+  <<<GET_BLOCKS(in->size()), CUDA_NUM_THREADS>>>(in->size(), data_sm, data_oh, 1.0f, grad_in);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 

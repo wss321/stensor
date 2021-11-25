@@ -20,6 +20,7 @@ CrossEntropyLossLayer::CrossEntropyLossLayer(const std::string &name, int axis, 
 TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 2) << "inputs must be two tensor:prediction & ground-truth";
   this->zero_output_grad();
+  zero_temp_grad();
   inputs_ = inputs;
   SharedTensor pred = inputs_[0]; // float:e.g 64x100 (batch size:64, num class:100)
   SharedTensor gt = inputs_[1]; // int :64, 0~99
@@ -29,11 +30,16 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   int N = pred->count(caxis + 1, pred->num_axes());
   int C = pred->shape(caxis);
   CHECK_EQ(M * N, gt->size());
-//  std::cout<<pred;
-  Tensor *sm = stensor::softmax(pred.get(), caxis);
-//  std::cout<<sm;
-  softmax_out_.reset(sm);
-  float *sm_data = sm->data();
+  if (softmax_out_.get() == nullptr || pred->shape() != softmax_out_->shape()) {
+    outputs_.resize(1);
+    softmax_out_.reset(new Tensor(pred->shape(), pred->device(), pred->require_grad()));
+    one_hot_.reset(new Tensor(pred->shape(), pred->device(), false));
+    softmax_out_->set_name(name()+"/softmax_output");
+    one_hot_->set_name(name()+"/one_hot");
+    outputs_[0] = softmax_out_;
+  }
+  stensor::softmax(pred.get(), caxis, softmax_out_.get());// gpu err
+  float *sm_data = softmax_out_->data();
   const float *gt_data = gt->const_data();
   loss_ = 0;
   for (int m = 0; m < M; ++m) {
@@ -60,13 +66,11 @@ void CrossEntropyLossLayer::backward_cpu() {
 
   if (!in->require_grad()) return;
   int caxis = in->canonical_axis_index(axis_);
-  int M = in->count(0, caxis);
-  int N = in->count(caxis + 1, in->num_axes());
   int num_class = in->shape(caxis);
-  Tensor *one_hot = stensor::one_hot(gt.get(), num_class);
-  one_hot_.reset(one_hot);
+  stensor::one_hot(gt.get(), num_class, one_hot_.get());
+
   const float *data_sm = sm->const_data();
-  const float *data_oh = one_hot->const_data();
+  const float *data_oh = one_hot_->const_data();
   float *grad_in = in->grad();
 
   if (caxis != sm->num_axes() - 1) {
@@ -76,11 +80,10 @@ void CrossEntropyLossLayer::backward_cpu() {
       new_order.push_back(i);
     new_order[sm->num_axes() - 1] = caxis;
     new_order[caxis] = sm->num_axes() - 1;
-    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);
+    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);//TODO inplace transpose
     data_sm = transpose_sm->const_data();
   }
-//  std::cout<<one_hot;
-//  std::cout<<sm;
+
   for (int i = 0; i < in->size(); ++i) {
     *grad_in += *data_sm - *data_oh;
     grad_in++;
