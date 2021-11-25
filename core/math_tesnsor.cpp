@@ -179,14 +179,43 @@ Tensor *softmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
   return out;
 }
 
+Tensor *argmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
+  int caxis = in->canonical_axis_index(axis);
+  std::vector<int> new_shape(in->shape());
+  new_shape[caxis] = 1;
+  if (out != nullptr) {
+    CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
+    CHECK_SHAPE(new_shape, out->shape());
+  } else
+    out = new Tensor(new_shape, in->device(), in->require_grad());
+  int M = in->count(0, caxis);
+  int N = in->count(caxis + 1, in->num_axes());
+  int D = in->shape(caxis);
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = in->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = in->const_grad();
+  }
+  switch (in->state()) {
+    case CPU:cpu_argmax(M, D, N, in_data, out_data);
+      break;
+    case GPU:gpu_argmax(M, D, N, in_data, out_data);
+      break;
+  }
+  return out;
+}
+
 Tensor *one_hot(const Tensor *in, int num_class, Tensor *out, bool grad_op) {
   std::vector<int> out_shape(in->shape());
   out_shape.push_back(num_class);
-  if (out != nullptr){
+  if (out != nullptr) {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(out_shape, out->shape());
-  }
-  else
+  } else
     out = new Tensor(out_shape, in->device(), in->require_grad());
   int M = in->size();
   float *out_data = nullptr;
@@ -206,7 +235,6 @@ Tensor *one_hot(const Tensor *in, int num_class, Tensor *out, bool grad_op) {
   }
   return out;
 }
-
 
 /* self-op end*/
 

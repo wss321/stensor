@@ -30,7 +30,7 @@ Tensor *repeat(const Tensor *tensor, int axis, int num, Tensor *out = nullptr, b
 Tensor *softmax(const Tensor *tensor, int axis, Tensor *out = nullptr, bool grad_op = false);
 
 Tensor *one_hot(const Tensor *tensor, int num_class, Tensor *out = nullptr, bool grad_op = false);
-
+Tensor *argmax(const Tensor *tensor, int axis, Tensor *out = nullptr, bool grad_op = false);
 /* self-op end*/
 
 /* Tensor-scalar start*/

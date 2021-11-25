@@ -419,9 +419,9 @@ TEST_F(MathTensorTest, Concat) {
 }
 
 TEST_F(MathTensorTest, Softmax) {
-  Tensor::ShapeType shape1{50, 20, 400};
+  Tensor::ShapeType shape1{5, 4};
 
-  int axis = 2;
+  int axis = -1;
   int device = 0;
 
   Tensor *a = stensor::ones(shape1, device);
@@ -429,11 +429,14 @@ TEST_F(MathTensorTest, Softmax) {
   Tensor *e = stensor::softmax(a, axis);
   std::cout << e->shape_string() << std::endl;
   LOG(INFO) << "GPU softmax operation time:" << systemtime_ms() - start << "ms";
+  cudaDeviceSynchronize();
+  std::cout<<e;
 
   a->to_cpu();
   start = systemtime_ms();
   e = stensor::softmax(a, axis);
   std::cout << e->shape_string() << std::endl;
+//  std::cout<<e;
   LOG(INFO) << "CPU softmax operation time:" << systemtime_ms() - start << "ms";
   //  std::cout << e << std::endl;
 
@@ -462,5 +465,31 @@ TEST_F(MathTensorTest, OneHot) {
   delete a;
   delete e;
 }
+TEST_F(MathTensorTest, Argmax) {
+  Tensor::ShapeType shape1{5, 4};
 
+  int axis = -1;
+  int device = 0;
+
+  Tensor *a = stensor::random(shape1, device);
+  cudaDeviceSynchronize();
+  std::cout<<a;
+  long long start = systemtime_ms();
+  Tensor *e = stensor::argmax(a, axis);
+  std::cout << e->shape_string() << std::endl;
+  LOG(INFO) << "GPU softmax operation time:" << systemtime_ms() - start << "ms";
+  cudaDeviceSynchronize();
+  std::cout<<e;
+
+  a->to_cpu();
+  start = systemtime_ms();
+  e = stensor::argmax(a, axis);
+  std::cout << e->shape_string() << std::endl;
+  std::cout<<e;
+  LOG(INFO) << "CPU softmax operation time:" << systemtime_ms() - start << "ms";
+  //  std::cout << e << std::endl;
+
+  delete a;
+  delete e;
+}
 }

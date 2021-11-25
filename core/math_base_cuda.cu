@@ -92,7 +92,6 @@ __global__ void reduce_sum_kernel(const int M, const int D, const int N, const D
 template<typename Dtype>
 void gpu_reduce_sum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_sum_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
-  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -117,7 +116,6 @@ __global__ void reduce_mean_kernel(const int M, const int D, const int N, const 
 template<typename Dtype>
 void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_mean_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
-  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -142,7 +140,6 @@ __global__ void reduce_asum_kernel(const int M, const int D, const int N, const 
 template<typename Dtype>
 void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_asum_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
-  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -152,9 +149,9 @@ template void gpu_reduce_asum<double>(const int M, const int D, const int N, con
 
 template<typename Dtype>
 __global__ void softmax_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
-  CUDA_KERNEL_LOOP(index, M * D * N) {
+  CUDA_KERNEL_LOOP(index, M * N) {
     int n = index % N;
-    int m = index / (D * N);
+    int m = index / N;
     Dtype denominator = 0;
     int cur_idx = m * D * N + n;
     for (int d = 0; d < D; ++d) {
@@ -174,13 +171,42 @@ __global__ void softmax_kernel(const int M, const int D, const int N, const Dtyp
 
 template<typename Dtype>
 void gpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
-  softmax_kernel<Dtype><<<GET_BLOCKS(M * D * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
-  cudaDeviceSynchronize();
+  softmax_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
   CUDA_POST_KERNEL_CHECK;
 }
 
 template void gpu_softmax<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
 template void gpu_softmax<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+__global__ void argmax_kernel(const int M, const int D, const int N, const Dtype *x, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    int cur_idx = m * D * N + n;
+    Dtype maxV = x[cur_idx];
+    int max_index = 0;
+
+    for (int d = 0; d < D; ++d) {
+      if (x[cur_idx+d*N] > maxV) {
+        maxV = x[cur_idx+d*N];
+        max_index = d;
+      }
+    }
+    y[index]= max_index;
+
+    }
+}
+
+template<typename Dtype>
+void gpu_argmax(const int M, const int D, const int N, const Dtype *x, Dtype *y) {
+  argmax_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, y);
+  cudaDeviceSynchronize();
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void gpu_argmax<float>(const int M, const int D, const int N, const float *x, float *y);
+template void gpu_argmax<double>(const int M, const int D, const int N, const double *x, double *y);
 
 template<typename Dtype>
 __global__ void one_hot_kernel(const int M, const int C, const Dtype *x, Dtype *y) {

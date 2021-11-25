@@ -191,6 +191,7 @@ int main() {
       read_Mnist_Images_to_Tensor(mnist_root + "t10k-images-idx3-ubyte"));
   nn::TensorVec mnist_label(
       read_Mnist_Label2Tensor(mnist_root + "t10k-labels-idx1-ubyte"));
+  long long start_t = systemtime_ms();
   for (int e = 0; e < 100; ++e) {
     for (int i = 0; i < mnist_data.size(); ++i) {
 
@@ -223,5 +224,6 @@ int main() {
     }
     std::cout << "epoch:" << e << ", loss:" << loss.get_loss() << std::endl;
   }
+  LOG(INFO) << "Time cost:" << (systemtime_ms() - start_t)/1000 << " s\n";
   return 0;
 }

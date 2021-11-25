@@ -81,7 +81,8 @@ void cpu_one_hot(const int M, const int C, const Dtype *x, Dtype *y);
 
 template<typename Dtype>
 void cpu_one_hot(const int M, const int C, const int *x, Dtype *y);
-
+template<typename Dtype>
+void cpu_argmax(const int M, const int D, const int N, const Dtype *x, Dtype *y);
 
 /* self op end*/
 

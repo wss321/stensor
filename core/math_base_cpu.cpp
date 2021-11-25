@@ -118,6 +118,30 @@ template void cpu_softmax<float>(const int M, const int D, const int N, const fl
 template void cpu_softmax<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
+void cpu_argmax(const int M, const int D, const int N, const Dtype *x, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype maxV = in_data[n];
+      int max_index = 0;
+      for (int d = 1; d < D; ++d) {
+        if (in_data[d * N + n] > maxV) {
+          maxV = in_data[d * N + n];
+          max_index = d;
+        }
+      }
+      *out_data = max_index;
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+
+template void cpu_argmax<float>(const int M, const int D, const int N, const float *x, float *y);
+template void cpu_argmax<double>(const int M, const int D, const int N, const double *x, double *y);
+
+template<typename Dtype>
 void cpu_one_hot(const int M, const int C, const Dtype *x, Dtype *y) {
   const Dtype *in_data = x;
   Dtype *out_data = y;
@@ -152,7 +176,6 @@ void cpu_one_hot(const int M, const int C, const int *x, Dtype *y) {
 
 template void cpu_one_hot<float>(const int M, const int C, const int *x, float *y);
 template void cpu_one_hot<double>(const int M, const int C, const int *x, double *y);
-
 
 template<typename Dtype>
 void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
