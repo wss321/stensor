@@ -19,7 +19,7 @@ class LinearLayer : public Module {
               int device,
               bool bias);
   ~LinearLayer(){};
-  TensorVec forward(TensorVec &inputs);
+  std::vector<Tensor*> forward(std::vector<Tensor*> &inputs);
   void backward();
  private:
 //  TensorVec forward_cpu(TensorVec &inputs);

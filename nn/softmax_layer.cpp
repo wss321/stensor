@@ -16,12 +16,12 @@ SoftmaxLayer::SoftmaxLayer(const std::string &name, int axis, int device) : axis
 
 }
 
-TensorVec SoftmaxLayer::forward(TensorVec &inputs) {
+std::vector<Tensor*> SoftmaxLayer::forward(std::vector<Tensor*> &inputs) {
   outputs_.resize(inputs.size());
   inputs_ = inputs;
   for (int i = 0; i < inputs.size(); ++i) {
-    Tensor *m = stensor::softmax(inputs[i].get(), axis_);
-    outputs_[i].reset(m);
+    Tensor *m = stensor::softmax(inputs[i], axis_);
+    outputs_[i]=m;
   }
   return outputs_;
 }
@@ -63,8 +63,8 @@ void cpu_softmax_backward(const int M,
 
 void SoftmaxLayer::backward_cpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
-    SharedTensor in = inputs_[i];
-    SharedTensor out = outputs_[i];
+    Tensor* in = inputs_[i];
+    Tensor* out = outputs_[i];
     if (!in->require_grad()||!out->require_grad()) continue;
     int caxis = in->canonical_axis_index(axis_);
     int M = in->count(0, caxis);

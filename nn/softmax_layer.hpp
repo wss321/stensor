@@ -16,7 +16,7 @@ class SoftmaxLayer : public Module {
                         int axis,
                         int device);
   ~SoftmaxLayer() {};
-  TensorVec forward(TensorVec &inputs);
+  std::vector<Tensor*> forward(std::vector<Tensor*> &inputs);
   inline void backward() {
     if (state_ == GPU)
       backward_gpu();

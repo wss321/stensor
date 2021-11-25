@@ -161,11 +161,11 @@ class SimpleNet : public nn::Module {
     }
   };
   ~SimpleNet() {};
-  nn::TensorVec forward(nn::TensorVec &inputs) override {//image and ground-truth
+  std::vector<Tensor*> forward(std::vector<Tensor*> &inputs) override {//image and ground-truth
     inputs_.clear();
     inputs_.push_back(inputs[0]);
     modules["l1"];
-    nn::TensorVec x1 = modules["l1"]->forward(inputs_);
+    std::vector<Tensor*> x1 = modules["l1"]->forward(inputs_);
 //    nn::TensorVec x2 = modules["l2"]->forward(x1);
 //    nn::TensorVec x3 = modules["loss"]->forward(x2);
     return x1;
@@ -196,7 +196,7 @@ int main() {
     for (int i = 0; i < mnist_data.size(); ++i) {
 
       sgd.zero_grad();
-      nn::TensorVec in;
+      std::vector<Tensor*> in;
       nn::SharedTensor img = mnist_data[i];
       if (e == 0)
         stensor::scale(img.get(), 1 / 255.0, img.get());
@@ -210,11 +210,11 @@ int main() {
           gt->to_gpu();
       }
 
-      in.push_back(img);
+      in.push_back(img.get());
 
-      nn::TensorVec logit = net.forward(in);
+      std::vector<Tensor*> logit = net.forward(in);
 
-      nn::TensorVec pair{logit[0], gt};
+      std::vector<Tensor*> pair{logit[0], gt.get()};
       loss.forward(pair);
 
       loss.backward();

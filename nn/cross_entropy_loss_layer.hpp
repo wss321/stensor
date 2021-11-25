@@ -19,7 +19,7 @@ class CrossEntropyLossLayer : public Module {
                                  int axis,
                                  int device);
   ~CrossEntropyLossLayer() {};
-  TensorVec forward(TensorVec &inputs);
+  std::vector<Tensor*> forward(std::vector<Tensor*> &inputs);
   inline void backward() {
     if (state_ == GPU)
       backward_gpu();

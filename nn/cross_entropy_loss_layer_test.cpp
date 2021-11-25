@@ -23,9 +23,9 @@ TEST_F(CrossEntropyTest, Forward) {
   Tensor *sm = stensor::softmax(a.get(), -1);
   std::cout << sm << std::endl;
 
-  nn::TensorVec input(2);
-  input[0] = a;
-  input[1].reset(gt);
+  std::vector<Tensor*> input(2);
+  input[0] = a.get();
+  input[1]=gt;
   nn::CrossEntropyLossLayer cross_entropy_loss_layer("myCE", -1, device_id);
 
   cross_entropy_loss_layer.forward(input);

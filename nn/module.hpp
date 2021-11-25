@@ -27,7 +27,7 @@ class Module {
       submodules_[i]->from_proto(param.submodule(i));
   };
   virtual ~Module() {};
-  virtual TensorVec forward(TensorVec &inputs)=0;
+  virtual std::vector<Tensor*> forward(std::vector<Tensor*> &inputs)=0;
   virtual void backward() = 0;
   virtual void to_proto(ModuleParameter *param, bool save_grad = false) const {
     param->Clear();
@@ -72,8 +72,8 @@ class Module {
   std::string type_;
   Mode state_;
   TensorVec parameters_;
-  TensorVec inputs_;
-  TensorVec outputs_;
+  std::vector<Tensor*> inputs_;
+  std::vector<Tensor*> outputs_;
   std::vector<std::shared_ptr<Module>> submodules_;
  DISABLE_COPY_AND_ASSIGN(Module);
 };

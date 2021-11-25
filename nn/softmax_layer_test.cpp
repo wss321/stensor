@@ -10,12 +10,12 @@ class SoftmaxTest : public ::testing::Test {};
 TEST_F(SoftmaxTest, Forward) {
   int device_id = 0;
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
   nn::SoftmaxLayer softmax_layer("mySoftmax", -1, device_id);
 
-  nn::TensorVec output1 = softmax_layer.forward(input);
-  nn::TensorVec output2 = softmax_layer.forward(input);
+  std::vector<Tensor*> output1 = softmax_layer.forward(input);
+  std::vector<Tensor*> output2 = softmax_layer.forward(input);
 
   output1[0]->to_cpu();
   output2[0]->to_cpu();
@@ -40,13 +40,13 @@ TEST_F(SoftmaxTest, load) {
 
 //  stensor::Config::set_random_seed(123);
   nn::SharedTensor a(stensor::ones({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
 
   stensor::load(&softmax_layer,"/home/wss/CLionProjects/stensor/output/softmax_layer.pt3");
 
-  nn::TensorVec output1 = softmax_layer.forward(input);
-  nn::TensorVec output2 = softmax_layer.forward(input);
+  std::vector<Tensor*> output1 = softmax_layer.forward(input);
+  std::vector<Tensor*> output2 = softmax_layer.forward(input);
 
   output1[0]->to_cpu();
   output2[0]->to_cpu();
@@ -63,11 +63,11 @@ TEST_F(SoftmaxTest, load) {
 TEST_F(SoftmaxTest, Backward) {
   int device_id = 0;
   nn::SharedTensor a(stensor::random({2, 2}, device_id, true));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
   nn::SoftmaxLayer softmax_layer("mySoftmax", -1, device_id);
 
-  nn::TensorVec output1 = softmax_layer.forward(input);
+  std::vector<Tensor*> output1 = softmax_layer.forward(input);
   softmax_layer.backward();
   std::cout<<output1[0]->data_string();
   std::cout<<a->grad_string();

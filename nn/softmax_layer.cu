@@ -13,9 +13,9 @@ __global__ void softmax_backward_kernel(const int M, const int D, const int N,
                                         const Dtype *y_grad,
                                         Dtype beta,
                                         Dtype *x_grad) {
-  CUDA_KERNEL_LOOP(index, M * D * N) {
+  CUDA_KERNEL_LOOP(index, M* N) {
     int n = index % N;
-    int m = index / (D * N);
+    int m = index / N;
     Dtype sum_delta_y_mul_y = 0;
     int cur_idx = m * D * N + n;
     for (int d = 0; d < D; ++d) {
@@ -42,7 +42,7 @@ void gpu_softmax_backward(const int M, const int D, const int N,
                           const Dtype *y_grad,
                           Dtype beta,
                           Dtype *x_grad) {
-  softmax_backward_kernel<Dtype><<<GET_BLOCKS(M * D * N),
+  softmax_backward_kernel<Dtype><<<GET_BLOCKS(M* N),
   CUDA_NUM_THREADS>>>(M, D, N, y_data, y_grad, beta, x_grad);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
@@ -50,8 +50,8 @@ void gpu_softmax_backward(const int M, const int D, const int N,
 
 void SoftmaxLayer::backward_gpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
-    SharedTensor in = inputs_[i];
-    SharedTensor out = outputs_[i];
+    Tensor* in = inputs_[i];
+    Tensor* out = outputs_[i];
     if (!in->require_grad()||!out->require_grad()) continue;
     int caxis = in->canonical_axis_index(axis_);
     int M = in->count(0, caxis);

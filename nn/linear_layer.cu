@@ -10,10 +10,10 @@ namespace nn {
 
 void LinearLayer::backward_gpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
-    SharedTensor x(inputs_[i]);
-    SharedTensor y(outputs_[i]);
+    Tensor* x=inputs_[i];
+    Tensor* y=outputs_[i];
     int caxis = x->canonical_axis_index(axis_);
-    stensor::backward::matmul_backward(x.get(), W_.get(), y.get());
+    stensor::backward::matmul_backward(x, W_.get(), y);
     if (has_bias_){
       int M = y->count(0, caxis - 1);
       int N = y->count(caxis, y->num_axes());

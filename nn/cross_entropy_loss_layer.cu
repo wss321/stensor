@@ -19,14 +19,14 @@ __global__ void cross_entropy_backward_kernel(const int n,
 }
 
 void CrossEntropyLossLayer::backward_gpu() {
-  SharedTensor in = inputs_[0];
+  Tensor* in = inputs_[0];
   SharedTensor sm = softmax_out_;
-  SharedTensor gt = inputs_[1];
+  Tensor* gt = inputs_[1];
   CHECK(in->shape_equal(sm.get()));
   if (!in->require_grad()) return;
   int caxis = in->canonical_axis_index(axis_);
   int num_class = in->shape(caxis);
-  Tensor *one_hot = stensor::one_hot(gt.get(), num_class);
+  Tensor *one_hot = stensor::one_hot(gt, num_class);
   one_hot_.reset(one_hot);
   const float *data_sm = sm->const_data();
   const float *data_gt = one_hot->const_data();

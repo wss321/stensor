@@ -10,12 +10,12 @@ class LinearLayerTest : public ::testing::Test {};
 TEST_F(LinearLayerTest, Forward) {
   int device_id = 0;
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
   nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
-  nn::TensorVec output1 = linear.forward(input);
-  nn::TensorVec output2 = linear.forward(input);
+  std::vector<Tensor*> output1 = linear.forward(input);
+  std::vector<Tensor*> output2 = linear.forward(input);
 
   output1[0]->to_cpu();
   output2[0]->to_cpu();
@@ -37,12 +37,12 @@ TEST_F(LinearLayerTest, save) {
   int device_id = 0;
   stensor::Config::set_random_seed(123);
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
   nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
-  nn::TensorVec output1 = linear.forward(input);
-  nn::TensorVec output2 = linear.forward(input);
+  std::vector<Tensor*> output1 = linear.forward(input);
+  std::vector<Tensor*> output2 = linear.forward(input);
 
   output1[0]->to_cpu();
   output2[0]->to_cpu();
@@ -66,13 +66,13 @@ TEST_F(LinearLayerTest, load) {
 
 //  stensor::Config::set_random_seed(123);
   nn::SharedTensor a(stensor::ones({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
 
   stensor::load(&linear,"/home/wss/CLionProjects/stensor/output/liner_layer.pt3");
 
-  nn::TensorVec output1 = linear.forward(input);
-  nn::TensorVec output2 = linear.forward(input);
+  std::vector<Tensor*> output1 = linear.forward(input);
+  std::vector<Tensor*> output2 = linear.forward(input);
 
   output1[0]->to_cpu();
   output2[0]->to_cpu();
@@ -89,11 +89,11 @@ TEST_F(LinearLayerTest, load) {
 TEST_F(LinearLayerTest, Backward) {
   int device_id = -1;
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
-  nn::TensorVec input;
-  input.push_back(a);
+  std::vector<Tensor*> input;
+  input.push_back(a.get());
   nn::LinearLayer linear("myLinear", 2, 2, -1, device_id, true);
 
-  nn::TensorVec output1 = linear.forward(input);
+  std::vector<Tensor*> output1 = linear.forward(input);
   linear.backward();
 }
 }
