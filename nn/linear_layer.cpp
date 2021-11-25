@@ -36,6 +36,7 @@ LinearLayer::LinearLayer(const std::string &name,
   }
 }
 
+//TODO:fix matmul (a,b,c) err
 TensorVec LinearLayer::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
   SharedTensor in = inputs[0];
@@ -75,7 +76,7 @@ void LinearLayer::backward_cpu() {
     }
 
   }
-//  inputs_.clear();
+  inputs_.clear();
 }
 
 void LinearLayer::backward() {
