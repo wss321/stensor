@@ -19,6 +19,7 @@ CrossEntropyLossLayer::CrossEntropyLossLayer(const std::string &name, int axis, 
 
 TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 2) << "inputs must be two tensor:prediction & ground-truth";
+  this->zero_output_grad();
   inputs_ = inputs;
   SharedTensor pred = inputs_[0]; // float:e.g 64x100 (batch size:64, num class:100)
   SharedTensor gt = inputs_[1]; // int :64, 0~99
