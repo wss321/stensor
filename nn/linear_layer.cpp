@@ -39,6 +39,7 @@ LinearLayer::LinearLayer(const std::string &name,
 //TODO:fix matmul (a,b,c) err
 TensorVec LinearLayer::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
+  this->zero_output_grad();
   SharedTensor in = inputs[0];
   std::vector<int> out_shape(in->shape());
   out_shape[in->canonical_axis_index(axis_)] = W_->shape(-1);
@@ -47,18 +48,17 @@ TensorVec LinearLayer::forward(TensorVec &inputs) {
     result_.reset(new Tensor(out_shape, in->device(), W_->require_grad() || in->require_grad()));
     result_->set_name(name()+"/output");
   }
-
   inputs_ = inputs;
-  SharedTensor m(stensor::matmul(in.get(), W_.get(), axis_));
-//  stensor::matmul(in.get(), W_.get(), axis_,
-//                  false, false, 0.0, result_.get());
+//  SharedTensor m(stensor::matmul(in.get(), W_.get(), axis_));
+  stensor::matmul(in.get(), W_.get(), axis_,
+                  false, false, 0.0, result_.get());
 
   if (has_bias_)
-    stensor::add(m.get(), b_.get(), m.get());
+    stensor::add(result_.get(), b_.get(), result_.get());
 
   if (outputs_.empty())
-    outputs_.push_back(m);
-  else outputs_[0] = m;
+    outputs_.push_back(result_);
+  else outputs_[0] = result_;
   return outputs_;
 }
 void LinearLayer::backward_cpu() {
