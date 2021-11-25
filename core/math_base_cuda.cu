@@ -20,12 +20,14 @@ __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
 template <> \
 void gpu_##name<float>(const int n, const float* x, float* y) { \
   name##_kernel<float><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>( \
-      n, x, y); \
+      n, x, y);                                       \
+      cudaDeviceSynchronize(); \
 } \
 template <> \
 void gpu_##name<double>(const int n, const double* x, double* y) { \
   name##_kernel<double><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>( \
-      n, x, y); \
+      n, x, y);                                       \
+      cudaDeviceSynchronize();\
 }
 
 IMPLEMENT_GPU_UNARY_FUNC(exp, y[index] = exp(x[index]));
@@ -46,11 +48,13 @@ IMPLEMENT_GPU_UNARY_FUNC(sgnbit, y[index] = signbit(x[index]));
 template<>
 void gpu_asum<float>(const int n, const float *x, float *y) {
   CUBLAS_CHECK(cublasSasum(Config::cublas_handle(), n, x, 1, y));
+  cudaDeviceSynchronize();
 }
 
 template<>
 void gpu_asum<double>(const int n, const double *x, double *y) {
   CUBLAS_CHECK(cublasDasum(Config::cublas_handle(), n, x, 1, y));
+  cudaDeviceSynchronize();
 }
 
 template<typename Dtype>
@@ -70,6 +74,7 @@ void gpu_clamp(const int n,
                Dtype *y) {
   clamp_kernel<Dtype><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>(
       n, min, max, x, y);
+  cudaDeviceSynchronize();
 }
 template void gpu_clamp<int>(const int n, const int min, const int max, const int *x, int *y);
 template void gpu_clamp<float>(const int n, const float min, const float max, const float *x, float *y);
@@ -118,6 +123,7 @@ template<typename Dtype>
 void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_mean_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
   CUDA_POST_KERNEL_CHECK;
+  cudaDeviceSynchronize();
 }
 
 template void gpu_reduce_mean<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
@@ -141,6 +147,7 @@ __global__ void reduce_asum_kernel(const int M, const int D, const int N, const 
 template<typename Dtype>
 void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
   reduce_asum_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -197,7 +204,7 @@ __global__ void argmax_kernel(const int M, const int D, const int N, const Dtype
     }
     y[index]= max_index;
 
-    }
+  }
 }
 
 template<typename Dtype>
@@ -271,6 +278,7 @@ void gpu_set(const int N, const Dtype alpha, Dtype *Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   set_kernel < Dtype ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, alpha, Y);
+  cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -300,6 +308,7 @@ void gpu_add_scalar(const int N, const float *X, const float alpha, float *Y) {
       N, alpha, Y);
   else add_scalar_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, X, alpha, Y);
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -315,11 +324,13 @@ void gpu_add_scalar(const int N, const double *X, const double alpha, double *Y)
 template<>
 void gpu_scale<float>(const int N, const float alpha, float *X) {
   CUBLAS_CHECK(cublasSscal(Config::cublas_handle(), N, &alpha, X, 1));
+  cudaDeviceSynchronize();
 }
 
 template<>
 void gpu_scale<double>(const int N, const double alpha, double *X) {
   CUBLAS_CHECK(cublasDscal(Config::cublas_handle(), N, &alpha, X, 1));
+  cudaDeviceSynchronize();
 }
 
 template<typename Dtype>
@@ -337,6 +348,7 @@ void gpu_scale(const int N, const float *X, const float alpha, float *Y) {
   else
     scale_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, X, alpha, Y);
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -347,6 +359,7 @@ void gpu_scale(const int N, const double *X, const double alpha, double *Y) {
   else
     scale_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, X, alpha, Y);
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -357,6 +370,7 @@ void gpu_scale<float>(const int N, const float alpha, float *X,
   CUBLAS_CHECK(cublasSetStream(Config::cublas_handle(), str));
   CUBLAS_CHECK(cublasSscal(Config::cublas_handle(), N, &alpha, X, 1));
   CUBLAS_CHECK(cublasSetStream(Config::cublas_handle(), initial_stream));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -367,6 +381,7 @@ void gpu_scale<double>(const int N, const double alpha, double *X,
   CUBLAS_CHECK(cublasSetStream(Config::cublas_handle(), str));
   CUBLAS_CHECK(cublasDscal(Config::cublas_handle(), N, &alpha, X, 1));
   CUBLAS_CHECK(cublasSetStream(Config::cublas_handle(), initial_stream));
+  cudaDeviceSynchronize();
 }
 
 template<typename Dtype>
@@ -383,6 +398,7 @@ void gpu_pow_scalar<float>(const int N, const float *a,
   // NOLINT_NEXT_LINE(whitespace/operators)
   pow_scalar_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -391,6 +407,7 @@ void gpu_pow_scalar<double>(const int N, const double *a,
   // NOLINT_NEXT_LINE(whitespace/operators)
   pow_scalar_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
+  cudaDeviceSynchronize();
 }
 
 
@@ -411,6 +428,7 @@ bool gpu_equal<int>(const int N, const int *a, const int *b) {
   MallocGPU((void **) &y, sizeof(int));
   gpu_set(1, 1, y);
   equal_kernel < int ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  cudaDeviceSynchronize();
   int o;
   stensor::memcopy(sizeof(int), y, &o);
   return o == 1;
@@ -422,6 +440,7 @@ bool gpu_equal<float>(const int N, const float *a, const float *b) {
   MallocGPU((void **) &y, sizeof(int));
   gpu_set(1, 1, y);
   equal_kernel < float ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  cudaDeviceSynchronize();
   int o;
   stensor::memcopy(sizeof(int), y, &o);
   return o == 1;
@@ -433,6 +452,7 @@ bool gpu_equal<double>(const int N, const double *a, const double *b) {
   MallocGPU((void **) &y, sizeof(int));
   gpu_set(1, 1, y);
   equal_kernel < double ><<<GET_BLOCKS(N), getMaxThreadNum()>>>(N, a, b, y);
+  cudaDeviceSynchronize();
   int o;
   stensor::memcopy(sizeof(int), y, &o);
   return o == 1;
@@ -450,25 +470,26 @@ template<>\
 void gpu_##name<int>(const int N, const int *a, const int *b,\
                     int *y) { \
   name##_kernel<int><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(\
-      N, a, b, y);\
+      N, a, b, y);cudaDeviceSynchronize();\
 }\
 template<>\
 void gpu_##name<float>(const int N, const float *a, const float *b,\
                     float *y) { \
   name##_kernel < float ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(\
-      N, a, b, y);\
+      N, a, b, y);cudaDeviceSynchronize();\
 }\
 template<>\
 void gpu_##name<double>(const int N, const double *a, const double *b,\
                      double *y) {\
   name##_kernel < double ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(\
-      N, a, b, y);\
+      N, a, b, y);cudaDeviceSynchronize();\
 }
 
 template<typename Dtype>
 void gpu_copy(const int n, const Dtype *x, Dtype *y) {
   if (x != y) {
     CUDA_CHECK(cudaMemcpy(y, x, n * sizeof(Dtype), cudaMemcpyDefault));  // NOLINT(stensor/alt_fn)
+    cudaDeviceSynchronize();
   }
 }
 template void gpu_copy<int>(const int n, const int *x, int *y);
@@ -544,7 +565,8 @@ void gpu_##name<type>(const type *a, const type *b,\
   for (int i = 0; i < sy; ++i) shape_b_gpu[i] = shape_b[i];\
   for (int i = 0; i < sy; ++i) shape_y_gpu[i] = shape_y[i];\
   name##_kernel < type ><<<GET_BLOCKS(n), CUDA_NUM_THREADS>>>(\
-      n, sy, a, b, shape_a_gpu, shape_b_gpu, shape_y_gpu, y);\
+      n, sy, a, b, shape_a_gpu, shape_b_gpu, shape_y_gpu, y);     \
+      cudaDeviceSynchronize();\
   FreeGPU(shape_a_gpu);\
   FreeGPU(shape_b_gpu);\
   FreeGPU(shape_y_gpu);\
@@ -575,12 +597,14 @@ template<>
 void gpu_dot<float>(const int n, const float *x, const float *y,
                     float *out) {
   CUBLAS_CHECK(cublasSdot(Config::cublas_handle(), n, x, 1, y, 1, out));
+  cudaDeviceSynchronize();
 }
 
 template<>
 void gpu_dot<double>(const int n, const double *x, const double *y,
                      double *out) {
   CUBLAS_CHECK(cublasDdot(Config::cublas_handle(), n, x, 1, y, 1, out));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -589,6 +613,7 @@ void gpu_stride_dot<float>(int n,
                            const float *y, int incy,
                            float *out) {
   CUBLAS_CHECK(cublasSdot(Config::cublas_handle(), n, x, incx, y, incy, out));
+  cudaDeviceSynchronize();
 }
 template<>
 void gpu_stride_dot<double>(int n,
@@ -596,6 +621,7 @@ void gpu_stride_dot<double>(int n,
                             const double *y, int incy,
                             double *out) {
   CUBLAS_CHECK(cublasDdot(Config::cublas_handle(), n, x, incx, y, incy, out));
+  cudaDeviceSynchronize();
 }
 
 
@@ -610,6 +636,7 @@ void gpu_gemv<float>(const bool TransA, const int M,
   cublasOperation_t cuTransA = !TransA ? CUBLAS_OP_T : CUBLAS_OP_N;
   CUBLAS_CHECK(cublasSgemv(Config::cublas_handle(), cuTransA, N, M, &alpha,
                            A, N, x, 1, &beta, y, 1));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -619,6 +646,7 @@ void gpu_gemv<double>(const bool TransA, const int M,
   cublasOperation_t cuTransA = !TransA ? CUBLAS_OP_T : CUBLAS_OP_N;
   CUBLAS_CHECK(cublasDgemv(Config::cublas_handle(), cuTransA, N, M, &alpha,
                            A, N, x, 1, &beta, y, 1));
+  cudaDeviceSynchronize();
 }
 
 /* matrix-vector end*/
@@ -638,6 +666,7 @@ void gpu_gemm<float>(const bool TransA,
       !TransB ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasSgemm(Config::cublas_handle(), cuTransB, cuTransA,
                            N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -654,18 +683,22 @@ void gpu_gemm<double>(const bool TransA,
       !TransB ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasDgemm(Config::cublas_handle(), cuTransB, cuTransA,
                            N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+  cudaDeviceSynchronize();
 }
 
 template<>
 void gpu_axpy<float>(const int N, const float alpha, const float *X,
                      float *Y) {
   CUBLAS_CHECK(cublasSaxpy(Config::cublas_handle(), N, &alpha, X, 1, Y, 1));
+  cudaDeviceSynchronize();
 }
 
 template<>
 void gpu_axpy<double>(const int N, const double alpha, const double *X,
                       double *Y) {
   CUBLAS_CHECK(cublasDaxpy(Config::cublas_handle(), N, &alpha, X, 1, Y, 1));
+  cudaDeviceSynchronize();
+
 }
 
 template<>
@@ -673,6 +706,7 @@ void gpu_axpby<float>(const int N, const float alpha, const float *X,
                       const float beta, float *Y) {
   gpu_scale<float>(N, beta, Y);
   gpu_axpy<float>(N, alpha, X, Y);
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -680,6 +714,7 @@ void gpu_axpby<double>(const int N, const double alpha, const double *X,
                        const double beta, double *Y) {
   gpu_scale<double>(N, beta, Y);
   gpu_axpy<double>(N, alpha, X, Y);
+  cudaDeviceSynchronize();
 }
 
 /* matrix-matrix end*/
@@ -688,6 +723,7 @@ void gpu_axpby<double>(const int N, const double alpha, const double *X,
 
 void gpu_rng_uniform(const int n, unsigned int *r) {
   CURAND_CHECK(curandGenerate(Config::curand_generator(), r, n));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -701,6 +737,7 @@ void gpu_rng_uniform<float>(const int n, const float a, const float b,
   if (a != static_cast<float>(0)) {
     gpu_add_scalar(n, r, a, r);
   }
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -714,6 +751,7 @@ void gpu_rng_uniform<double>(const int n, const double a, const double b,
   if (a != static_cast<double>(0)) {
     gpu_add_scalar(n, r, a, r);
   }
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -721,6 +759,7 @@ void gpu_rng_gaussian(const int n, const float mu, const float sigma,
                       float *r) {
   CURAND_CHECK(
       curandGenerateNormal(Config::curand_generator(), r, n, mu, sigma));
+  cudaDeviceSynchronize();
 }
 
 template<>
@@ -728,6 +767,7 @@ void gpu_rng_gaussian(const int n, const double mu, const double sigma,
                       double *r) {
   CURAND_CHECK(
       curandGenerateNormalDouble(Config::curand_generator(), r, n, mu, sigma));
+  cudaDeviceSynchronize();
 }
 /* random generator end*/
 
