@@ -28,7 +28,9 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   int N = pred->count(caxis + 1, pred->num_axes());
   int C = pred->shape(caxis);
   CHECK_EQ(M * N, gt->size());
-  Tensor *sm = stensor::softmax(pred.get(), axis_);
+//  std::cout<<pred;
+  Tensor *sm = stensor::softmax(pred.get(), caxis);
+//  std::cout<<sm;
   softmax_out_.reset(sm);
   float *sm_data = sm->data();
   const float *gt_data = gt->const_data();
@@ -59,8 +61,8 @@ void CrossEntropyLossLayer::backward_cpu() {
   int caxis = in->canonical_axis_index(axis_);
   int M = in->count(0, caxis);
   int N = in->count(caxis + 1, in->num_axes());
-  int D = in->shape(caxis);
-  Tensor *one_hot = stensor::one_hot(gt.get(), D);
+  int num_class = in->shape(caxis);
+  Tensor *one_hot = stensor::one_hot(gt.get(), num_class);
   one_hot_.reset(one_hot);
   const float *data_sm = sm->const_data();
   const float *data_oh = one_hot->const_data();
@@ -76,8 +78,9 @@ void CrossEntropyLossLayer::backward_cpu() {
     Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);
     data_sm = transpose_sm->const_data();
   }
-
-  for (int i = 0; i < M * N; ++i) {
+//  std::cout<<one_hot;
+//  std::cout<<sm;
+  for (int i = 0; i < in->size(); ++i) {
     *grad_in += *data_sm - *data_oh;
     grad_in++;
     data_oh++;

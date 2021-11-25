@@ -240,10 +240,6 @@ void Tensor::to_proto(TensorProto *proto, bool write_grad) const {
   // 5. neighbor & operations
   proto->clear_neighbors();
   proto->clear_operations();
-  for (int i = 0; i < _children_name.size(); ++i) {
-    proto->add_neighbors(_children_name[i]);
-    proto->add_operations(_operations[i]);
-  }
 }
 
 void Tensor::from_proto(const TensorProto &proto, bool reset) {
@@ -284,9 +280,6 @@ void Tensor::from_proto(const TensorProto &proto, bool reset) {
       }
       break;
   }
-  // 4. neighbors & operations
-  stensor::RepeatTypeToVector(proto.neighbors(), _children_name);
-  stensor::RepeatTypeToVector(proto.operations(), _operations);
 }
 
 //template<typename Dtype>

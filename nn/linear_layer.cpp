@@ -23,12 +23,13 @@ LinearLayer::LinearLayer(const std::string &name,
   else state_ = CPU;
   has_bias_ = bias;
   parameters_.resize(2);
-  Tensor *W = stensor::random({dim_in, dim_out}, device, true);
+  Tensor *W = stensor::random_gaussian({dim_in, dim_out}, 0, 0.1, device, true);
   W->set_name(name_ + "(" + type_ + ")" + "/W");
   W_.reset(W);
   parameters_[0] = W_; // add parameter
   if (has_bias_) {
-    Tensor *b = stensor::random({1, dim_out}, device, true);
+//    Tensor *b = stensor::random({1, dim_out}, -1, 1, device, true);
+    Tensor *b = stensor::zeros({1, dim_out}, device, true);
     b_.reset(b);
     b_->set_name(name_ + "(" + type_ + ")" + "/bias");
     parameters_[1] = b_;// add parameter
@@ -36,19 +37,27 @@ LinearLayer::LinearLayer(const std::string &name,
 }
 
 TensorVec LinearLayer::forward(TensorVec &inputs) {
-  outputs_.resize(inputs.size());
-  inputs_ = inputs;
-  Tensor *m;
-  Tensor *m1;
-  for (int i = 0; i < inputs.size(); ++i) {
-    m = stensor::matmul(inputs[i].get(), W_.get(), axis_);
-    if (has_bias_) {
-      m1 = stensor::add(m, b_.get());
-      delete m;
-      m = m1;
-    }
-    outputs_[i].reset(m);
+  CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
+  SharedTensor in = inputs[0];
+  std::vector<int> out_shape(in->shape());
+  out_shape[in->canonical_axis_index(axis_)] = W_->shape(-1);
+  if (result_.get() == nullptr || out_shape != result_->shape()) {
+    outputs_.resize(1);
+    result_.reset(new Tensor(out_shape, in->device(), W_->require_grad() || in->require_grad()));
+    result_->set_name(name()+"/output");
   }
+
+  inputs_ = inputs;
+  SharedTensor m(stensor::matmul(in.get(), W_.get(), axis_));
+//  stensor::matmul(in.get(), W_.get(), axis_,
+//                  false, false, 0.0, result_.get());
+
+  if (has_bias_)
+    stensor::add(m.get(), b_.get(), m.get());
+
+  if (outputs_.empty())
+    outputs_.push_back(m);
+  else outputs_[0] = m;
   return outputs_;
 }
 void LinearLayer::backward_cpu() {
@@ -57,13 +66,16 @@ void LinearLayer::backward_cpu() {
     SharedTensor y(outputs_[i]);
     int caxis = x->canonical_axis_index(axis_);
     stensor::backward::matmul_backward(x.get(), W_.get(), y.get());
-    if (has_bias_)
-      stensor::cpu_reduce_sum(y->count(0, caxis),
-                              y->shape(caxis),
-                              y->count(caxis + 1, y->num_axes()),
+    if (has_bias_) {
+      int M = y->count(0, caxis - 1);
+      int N = y->count(caxis, y->num_axes());
+      int D = y->shape(caxis - 1);
+      stensor::cpu_reduce_sum(M, D, N,
                               y->const_grad(), 1.0f, b_->grad());
+    }
+
   }
-  inputs_.clear();
+//  inputs_.clear();
 }
 
 void LinearLayer::backward() {

@@ -29,7 +29,7 @@ class Module {
   virtual ~Module() {};
   virtual TensorVec forward(TensorVec &inputs)=0;
   virtual void backward() = 0;
-  virtual void to_proto(ModuleParameter *param, bool save_grad = false) const{
+  virtual void to_proto(ModuleParameter *param, bool save_grad = false) const {
     param->Clear();
     param->set_name(name_);
     param->set_type(type_);
@@ -41,7 +41,7 @@ class Module {
 
   }
   virtual void from_proto(const ModuleParameter &param) {
-    CHECK_EQ(name_, param.name())<<"name mismatch";
+    CHECK_EQ(name_, param.name()) << "name mismatch";
     CHECK_EQ(type_, param.type());
     for (int i = 0; i < param.param_size(); ++i)
       parameters_[i]->from_proto(param.param(i));
@@ -49,6 +49,24 @@ class Module {
     for (int i = 0; i < param.submodule_size(); ++i)
       submodules_[i]->from_proto(param.submodule(i));
   }
+
+  virtual TensorVec get_learnable_params() {
+    TensorVec learnable_params;
+    for (int i = 0; i < parameters_.size(); ++i)
+      if (parameters_[i]->require_grad())
+        learnable_params.push_back(parameters_[i]);
+
+    for (int i = 0; i < submodules_.size(); ++i) {
+      TensorVec temp = submodules_[i]->get_learnable_params();
+      for (int j = 0; j < temp.size(); ++j) {
+        learnable_params.push_back(temp[j]);
+      }
+    }
+    return learnable_params;
+  }
+  virtual inline Mode state(){return state_;}
+  virtual inline std::string name(){return name_;}
+  virtual inline std::string type(){return type_;}
  protected:
   std::string name_;
   std::string type_;

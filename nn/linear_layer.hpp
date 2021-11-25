@@ -28,6 +28,7 @@ class LinearLayer : public Module {
   void backward_gpu();
   SharedTensor W_;
   SharedTensor b_;
+  SharedTensor result_;
   int axis_;
   bool has_bias_;
  DISABLE_COPY_AND_ASSIGN(LinearLayer);

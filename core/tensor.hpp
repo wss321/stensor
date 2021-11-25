@@ -10,22 +10,6 @@ using namespace boost;
 namespace stensor {
 
 const int kMaxTensorAxes = MAX_AXES;
-class Tensor;
-class Children {
-  typedef std::vector<shared_ptr<Tensor>> OpTensorsType;
-  typedef TensorProto_Operation OpType;
- public:
-  inline void add(OpTensorsType tensors, OpType op) { _pairs.emplace_back(tensors, op); }
-  inline std::pair<OpTensorsType, OpType> get_child(int index) {
-    if (index > 0)return _pairs[index];
-    else
-      return _pairs[num_child() + index];
-  }
-  inline int num_child() { return _pairs.size(); }
-
- private:
-  std::vector<std::pair<OpTensorsType, OpType>> _pairs;
-};
 
 class Tensor {
  public:
@@ -45,9 +29,7 @@ class Tensor {
   std::string _name;
   int _capacity;
   int _device;
-//  PairIndexType _axis_start_ends;
-  CdNameType _children_name;
-  std::vector<OpType> _operations;
+
   Dtype *_current_data;
   Dtype *_current_grad;
 
@@ -260,6 +242,7 @@ class Tensor {
 
   void copy_data_from(const Tensor *other, bool reset = false);
   void copy_grad_from(const Tensor *other, bool reset = false);
+  inline std::string name(){return _name;}
 // DISABLE_COPY_AND_ASSIGN(Tensor);
 };
 
