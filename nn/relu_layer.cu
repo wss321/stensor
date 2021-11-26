@@ -12,7 +12,7 @@ namespace nn {
 template<typename Dtype>
 __global__ void relu_backward_kernel(const int n, const Dtype *y_grad, const Dtype *x_data, Dtype *x_grad) {
   CUDA_KERNEL_LOOP(index, n) {
-    x_grad[index] = x_data[index] > 0 ? x_data[index] * y_grad[index] : Dtype(0);
+    x_grad[index] += x_data[index] > 0 ? y_grad[index] : Dtype(0);
   }
 }
 

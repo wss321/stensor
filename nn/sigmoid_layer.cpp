@@ -18,7 +18,7 @@ TensorVec Sigmoid::forward(TensorVec &inputs) {
     result_->set_name(name() + "/output");
   }
   inputs_ = inputs;
-  stensor::tanh(in.get(), result_.get());
+  stensor::sigmoid(in.get(), result_.get());
   if (outputs_.empty())
     outputs_.push_back(result_);
   else outputs_[0] = result_;

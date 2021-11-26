@@ -33,7 +33,7 @@ void ReLU::backward_cpu() {
   float *x_grad = x->grad();
 
   for (int j = 0; j < x->size(); ++j) {
-    *x_grad = (*x_data) > 0 ? (*x_data) * (*y_grad) : float(0);
+    *x_grad += (*x_data) > 0 ? (*y_grad) : float(0);
     x_data++;
     x_grad++;
     y_grad++;

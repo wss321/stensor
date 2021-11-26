@@ -13,7 +13,7 @@ template<typename Dtype>
 __global__ void tanh_backward_kernel(const int n, const Dtype *y_grad, const Dtype *y_data, Dtype *x_grad) {
   CUDA_KERNEL_LOOP(index, n) {
     int y = y_data[index];
-    x_grad[index] = (1 - y * y) * y_grad[index];
+    x_grad[index] += (1 - y * y) * y_grad[index];
   }
 }
 
