@@ -9,12 +9,12 @@
 namespace stensor {
 
 namespace nn {
-class SoftmaxLayer : public Module {
+class Softmax : public Module {
  public:
-  explicit SoftmaxLayer(const std::string &name,
-                        int axis,
-                        int device);
-  ~SoftmaxLayer() {};
+  explicit Softmax(const std::string &name,
+                   int axis,
+                   int device);
+  ~Softmax() {};
   TensorVec forward(TensorVec &inputs);
   inline void backward() {
     if (state_ == GPU)
@@ -26,7 +26,7 @@ class SoftmaxLayer : public Module {
   void backward_cpu();
   void backward_gpu();
   int axis_;
- DISABLE_COPY_AND_ASSIGN(SoftmaxLayer);
+ DISABLE_COPY_AND_ASSIGN(Softmax);
 };
 }//namespace nn
 

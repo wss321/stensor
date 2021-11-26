@@ -10,7 +10,7 @@ namespace stensor {
 
 namespace nn {
 
-void LinearLayer::backward_gpu() {
+void Linear::backward_gpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
     SharedTensor x(inputs_[i]);
     SharedTensor y(outputs_[i]);

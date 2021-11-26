@@ -156,7 +156,7 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
-    nn::LinearLayer *l1 = new nn::LinearLayer("l1", dim_in, 64, axis, device_id, true);
+    nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
 //    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
 //    nn::CrossEntropyLossLayer loss("loss", axis, device_id);
     submodules_.clear();
@@ -202,9 +202,9 @@ int calc_acc(const Tensor *logit, const Tensor *gt) {
 int main() {
   stensor::Config::set_random_seed(1234);
   int batch_size = 64;
-  int device_id = 0;
+  int device_id = 0; // using GPU0
   SimpleNet net(28 * 28, 10, device_id);
-  nn::CrossEntropyLossLayer loss("loss", -1, device_id);
+  nn::CrossEntropyLoss loss("loss", -1, device_id);
 
   stensor::optim::SGD sgd(&net, 0.01, 0.0);
 

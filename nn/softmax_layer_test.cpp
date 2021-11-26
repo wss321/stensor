@@ -14,7 +14,7 @@ TEST_F(SoftmaxTest, Forward) {
   nn::SharedTensor a(stensor::random({2, 2}, device_id));
   nn::TensorVec input;
   input.push_back(a);
-  nn::SoftmaxLayer softmax_layer("mySoftmax", -1, device_id);
+  nn::Softmax softmax_layer("mySoftmax", -1, device_id);
 
   nn::TensorVec output1 = softmax_layer.forward(input);
   nn::TensorVec output2 = softmax_layer.forward(input);
@@ -37,7 +37,7 @@ TEST_F(SoftmaxTest, Forward) {
 TEST_F(SoftmaxTest, load) {
 
   int device_id = 0;
-  nn::SoftmaxLayer softmax_layer("mySoftmax", -1, device_id);
+  nn::Softmax softmax_layer("mySoftmax", -1, device_id);
 
 
 //  stensor::Config::set_random_seed(123);
@@ -67,7 +67,7 @@ TEST_F(SoftmaxTest, Backward) {
   nn::SharedTensor a(stensor::random({2, 2}, device_id, true));
   nn::TensorVec input;
   input.push_back(a);
-  nn::SoftmaxLayer softmax_layer("mySoftmax", -1, device_id);
+  nn::Softmax softmax_layer("mySoftmax", -1, device_id);
 
   nn::TensorVec output1 = softmax_layer.forward(input);
   softmax_layer.backward();

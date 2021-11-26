@@ -11,7 +11,7 @@ namespace stensor {
 
 namespace nn {
 
-SoftmaxLayer::SoftmaxLayer(const std::string &name, int axis, int device) : axis_(axis) {
+Softmax::Softmax(const std::string &name, int axis, int device) : axis_(axis) {
   if (device > -1) state_ = GPU;
   else state_ = CPU;
   type_ = "Softmax";
@@ -20,7 +20,7 @@ SoftmaxLayer::SoftmaxLayer(const std::string &name, int axis, int device) : axis
 
 }
 
-TensorVec SoftmaxLayer::forward(TensorVec &inputs) {
+TensorVec Softmax::forward(TensorVec &inputs) {
   outputs_.resize(inputs.size());
   inputs_ = inputs;
   for (int i = 0; i < inputs.size(); ++i) {
@@ -65,7 +65,7 @@ void cpu_softmax_backward(const int M,
   }
 }
 
-void SoftmaxLayer::backward_cpu() {
+void Softmax::backward_cpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
     SharedTensor in = inputs_[i];
     SharedTensor out = outputs_[i];

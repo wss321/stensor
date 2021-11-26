@@ -9,14 +9,14 @@
 namespace stensor {
 
 namespace nn {
-class LinearLayer : public Module {
+class Linear : public Module {
  public:
-  explicit LinearLayer(const std::string &name, int dim_in,
-              int dim_out,
-              int axis,
-              int device,
-              bool bias);
-  ~LinearLayer(){};
+  explicit Linear(const std::string &name, int dim_in,
+                  int dim_out,
+                  int axis,
+                  int device,
+                  bool bias);
+  ~Linear(){};
   TensorVec forward(TensorVec &inputs);
   void backward();
  private:
@@ -29,7 +29,7 @@ class LinearLayer : public Module {
   SharedTensor result_;
   int axis_;
   bool has_bias_;
- DISABLE_COPY_AND_ASSIGN(LinearLayer);
+ DISABLE_COPY_AND_ASSIGN(Linear);
 };
 }//namespace nn
 

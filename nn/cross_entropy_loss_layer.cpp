@@ -12,7 +12,7 @@ namespace stensor {
 
 namespace nn {
 
-CrossEntropyLossLayer::CrossEntropyLossLayer(const std::string &name, int axis, int device) : axis_(axis) {
+CrossEntropyLoss::CrossEntropyLoss(const std::string &name, int axis, int device) : axis_(axis) {
   if (device > -1) state_ = GPU;
   else state_ = CPU;
   type_ = "CrossEntropyLoss";
@@ -22,7 +22,7 @@ CrossEntropyLossLayer::CrossEntropyLossLayer(const std::string &name, int axis, 
 
 }
 
-TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
+TensorVec CrossEntropyLoss::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 2) << "inputs must be two tensor:prediction & ground-truth";
   this->zero_output_grad();
   zero_temp_grad();
@@ -64,7 +64,7 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   return outputs_;
 }
 
-void CrossEntropyLossLayer::backward_cpu() {
+void CrossEntropyLoss::backward_cpu() {
   SharedTensor in = inputs_[0];
   SharedTensor sm = softmax_out_;
   SharedTensor gt = inputs_[1];

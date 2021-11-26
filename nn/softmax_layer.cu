@@ -50,7 +50,7 @@ void gpu_softmax_backward(const int M, const int D, const int N,
   CUDA_POST_KERNEL_CHECK;
 }
 
-void SoftmaxLayer::backward_gpu() {
+void Softmax::backward_gpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
     SharedTensor in = inputs_[i];
     SharedTensor out = outputs_[i];

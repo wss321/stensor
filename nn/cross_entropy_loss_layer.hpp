@@ -10,12 +10,12 @@ namespace stensor {
 
 namespace nn {
 // softmax and
-class CrossEntropyLossLayer : public Module {
+class CrossEntropyLoss : public Module {
  public:
-  explicit CrossEntropyLossLayer(const std::string &name,
-                                 int axis,
-                                 int device);
-  ~CrossEntropyLossLayer() {};
+  explicit CrossEntropyLoss(const std::string &name,
+                            int axis,
+                            int device);
+  ~CrossEntropyLoss() {};
   TensorVec forward(TensorVec &inputs);
   inline void backward() {
     if (state_ == GPU)
@@ -35,7 +35,7 @@ class CrossEntropyLossLayer : public Module {
   float loss_;
   SharedTensor softmax_out_;
   SharedTensor one_hot_;
- DISABLE_COPY_AND_ASSIGN(CrossEntropyLossLayer);
+ DISABLE_COPY_AND_ASSIGN(CrossEntropyLoss);
 };
 }//namespace nn
 

@@ -28,7 +28,7 @@ TEST_F(CrossEntropyTest, Forward) {
   nn::TensorVec input(2);
   input[0] = a;
   input[1].reset(gt);
-  nn::CrossEntropyLossLayer cross_entropy_loss_layer("myCE", -1, device_id);
+  nn::CrossEntropyLoss cross_entropy_loss_layer("myCE", -1, device_id);
 
   cross_entropy_loss_layer.forward(input);
   std::cout << cross_entropy_loss_layer.get_loss() << std::endl;

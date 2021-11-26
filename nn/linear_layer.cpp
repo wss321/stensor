@@ -12,12 +12,12 @@ namespace stensor {
 
 namespace nn {
 
-LinearLayer::LinearLayer(const std::string &name,
-                         int dim_in,
-                         int dim_out,
-                         int axis,
-                         int device,
-                         bool bias) {
+Linear::Linear(const std::string &name,
+               int dim_in,
+               int dim_out,
+               int axis,
+               int device,
+               bool bias) {
   CHECK_GT(dim_in, 0);
   CHECK_GT(dim_out, 0);
   type_ = "Linear";
@@ -40,7 +40,7 @@ LinearLayer::LinearLayer(const std::string &name,
   }
 }
 
-TensorVec LinearLayer::forward(TensorVec &inputs) {
+TensorVec Linear::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
   this->zero_output_grad();
   SharedTensor in = inputs[0];
@@ -63,7 +63,7 @@ TensorVec LinearLayer::forward(TensorVec &inputs) {
   else outputs_[0] = result_;
   return outputs_;
 }
-void LinearLayer::backward_cpu() {
+void Linear::backward_cpu() {
   for (int i = 0; i < inputs_.size(); ++i) {
     SharedTensor x(inputs_[i]);
     SharedTensor y(outputs_[i]);
@@ -81,7 +81,7 @@ void LinearLayer::backward_cpu() {
   inputs_.clear();
 }
 
-void LinearLayer::backward() {
+void Linear::backward() {
   if (state_ == GPU)
     backward_gpu();
   else

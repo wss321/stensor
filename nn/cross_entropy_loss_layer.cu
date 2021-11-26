@@ -22,7 +22,7 @@ __global__ void cross_entropy_backward_kernel(const int n,
   }
 }
 
-void CrossEntropyLossLayer::backward_gpu() {
+void CrossEntropyLoss::backward_gpu() {
   SharedTensor in = inputs_[0];
   SharedTensor sm = softmax_out_;
   SharedTensor gt = inputs_[1];
