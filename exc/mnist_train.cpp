@@ -10,6 +10,7 @@
 #include "nn/cross_entropy_loss_layer.hpp"
 #include "nn/relu_layer.hpp"
 #include "nn/tanh_layer.hpp"
+#include "nn/sigmoid_layer.hpp"
 
 using namespace std;
 using namespace stensor;
@@ -159,7 +160,7 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
-    nn::TanH *tanh = new nn::TanH("tanh");
+    nn::Sigmoid *tanh = new nn::Sigmoid("tanh");
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();
