@@ -4,10 +4,10 @@
 */
 #include "public/common.hpp"
 #include "core/tensor.hpp"
+#include "core/math_tesnsor.hpp"
 #include "optimizer/sgd.hpp"
-#include "linear_layer.hpp"
-#include "softmax_layer.hpp"
-#include "cross_entropy_loss_layer.hpp"
+#include "nn/linear_layer.hpp"
+#include "nn/cross_entropy_loss_layer.hpp"
 
 using namespace std;
 using namespace stensor;
@@ -149,29 +149,29 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
-    nn::LinearLayer *l1 = new nn::LinearLayer("l1", dim_in, 10, axis, device_id, true);
-//    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
+    nn::LinearLayer *l1 = new nn::LinearLayer("l1", dim_in, 64, axis, device_id, true);
+    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
 //    nn::CrossEntropyLossLayer loss("loss", axis, device_id);
     submodules_.clear();
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
-//    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
+    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
 //    submodules_.push_back(std::shared_ptr<nn::Module>(&loss));
     for (auto &sm: submodules_) {
       modules[sm->name()] = sm;
     }
   };
   ~SimpleNet() {};
-  nn::TensorVec forward(nn::TensorVec &inputs) override {//image and ground-truth
+  inline nn::TensorVec forward(nn::TensorVec &inputs) override {//image and ground-truth
     inputs_.clear();
     inputs_.push_back(inputs[0]);
     modules["l1"];
     nn::TensorVec x1 = modules["l1"]->forward(inputs_);
-//    nn::TensorVec x2 = modules["l2"]->forward(x1);
+    nn::TensorVec x2 = modules["l2"]->forward(x1);
 //    nn::TensorVec x3 = modules["loss"]->forward(x2);
-    return x1;
+    return x2;
   }
-  void backward() override {
-//    modules["l2"]->backward();
+  inline void backward() override {
+    modules["l2"]->backward();
     modules["l1"]->backward();
   }
  private:
@@ -223,6 +223,6 @@ int main() {
     }
     std::cout << "epoch:" << e << ", loss:" << loss.get_loss() << std::endl;
   }
-  LOG(INFO) << "Time cost:" << (systemtime_ms() - start_t)/1000 << " s\n";
+  LOG(INFO) << "Time cost:" << (systemtime_ms() - start_t) / 1000 << " s\n";
   return 0;
 }

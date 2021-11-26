@@ -4,8 +4,6 @@
 */
 #ifndef STENSOR_CORE_TRANSPOSE_HPP_
 #define STENSOR_CORE_TRANSPOSE_HPP_
-#include "math_base_cpu.hpp"
-#include "math_base_cuda.hpp"
 #include "tensor.hpp"
 
 namespace stensor {

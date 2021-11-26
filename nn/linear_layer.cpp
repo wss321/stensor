@@ -3,6 +3,10 @@
 * Created by wss on 11月,21, 2021
 */
 #include "linear_layer.hpp"
+#include "core/math_tensor_backward.hpp"
+#include "math/math_base_cuda.hpp"
+#include "math/math_base_cpu.hpp"
+#include "core/math_tesnsor.hpp"
 
 namespace stensor {
 

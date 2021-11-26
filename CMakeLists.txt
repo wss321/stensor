@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(stensor)
 add_subdirectory(public)
+add_subdirectory(math)
 add_subdirectory(proto)
 add_subdirectory(core)
 add_subdirectory(exc)

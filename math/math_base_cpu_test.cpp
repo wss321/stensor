@@ -4,9 +4,9 @@
 */
 #include "math_base_cpu.hpp"
 #include "public/common.hpp"
-#include <memory>
-#include "tensor.hpp"
+#include "core/tensor.hpp"
 #include <vector>
+#include <gtest/gtest.h>
 
 namespace stensor {
 class CPUMathTest : public ::testing::Test {};

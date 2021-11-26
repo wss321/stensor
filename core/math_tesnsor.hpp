@@ -6,9 +6,6 @@
 #define STENSOR_CORE_MATH_TESNSOR_HPP_
 #include "public/common.hpp"
 #include "tensor.hpp"
-#include "math_base_cpu.hpp"
-#include "math_base_cuda.hpp"
-#include "utils.hpp"
 
 namespace stensor {
 
@@ -96,7 +93,7 @@ inline Tensor *ones(const Tensor::ShapeType &shape, int device_id = -1, bool req
 }
 
 inline Tensor *constants_like(Tensor *other, Tensor::Dtype val, bool require_grad = false) {
-  Tensor *new_t = new Tensor(other, require_grad);
+  Tensor *new_t = new Tensor(other->shape(),other->device(), require_grad);
   set(new_t, val);
   return new_t;
 }

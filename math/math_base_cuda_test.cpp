@@ -4,10 +4,11 @@
 */
 #include "math_base_cuda.hpp"
 #include "public/synmem.hpp"
-#include "common.hpp"
-#include "memory_op.hpp"
+#include "public/common.hpp"
+#include "public/memory_op.hpp"
 #include "math_base_cpu.hpp"
-#include "tensor.hpp"
+#include "core/tensor.hpp"
+#include <gtest/gtest.h>
 
 namespace stensor {
 class GPUMathTest : public ::testing::Test {};

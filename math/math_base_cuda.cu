@@ -271,10 +271,10 @@ __global__ void set_kernel(const int n, const Dtype alpha, Dtype *y) {
 
 template<typename Dtype>
 void gpu_set(const int N, const Dtype alpha, Dtype *Y) {
-  if (alpha == 0) {
-    CUDA_CHECK(cudaMemset(Y, 0, sizeof(Dtype) * N));  // NOLINT(stensor/alt_fn)
-    return;
-  }
+//  if (alpha == 0) {
+//    CUDA_CHECK(cudaMemset(Y, 0, sizeof(Dtype) * N));  // NOLINT(stensor/alt_fn)
+//    return;
+//  }
   // NOLINT_NEXT_LINE(whitespace/operators)
   set_kernel < Dtype ><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       N, alpha, Y);

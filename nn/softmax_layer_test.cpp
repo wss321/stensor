@@ -3,7 +3,9 @@
 * Created by wss on 11月,21, 2021
 */
 #include "softmax_layer.hpp"
-#include "common.hpp"
+#include "public/common.hpp"
+#include "core/math_tesnsor.hpp"
+#include <gtest/gtest.h>
 
 namespace stensor {
 class SoftmaxTest : public ::testing::Test {};

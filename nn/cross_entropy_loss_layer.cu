@@ -3,6 +3,10 @@
 * Created by wss on 11月,24, 2021
 */
 #include "cross_entropy_loss_layer.hpp"
+#include "core/math_tensor_backward.hpp"
+#include "math/math_base_cuda.hpp"
+#include "core/transpose.hpp"
+#include "core/math_tesnsor.hpp"
 
 namespace stensor {
 
@@ -30,8 +34,8 @@ void CrossEntropyLossLayer::backward_gpu() {
 //  int N = in->count(caxis + 1, in->num_axes());
   int num_class = in->shape(caxis);
 //  stensor::one_hot(gt.get(), num_class, one_hot_.get());
-  Tensor *one_hot = stensor::one_hot(gt.get(), num_class);
-  one_hot_.reset(one_hot);
+  stensor::one_hot(gt.get(), num_class, one_hot_.get());
+
   const float *data_sm = sm->const_data();
   const float *data_oh = one_hot_->const_data();
   float *grad_in = in->grad();

@@ -6,7 +6,6 @@
 #define STENSOR_NN_MODULE_HPP_
 #include "tensor.hpp"
 #include "common.hpp"
-#include "math_tesnsor.hpp"
 #include "proto/module.pb.h"
 
 namespace stensor {

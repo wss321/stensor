@@ -3,7 +3,9 @@
 * Created by wss on 11月,21, 2021
 */
 #include "cross_entropy_loss_layer.hpp"
-#include "common.hpp"
+#include "public/common.hpp"
+#include "core/math_tesnsor.hpp"
+#include <gtest/gtest.h>
 
 namespace stensor {
 class CrossEntropyTest : public ::testing::Test {};

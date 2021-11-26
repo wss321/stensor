@@ -1,7 +1,7 @@
 #include <public/synmem.hpp>
 #include "tensor.hpp"
 #include "proto/tensor.pb.h"
-#include "math_base_cpu.hpp"
+#include "math/math_base_cpu.hpp"
 
 namespace stensor {
 
@@ -132,8 +132,10 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-      if (copy_grad && source->require_grad())
+      if (copy_grad && source->require_grad()&&_current_grad)
         cpu_copy(_size, source->const_grad(), grad());
+      else
+        LOG(WARNING)<<"Copy gradient failed";
       cpu_copy(_size, source->const_data(), data());
 
       break;
@@ -141,8 +143,10 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-      if (copy_grad && source->require_grad())
+      if (copy_grad && source->require_grad()&&_current_grad)
         gpu_copy(_size, source->const_grad(), grad());
+      else
+        LOG(WARNING)<<"Copy gradient failed";
       gpu_copy(_size, source->const_data(), data());
 
       break;
@@ -362,14 +366,6 @@ std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
   return stensor::operator<<(out, &tensor);
 }
 
-Tensor &Tensor::operator=(const Tensor &other) {
-  copy_from(other, false, true);
-  return (*this);
-}
-Tensor &Tensor::operator=(const Tensor *other) {
-  copy_from(other, false, true);
-  return (*this);
-}
 
 Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
   CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";

@@ -3,8 +3,8 @@
 * Created by wss on 11月,21, 2021
 */
 #include <vector>
-#include "math_base_cuda.hpp"
-#include "memory_op.hpp"
+#include "math/math_base_cuda.hpp"
+#include "public/memory_op.hpp"
 
 namespace stensor {
 template<typename Dtype>

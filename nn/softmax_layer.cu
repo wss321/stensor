@@ -3,6 +3,8 @@
 * Created by wss on 11月,24, 2021
 */
 #include "softmax_layer.hpp"
+#include "math/math_base_cuda.hpp"
+
 namespace stensor {
 
 namespace nn {

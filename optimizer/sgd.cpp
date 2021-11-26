@@ -3,6 +3,9 @@
 * Created by wss on 11月,25, 2021
 */
 #include "sgd.hpp"
+#include "math/math_base_cpu.hpp"
+#include "math/math_base_cuda.hpp"
+
 namespace stensor {
 
 namespace optim {

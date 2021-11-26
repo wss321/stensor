@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <vector>
-
+#include <gtest/gtest.h>
 #include "common.hpp"
 #include "synmem.hpp"
 

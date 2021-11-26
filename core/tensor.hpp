@@ -54,20 +54,6 @@ class Tensor {
       _current_data(nullptr), _current_grad(nullptr) {
     Reset(shape, device_id);
   }
-  Tensor(const Tensor &other, bool require_grad = false) :
-      _data(), _grad(), _device(other.device()),
-      _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),
-      _current_data(nullptr), _current_grad(nullptr) {
-    copy_from(other, true, true);
-  }
-  Tensor(const Tensor *other, bool require_grad = false) :
-      _data(), _grad(), _device(other->device()),
-      _size(0), _capacity(0), _name(),
-      _require_grad(require_grad),
-      _current_data(nullptr), _current_grad(nullptr) {
-    copy_from(other, true, true);
-  }
 
   inline Dtype *data() {
     check_data();
@@ -218,9 +204,6 @@ class Tensor {
   void from_proto(const TensorProto &proto, bool reset = true);
   void to_proto(TensorProto *proto, bool write_grad = false) const;
 
-  Tensor &operator=(const Tensor &other);
-  Tensor &operator=(const Tensor *other);
-
   Dtype &operator[](std::vector<int> indices); // get data
 //  Dtype &operator[](std::vector<uint32_t> indices);
   Tensor &operator[](PairIndexType start_end_indices); // slice
@@ -243,7 +226,7 @@ class Tensor {
   void copy_data_from(const Tensor *other, bool reset = false);
   void copy_grad_from(const Tensor *other, bool reset = false);
   inline std::string name(){return _name;}
-// DISABLE_COPY_AND_ASSIGN(Tensor);
+ DISABLE_COPY_AND_ASSIGN(Tensor);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tensor &tensor);

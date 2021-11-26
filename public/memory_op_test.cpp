@@ -4,6 +4,7 @@
 */
 #include "common.hpp"
 #include "memory_op.hpp"
+#include <gtest/gtest.h>
 
 namespace stensor {
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
 project(optimizer)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -7,15 +7,15 @@ set(CORE_SRCS ${CORE_SRCS} ${tmp})
 
 file(GLOB TEST_SRCS *_test.cpp)
 file(GLOB CU_SRCS *.cu)
+
 cuda_add_library(optimizer_cuda SHARED ${CU_SRCS})
 target_include_directories(nn_cuda
-        PRIVATE ${PROJECT_SOURCE_DIR}
-        PRIVATE ${stensor_SOURCE_DIR}/public
+        PUBLIC ${PROJECT_SOURCE_DIR}
+        PRIVATE ${stensor_SOURCE_DIR}
         )
 target_link_libraries(optimizer_cuda
         lib::public
         lib::tensor
-#        ${CUBLAS_LIBRARIES}
         )
 
 add_library(${PROJECT_NAME} STATIC

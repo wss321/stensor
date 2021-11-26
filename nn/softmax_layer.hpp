@@ -5,8 +5,7 @@
 #ifndef STENSOR_NN_SOFTMAX_LAYER_HPP_
 #define STENSOR_NN_SOFTMAX_LAYER_HPP_
 #include "module.hpp"
-#include "math_tensor_backward.hpp"
-#include "math_base_cuda.hpp"
+
 namespace stensor {
 
 namespace nn {

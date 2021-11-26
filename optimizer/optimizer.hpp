@@ -6,7 +6,7 @@
 #define STENSOR_OPTIMIZER_OPTIMIZER_HPP_
 #include <vector>
 #include <memory>
-#include "module.hpp"
+#include "nn/module.hpp"
 
 namespace stensor {
 

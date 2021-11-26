@@ -4,7 +4,7 @@
 */
 #ifndef STENSOR_CORE_MATH_BASE_CUDA_HPP_
 #define STENSOR_CORE_MATH_BASE_CUDA_HPP_
-#include "common.hpp"
+
 #include <cublas_v2.h>
 #include <cuda.h>
 #include <curand.h>
@@ -12,8 +12,10 @@
 #include <driver_types.h>
 #include <cudnn.h>
 #include <cblas-atlas.h>
-#include "memory_op.hpp"
-#include "stensor_random.hpp"
+
+#include "public/common.hpp"
+#include "public/memory_op.hpp"
+#include "public/stensor_random.hpp"
 
 namespace stensor {
 /* self-op start*/

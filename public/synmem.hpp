@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include "common.hpp"
 #include "memory_op.hpp"
+#include <cublas_v2.h>
+#include <cuda.h>
+#include <curand.h>
 #include <ctime>
 
 namespace stensor {

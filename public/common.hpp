@@ -2,7 +2,6 @@
 #define STENSOR_COMMON_HPP
 #include <gflags/gflags.h>
 #include <glog/logging.h>
-#include <gtest/gtest.h>
 
 //#include <cmath>
 #include <cstdint>
@@ -18,9 +17,7 @@
 #include<sys/timeb.h>
 
 // cuda
-#include <cublas_v2.h>
-#include <cuda.h>
-#include <curand.h>
+
 
 #include "stensor_random.hpp"
 #include "memory_op.hpp"

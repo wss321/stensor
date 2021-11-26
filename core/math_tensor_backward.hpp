@@ -6,9 +6,7 @@
 #define STENSOR_CORE_MATH_TENSOR_BACKWARD_HPP_
 #include "public/common.hpp"
 #include "tensor.hpp"
-#include "math_base_cpu.hpp"
-#include "math_base_cuda.hpp"
-#include "utils.hpp"
+
 namespace stensor{
 
 namespace backward{

@@ -7,7 +7,9 @@
 #include "tensor.hpp"
 #include <vector>
 #include "math_tesnsor.hpp"
+#include "math/math_base_cpu.hpp"
 #include "transpose.hpp"
+#include <gtest/gtest.h>
 
 namespace stensor {
 class MathTensorTest : public ::testing::Test {};
@@ -396,7 +398,7 @@ TEST_F(MathTensorTest, Concat) {
   Tensor::ShapeType shape1{50, 200, 400};
   Tensor::ShapeType shape2{10, 200, 400};
 
-  int axis = 3;
+  int axis = 0;
   int device = 0;
 
   Tensor *a = stensor::ones(shape1, device);
@@ -407,6 +409,7 @@ TEST_F(MathTensorTest, Concat) {
   LOG(INFO) << "GPU concat operation time:" << systemtime_ms() - start << "ms";
 
   a->to_cpu();
+  b->to_cpu();
   start = systemtime_ms();
   Tensor *f = stensor::concat({a, b}, axis);
   std::cout << f->shape_string() << std::endl;

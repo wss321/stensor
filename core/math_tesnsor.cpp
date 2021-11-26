@@ -3,6 +3,8 @@
 * Created by wss on 11月,16, 2021
 */
 #include "math_tesnsor.hpp"
+#include "math/math_base_cpu.hpp"
+#include "math/math_base_cuda.hpp"
 
 namespace stensor {
 /* math of Tensor */
@@ -14,7 +16,8 @@ CHECK(expect == got)\
 
 Tensor *sigmoid(const Tensor *in, Tensor *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in, in->require_grad());
+    out = new Tensor(in->shape(),in->device(), in->require_grad());
+
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
@@ -39,7 +42,7 @@ Tensor *sigmoid(const Tensor *in, Tensor *out, bool grad_op) {
 #define IMPLEMENT_TENSOR_UNARY_FUNC(name) \
 Tensor *name(const Tensor *in, Tensor *out, bool grad_op) {\
   if (out == nullptr)\
-    out = new Tensor(in, in->require_grad());\
+    out = new Tensor(in->shape(),in->device(), in->require_grad());\
   else{\
     CHECK_EQ(in->device(), out->device())<< "tensors must be at same device";\
     CHECK_SHAPE(in->shape(), out->shape());\
@@ -75,7 +78,7 @@ IMPLEMENT_TENSOR_UNARY_FUNC(exp);
 
 Tensor *clamp(const Tensor *in, float minVal, float maxVal, Tensor *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in, in->require_grad());
+    out = new Tensor(in->shape(),in->device(), in->require_grad());
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
@@ -252,7 +255,7 @@ void set(Tensor *in, float val, bool grad_op) {
 
 Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in, in->require_grad());
+    out = new Tensor(in->shape(),in->device(), in->require_grad());
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
@@ -278,7 +281,7 @@ Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
 #define IMPLEMENT_TENSOR_SCALAR_FUNC(name, base_math_func)\
 Tensor *name(const Tensor *in, float val, Tensor *out, bool grad_op) {\
   if (out == nullptr)\
-    out = new Tensor(in, in->require_grad());\
+    out = new Tensor(in->shape(),in->device(), in->require_grad());\
   else{\
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";\
     CHECK_SHAPE(in->shape(), out->shape());\

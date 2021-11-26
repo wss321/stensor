@@ -5,9 +5,6 @@
 #ifndef STENSOR_NN_CROSS_ENTROPY_LOSS_LAYER_HPP_
 #define STENSOR_NN_CROSS_ENTROPY_LOSS_LAYER_HPP_
 #include "module.hpp"
-#include "math_tensor_backward.hpp"
-#include "math_base_cuda.hpp"
-#include "transpose.hpp"
 
 namespace stensor {
 

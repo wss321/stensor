@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
-project(train_mnist)
+cmake_minimum_required(VERSION 3.0)
+project(mnist_train)
 
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
         -gencode arch=compute_30,code=sm_30;
@@ -11,7 +11,7 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
         -gencode arch=compute_75,code=sm_75;
         -std=c++11;)
 
-add_executable(${PROJECT_NAME} train_mnist.cpp)
+add_executable(${PROJECT_NAME} mnist_train.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${stensor_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME}
@@ -20,3 +20,4 @@ target_link_libraries(${PROJECT_NAME}
         lib::public
         lib::optim
         )
+#add_executable(varg varg.cpp)

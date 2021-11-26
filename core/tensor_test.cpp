@@ -1,14 +1,16 @@
 #include "public/common.hpp"
 #include <memory>
-#include "tensor.hpp"
+#include "core/tensor.hpp"
 #include <vector>
 #include "math_tesnsor.hpp"
+#include <gtest/gtest.h>
+
 
 namespace stensor {
 class TensorTest : public ::testing::Test {};
 TEST_F(TensorTest, Construct) {
   Tensor a(Tensor::ShapeType{3, 4});
-  Tensor cp = a;
+  Tensor cp;
   cp.copy_from(a, false, true);
 }
 
