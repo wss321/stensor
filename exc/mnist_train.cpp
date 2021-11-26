@@ -192,7 +192,7 @@ int main() {
   nn::TensorVec mnist_label(
       read_Mnist_Label2Tensor(mnist_root + "t10k-labels-idx1-ubyte"));
   long long start_t = systemtime_ms();
-  for (int e = 0; e < 100; ++e) {
+  for (int e = 0; e < 10; ++e) {
     for (int i = 0; i < mnist_data.size(); ++i) {
       sgd.zero_grad();
       nn::TensorVec in;

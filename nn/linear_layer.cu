@@ -5,8 +5,6 @@
 #include "linear_layer.hpp"
 #include "core/math_tensor_backward.hpp"
 #include "math/math_base_cuda.hpp"
-#include "core/transpose.hpp"
-#include "core/math_tesnsor.hpp"
 
 namespace stensor {
 
