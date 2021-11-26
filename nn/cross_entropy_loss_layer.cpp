@@ -39,8 +39,8 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
     outputs_.resize(1);
     softmax_out_.reset(new Tensor(pred->shape(), pred->device(), pred->require_grad()));
     one_hot_.reset(new Tensor(pred->shape(), pred->device(), false));
-    softmax_out_->set_name(name()+"/softmax_output");
-    one_hot_->set_name(name()+"/one_hot");
+    softmax_out_->set_name(name() + "/softmax_output");
+    one_hot_->set_name(name() + "/one_hot");
     outputs_[0] = softmax_out_;
   }
   stensor::softmax(pred.get(), caxis, softmax_out_.get());// gpu err
@@ -59,6 +59,7 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
     }
     gt_data += N;
   }
+  loss_ /= M * N; // batch mean
 
   return outputs_;
 }

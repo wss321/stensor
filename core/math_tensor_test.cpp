@@ -395,8 +395,8 @@ TEST_F(MathTensorTest, asum) {
 }
 
 TEST_F(MathTensorTest, Concat) {
-  Tensor::ShapeType shape1{50, 200, 400};
-  Tensor::ShapeType shape2{10, 200, 400};
+  Tensor::ShapeType shape1{50, 2000, 400};
+  Tensor::ShapeType shape2{10, 2000, 400};
 
   int axis = 0;
   int device = 0;

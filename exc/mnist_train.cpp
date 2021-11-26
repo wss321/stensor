@@ -77,7 +77,7 @@ void read_Mnist_Images_to_vector(const string &filename, vector<vector<double>> 
   }
 }
 
-nn::TensorVec read_Mnist_Label2Tensor(const string &filename) {
+nn::TensorVec read_Mnist_Label2Tensor(const string &filename, int batch_size = 64) {
   ifstream file(filename, ios::binary);
   if (file.is_open()) {
     int magic_number = 0;
@@ -88,20 +88,25 @@ nn::TensorVec read_Mnist_Label2Tensor(const string &filename) {
     number_of_images = ReverseInt(number_of_images);
     cout << "magic number = " << magic_number << endl;
     cout << "number of images = " << number_of_images << endl;
-    nn::TensorVec out(number_of_images);
-    for (int i = 0; i < number_of_images; i++) {
-      Tensor *out_tensor = new stensor::Tensor({1, 1});
+    nn::TensorVec out(number_of_images / batch_size);
+    for (int i = 0; i < out.size(); i++) {
+      Tensor *out_tensor = new stensor::Tensor({batch_size, 1});
       out[i].reset(out_tensor);
-      unsigned char label = 0;
-      file.read((char *) &label, sizeof(label));
-      *out_tensor->data() = (float) label;
+      float *data = out_tensor->data();
+      for (int j = 0; j < batch_size; ++j) {
+        unsigned char label = 0;
+        file.read((char *) &label, sizeof(label));
+        *data = (float) label;
+        data++;
+      }
+
     }
     return out;
   }
   return {};
 }
 
-nn::TensorVec read_Mnist_Images_to_Tensor(const string &filename) {
+nn::TensorVec read_Mnist_Images_to_Tensor(const string &filename, int batch_size = 64) {
   ifstream file(filename, ios::binary);
   if (file.is_open()) {
     int magic_number = 0;
@@ -122,18 +127,20 @@ nn::TensorVec read_Mnist_Images_to_Tensor(const string &filename) {
     cout << "number of images = " << number_of_images << endl;
     cout << "rows = " << n_rows << endl;
     cout << "cols = " << n_cols << endl;
-    nn::TensorVec out(number_of_images);
+    nn::TensorVec out(number_of_images / batch_size);
 
-    for (int i = 0; i < number_of_images; i++) {
-      Tensor *out_tensor = new stensor::Tensor({n_rows * n_cols});
+    for (int i = 0; i < out.size(); i++) {
+      Tensor *out_tensor = new stensor::Tensor({batch_size, n_rows * n_cols});
       out[i].reset(out_tensor);
       float *data = out_tensor->data();
-      for (int r = 0; r < n_rows; r++) {
-        for (int c = 0; c < n_cols; c++) {
-          unsigned char pixel = 0;
-          file.read((char *) &pixel, sizeof(pixel));
-          *data = (float) pixel;
-          data++;
+      for (int j = 0; j < batch_size; ++j) {
+        for (int r = 0; r < n_rows; r++) {
+          for (int c = 0; c < n_cols; c++) {
+            unsigned char pixel = 0;
+            file.read((char *) &pixel, sizeof(pixel));
+            *data = (float) pixel;
+            data++;
+          }
         }
       }
     }
@@ -150,11 +157,11 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::LinearLayer *l1 = new nn::LinearLayer("l1", dim_in, 64, axis, device_id, true);
-    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
+//    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
 //    nn::CrossEntropyLossLayer loss("loss", axis, device_id);
     submodules_.clear();
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
-    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
+//    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
 //    submodules_.push_back(std::shared_ptr<nn::Module>(&loss));
     for (auto &sm: submodules_) {
       modules[sm->name()] = sm;
@@ -166,12 +173,12 @@ class SimpleNet : public nn::Module {
     inputs_.push_back(inputs[0]);
     modules["l1"];
     nn::TensorVec x1 = modules["l1"]->forward(inputs_);
-    nn::TensorVec x2 = modules["l2"]->forward(x1);
+//    nn::TensorVec x2 = modules["l2"]->forward(x1);
 //    nn::TensorVec x3 = modules["loss"]->forward(x2);
-    return x2;
+    return x1;
   }
   inline void backward() override {
-    modules["l2"]->backward();
+//    modules["l2"]->backward();
     modules["l1"]->backward();
   }
  private:
@@ -180,28 +187,29 @@ class SimpleNet : public nn::Module {
 
 int main() {
   stensor::Config::set_random_seed(1234);
+  int batch_size=64;
   int device_id = 0;
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLossLayer loss("loss", -1, device_id);
 
-  stensor::optim::SGD sgd(&net, 0.001, 0.0);
+  stensor::optim::SGD sgd(&net, 0.01, 0.0);
 
   string mnist_root("/home/wss/CLionProjects/stensor/data/mnist/");
   nn::TensorVec mnist_data(
-      read_Mnist_Images_to_Tensor(mnist_root + "t10k-images-idx3-ubyte"));
+      read_Mnist_Images_to_Tensor(mnist_root + "t10k-images-idx3-ubyte", batch_size));
   nn::TensorVec mnist_label(
-      read_Mnist_Label2Tensor(mnist_root + "t10k-labels-idx1-ubyte"));
+      read_Mnist_Label2Tensor(mnist_root + "t10k-labels-idx1-ubyte", batch_size));
   long long start_t = systemtime_ms();
-  for (int e = 0; e < 10; ++e) {
+  for (int e = 0; e < 12; ++e) {
     for (int i = 0; i < mnist_data.size(); ++i) {
       sgd.zero_grad();
       nn::TensorVec in;
       nn::SharedTensor img = mnist_data[i];
       if (e == 0)
         stensor::scale(img.get(), 1 / 255.0, img.get());
-      img->reshape({1, 28 * 28});
+      img->reshape({batch_size, 28 * 28});
       nn::SharedTensor gt = mnist_label[i];
-      gt->reshape({1});
+      gt->reshape({batch_size});
       if (device_id > -1) {
         if (img->state() == stensor::CPU)
           img->to_gpu();

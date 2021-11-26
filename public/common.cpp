@@ -72,6 +72,7 @@ template std::ostream &operator<<<uint32_t>(std::ostream &out, std::vector<uint3
 template std::ostream &operator<<<bool>(std::ostream &out, std::vector<bool> vector);
 template std::ostream &operator<<<std::string>(std::ostream &out, std::vector<std::string> vector);
 
+// Make sure each thread can have different values.
 static boost::thread_specific_ptr<Config> thread_instance_;
 Config &Config::GetInstance() {
   if (!thread_instance_.get()) {

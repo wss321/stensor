@@ -157,29 +157,33 @@ template void gpu_reduce_asum<double>(const int M, const int D, const int N, con
 
 template<typename Dtype>
 __global__ void softmax_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
-  CUDA_KERNEL_LOOP(index, M * N) {
-    int n = index % N;
-    int m = index / N;
-    Dtype denominator = 0;
-    int cur_idx = m * D * N + n;
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index >= M * N) return;
+  int n = index % N;
+  int m = index / N;
+  Dtype denominator = 0;
+  int cur_idx = m * D * N + n;
+  Dtype maxV =  -FLT_MAX;
+  for (int d = 0; d < D; ++d) {//find max
+    maxV= max(maxV, x[cur_idx + d * N]);
+  }
+  for (int d = 0; d < D; ++d) {//subtract max
+    denominator += exp(x[cur_idx + d * N]-maxV);
+  }
+  if (beta == 0) {
     for (int d = 0; d < D; ++d) {
-      denominator += exp(x[cur_idx + d * N]);
+      y[cur_idx + d * N] = exp(x[cur_idx + d * N]-maxV) / denominator;
     }
-    if (beta == 0) {
-      for (int d = 0; d < D; ++d) {
-        y[cur_idx + d * N] = exp(x[cur_idx + d * N]) / denominator;
-      }
-    } else {
-      for (int d = 0; d < D; ++d) {
-        y[cur_idx + d * N] = exp(x[cur_idx + d * N]) / denominator + beta * y[index];
-      }
+  } else {
+    for (int d = 0; d < D; ++d) {
+      y[cur_idx + d * N] = exp(x[cur_idx + d * N]-maxV) / denominator + beta * y[index];
     }
   }
 }
 
 template<typename Dtype>
 void gpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
-  softmax_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  softmax_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
@@ -197,19 +201,19 @@ __global__ void argmax_kernel(const int M, const int D, const int N, const Dtype
     int max_index = 0;
 
     for (int d = 0; d < D; ++d) {
-      if (x[cur_idx+d*N] > maxV) {
-        maxV = x[cur_idx+d*N];
+      if (x[cur_idx + d * N] > maxV) {
+        maxV = x[cur_idx + d * N];
         max_index = d;
       }
     }
-    y[index]= max_index;
+    y[index] = max_index;
 
   }
 }
 
 template<typename Dtype>
 void gpu_argmax(const int M, const int D, const int N, const Dtype *x, Dtype *y) {
-  argmax_kernel<Dtype><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, y);
+  argmax_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, y);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
@@ -222,8 +226,8 @@ __global__ void one_hot_kernel(const int M, const int C, const Dtype *x, Dtype *
   CUDA_KERNEL_LOOP(index, M * C) {
     int m = index / C;
     int c = index % C;
-    if (x[m]==c) y[index]=Dtype(1);
-    else y[index]=Dtype(0);
+    if (x[m] == c) y[index] = Dtype(1);
+    else y[index] = Dtype(0);
   }
 }
 template<typename Dtype>
@@ -231,14 +235,14 @@ __global__ void one_hot_kernel(const int M, const int C, const int *x, Dtype *y)
   CUDA_KERNEL_LOOP(index, M * C) {
     int m = index / C;
     int c = index % C;
-    if (x[m]==c) y[index]=Dtype(1);
-    else y[index]=Dtype(0);
+    if (x[m] == c) y[index] = Dtype(1);
+    else y[index] = Dtype(0);
   }
 }
 
 template<typename Dtype>
 void gpu_one_hot(const int M, const int C, const Dtype *x, Dtype *y) {
-  one_hot_kernel<Dtype><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
+  one_hot_kernel < Dtype ><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }
@@ -248,7 +252,7 @@ template void gpu_one_hot<double>(const int M, const int C, const double *x, dou
 
 template<typename Dtype>
 void gpu_one_hot(const int M, const int C, const int *x, Dtype *y) {
-  one_hot_kernel<Dtype><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
+  one_hot_kernel < Dtype ><<<GET_BLOCKS(M * C), CUDA_NUM_THREADS>>>(M, C, x, y);
   cudaDeviceSynchronize();
   CUDA_POST_KERNEL_CHECK;
 }

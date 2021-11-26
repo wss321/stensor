@@ -95,17 +95,21 @@ void cpu_softmax(const int M, const int D, const int N, const Dtype *x, Dtype be
     for (int n = 0; n < N; ++n) {
       // calc denominator
       Dtype denominator = 0;
+      Dtype maxV = -FLT_MAX;
       for (int d = 0; d < D; ++d) {
-        denominator += exp(in_data[d * N + n]);
+        maxV = std::max(in_data[d * N + n], maxV);
+      }
+      for (int d = 0; d < D; ++d) {
+        denominator += exp(in_data[d * N + n] - maxV);
       }
 
       if (beta == 0) {
         for (int d = 0; d < D; ++d) {
-          out_data[d * N + n] = exp(in_data[d * N + n]) / denominator;
+          out_data[d * N + n] = exp(in_data[d * N + n] - maxV) / denominator;
         }
       } else {
         for (int d = 0; d < D; ++d) {
-          out_data[d * N + n] = beta * (*out_data) + exp(in_data[d * N + n]) / denominator;
+          out_data[d * N + n] = beta * (*out_data) + exp(in_data[d * N + n] - maxV) / denominator;
         }
       }
     }
