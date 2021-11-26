@@ -47,19 +47,19 @@ TensorVec CrossEntropyLossLayer::forward(TensorVec &inputs) {
   float *sm_data = softmax_out_->data();
   const float *gt_data = gt->const_data();
   loss_ = 0;
+  float batch_size = M * N;
   for (int m = 0; m < M; ++m) {
     for (int c = 0; c < C; ++c) {
       for (int n = 0; n < N; ++n) {
         int gt_i = gt_data[n];
         CHECK_GE(gt_i, 0) << "ground truth must be great than 0 and less than number of classes";
         CHECK_LT(gt_i, C) << "ground truth must be great than 0 and less than number of classes";
-        if (gt_i == c) loss_ -= log(*sm_data);
+        if (gt_i == c) loss_ -= log(*sm_data)/batch_size;// batch mean
         sm_data++;
       }
     }
     gt_data += N;
   }
-  loss_ /= M * N; // batch mean
 
   return outputs_;
 }

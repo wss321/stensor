@@ -184,10 +184,24 @@ class SimpleNet : public nn::Module {
  private:
   std::map<std::string, std::shared_ptr<nn::Module>> modules;
 };
+int calc_acc(const Tensor *logit, const Tensor *gt) {
+  Tensor *pred = stensor::argmax(logit, -1);
+  CHECK_EQ(pred->size(), gt->size());
+  int count = 0;
+  const float *gt_data = gt->const_data();
+  const float *pred_data = pred->const_data();
+  for (int i = 0; i < pred->size(); ++i) {
+    if (*gt_data == *pred_data) count++;
+    gt_data++;
+    pred_data++;
+  }
+  delete pred;
+  return count;
+}
 
 int main() {
   stensor::Config::set_random_seed(1234);
-  int batch_size=64;
+  int batch_size = 64;
   int device_id = 0;
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLossLayer loss("loss", -1, device_id);
@@ -200,7 +214,8 @@ int main() {
   nn::TensorVec mnist_label(
       read_Mnist_Label2Tensor(mnist_root + "t10k-labels-idx1-ubyte", batch_size));
   long long start_t = systemtime_ms();
-  for (int e = 0; e < 12; ++e) {
+  for (int e = 0; e < 120; ++e) {
+    float correct_count = 0;
     for (int i = 0; i < mnist_data.size(); ++i) {
       sgd.zero_grad();
       nn::TensorVec in;
@@ -220,16 +235,15 @@ int main() {
       in.push_back(img);
 
       nn::TensorVec logit = net.forward(in);
-
       nn::TensorVec pair{logit[0], gt};
       loss.forward(pair);
-
       loss.backward();
-
       net.backward();
       sgd.step();
+      correct_count += calc_acc(logit[0].get(), gt.get());
     }
-    std::cout << "epoch:" << e << ", loss:" << loss.get_loss() << std::endl;
+    std::cout << "epoch:" << e << ", loss:" << loss.get_loss()
+              << ", acc:" << correct_count / 10000.0 << std::endl;
   }
   LOG(INFO) << "Time cost:" << (systemtime_ms() - start_t) / 1000 << " s\n";
   return 0;
