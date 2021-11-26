@@ -8,6 +8,8 @@
 #include "optimizer/sgd.hpp"
 #include "nn/linear_layer.hpp"
 #include "nn/cross_entropy_loss_layer.hpp"
+#include "nn/relu_layer.hpp"
+#include "nn/tanh_layer.hpp"
 
 using namespace std;
 using namespace stensor;
@@ -157,12 +159,14 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
-//    nn::LinearLayer *l2 = new nn::LinearLayer("l2", 64, num_classes, axis, device_id, true);
-//    nn::CrossEntropyLossLayer loss("loss", axis, device_id);
+    nn::TanH *tanh = new nn::TanH("tanh");
+    nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
+
     submodules_.clear();
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
-//    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
-//    submodules_.push_back(std::shared_ptr<nn::Module>(&loss));
+    submodules_.push_back(std::shared_ptr<nn::Module>(l2));
+    submodules_.push_back(std::shared_ptr<nn::Module>(tanh));
+
     for (auto &sm: submodules_) {
       modules[sm->name()] = sm;
     }
@@ -171,14 +175,15 @@ class SimpleNet : public nn::Module {
   inline nn::TensorVec forward(nn::TensorVec &inputs) override {//image and ground-truth
     inputs_.clear();
     inputs_.push_back(inputs[0]);
-    modules["l1"];
-    nn::TensorVec x1 = modules["l1"]->forward(inputs_);
-//    nn::TensorVec x2 = modules["l2"]->forward(x1);
-//    nn::TensorVec x3 = modules["loss"]->forward(x2);
-    return x1;
+    nn::TensorVec x;
+    x = modules["l1"]->forward(inputs_);
+    x = modules["tanh"]->forward(x);
+    x = modules["l2"]->forward(x);
+    return x;
   }
   inline void backward() override {
-//    modules["l2"]->backward();
+    modules["l2"]->backward();
+    modules["tanh"]->backward();
     modules["l1"]->backward();
   }
  private:
