@@ -45,11 +45,11 @@ class Model(torch.nn.Module):
 
 
 model = Model()
-model = model.cuda()
+# model = model.cuda()
 torch.manual_seed(1234)
 # torch.cuda.manual_seed(1234)
 cost = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), 0.001)
+optimizer = torch.optim.Adam(model.parameters(), 0.001)
 n_epochs = 30
 # model.load_state_dict(torch.load('model_parameter.pkl'))
 running_loss = 0.0
@@ -58,8 +58,8 @@ data_list=[]
 for data in data_loader_train:
     running_loss = 0.0
     X_train, y_train = data
-    X_train = X_train.cuda()
-    y_train = y_train.cuda()
+    # X_train = X_train.cuda()
+    # y_train = y_train.cuda()
     data_list.append([X_train, y_train])
 start = time()
 for epoch in range(n_epochs):

@@ -32,6 +32,7 @@ class Adam : public Optimizer {
   int iter_;
   nn::TensorVec history_1order_;
   nn::TensorVec history_2order_;
+  nn::TensorVec denom_;
 
  DISABLE_COPY_AND_ASSIGN(Adam);
 };
