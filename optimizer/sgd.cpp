@@ -3,6 +3,7 @@
 * Created by wss on 11月,25, 2021
 */
 #include "sgd.hpp"
+#include "core/math_tesnsor.hpp"
 #include "math/math_base_cpu.hpp"
 #include "math/math_base_cuda.hpp"
 
@@ -19,7 +20,7 @@ SGD::SGD(nn::Module *model, float learning_rate, float weight_decay, float momen
   learnable_params_ = model->get_learnable_params();
   for (int i = 0; i < learnable_params_.size(); ++i) {
     nn::SharedTensor param = learnable_params_[i];
-    Tensor *history_mmt = new Tensor(param->shape(), param->device(), false);
+    Tensor *history_mmt = stensor::zeros(param->shape(), param->device(), false);
     history_momentum_.push_back(nn::SharedTensor(history_mmt));
   }
 }

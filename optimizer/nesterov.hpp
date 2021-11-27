@@ -7,7 +7,10 @@
 #include "optimizer.hpp"
 
 namespace stensor {
-
+/* nesterov
+ * v_t=\mu v_{t-1}+\Delta w_t
+ * w_{t+1}=w_t-\eta(\mu v_t+ \Delta w_t)
+ * */
 namespace optim {
 class Nesterov : public Optimizer {
  public:

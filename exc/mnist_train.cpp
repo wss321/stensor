@@ -13,6 +13,7 @@
 #include "nn/sigmoid_layer.hpp"
 #include "nn/leaky_relu_layer.hpp"
 #include "optimizer/nesterov.hpp"
+#include "optimizer/adam.hpp"
 
 using namespace std;
 using namespace stensor;
