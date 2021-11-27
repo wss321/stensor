@@ -15,6 +15,7 @@
 #include "optimizer/nesterov.hpp"
 #include "optimizer/adam.hpp"
 #include "optimizer/adagrad.hpp"
+#include "optimizer/rmsprop.hpp"
 
 using namespace std;
 using namespace stensor;
@@ -156,13 +157,14 @@ int calc_acc(const Tensor *logit, const Tensor *gt) {
 int main() {
   stensor::Config::set_random_seed(1234);
   int batch_size = 64;
-  int device_id = -1; // using GPU0
+  int device_id = 0; // using GPU0
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLoss loss("loss", -1, device_id);
 
 //  stensor::optim::SGD optimizer(&net, 0.001, 1e-4, 0.9);
 //  stensor::optim::AdaGrad optimizer(&net, 0.001, 1e-4, 1e-7);
-  stensor::optim::Adam optimizer(&net, 0.001, 1e-4, 0.9, 0.999);
+//  stensor::optim::Adam optimizer(&net, 0.001, 1e-4, 0.9, 0.999);
+  stensor::optim::RMSprop optimizer(&net, 0.001, 1e-4, 0.9);
 
   string mnist_root("/home/wss/CLionProjects/stensor/data/mnist/");
   nn::TensorVec mnist_data(

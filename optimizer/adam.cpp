@@ -90,7 +90,7 @@ void Adam::step_cpu() {
     cpu_sqrt(n, d, d);
     cpu_add_scalar(n, d, eps_, d);
     cpu_div(n, h1, d, d);
-    cpu_axpy(param->size(), -learning_rate_ * bf1, d, param->data());
+    cpu_axpy(n, -learning_rate_ * bf1, d, w);
   }
 }
 
