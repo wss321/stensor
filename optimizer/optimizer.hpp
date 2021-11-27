@@ -21,6 +21,7 @@ class Optimizer {
       learnable_params_[i]->zero_grad();
   };
   inline void set_learning_rate(float lr) { learning_rate_ = lr; };
+  virtual void weight_decay();
  protected:
   float learning_rate_;
   float weight_decay_;

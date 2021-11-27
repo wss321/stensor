@@ -25,7 +25,8 @@ SGD::SGD(nn::Module *model, float learning_rate, float weight_decay, float momen
 }
 
 void SGD::step_cpu() {
-  //TODO:weight decay
+  if (weight_decay_!=0)
+    this->weight_decay();
   if (momentum_==0)
     for (int i = 0; i < learnable_params_.size(); ++i) {
       nn::SharedTensor param = learnable_params_[i];
@@ -41,7 +42,8 @@ void SGD::step_cpu() {
 }
 
 void SGD::step_gpu() {
-  //TODO:weight decay
+  if (weight_decay_!=0)
+    this->weight_decay();
   if (momentum_==0)
     for (int i = 0; i < learnable_params_.size(); ++i) {
       nn::SharedTensor param = learnable_params_[i];

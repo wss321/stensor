@@ -157,7 +157,7 @@ int main() {
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLoss loss("loss", -1, device_id);
 
-  stensor::optim::SGD sgd(&net, 0.001, 0.0, 0.9);
+  stensor::optim::SGD sgd(&net, 0.001, 1e-4, 0.9);
 
   string mnist_root("/home/wss/CLionProjects/stensor/data/mnist/");
   nn::TensorVec mnist_data(

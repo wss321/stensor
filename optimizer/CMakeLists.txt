@@ -3,7 +3,7 @@ project(optimizer)
 
 set(CMAKE_CXX_STANDARD 11)
 file(GLOB tmp *.cpp)
-set(CORE_SRCS ${CORE_SRCS} ${tmp})
+set(CPP_SRCS ${CPP_SRCS} ${tmp})
 
 file(GLOB TEST_SRCS *_test.cpp)
 file(GLOB CU_SRCS *.cu)
@@ -19,7 +19,7 @@ target_link_libraries(optimizer_cuda
         )
 
 add_library(${PROJECT_NAME} STATIC
-        ${CORE_SRCS}
+        ${CPP_SRCS}
         )
 add_library(lib::optim ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
