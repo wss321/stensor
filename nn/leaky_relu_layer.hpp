@@ -10,7 +10,7 @@ namespace stensor {
 namespace nn {
 class LeakyReLU : public Module {
  public:
-  explicit LeakyReLU(std::string name, float alpha = 0.2, bool inplace = false) :
+  explicit LeakyReLU(std::string name, float alpha = 0.01, bool inplace = false) :
       inplace_(inplace) {
     alpha_ = alpha;
     name_ = name;

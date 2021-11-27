@@ -6,7 +6,7 @@
 #define STENSOR_NN_RELU_LAYER_HPP_
 #include "module.hpp"
 namespace stensor {
-
+//TODO:inplace
 namespace nn {
 class ReLU : public Module {
  public:
