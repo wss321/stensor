@@ -12,6 +12,7 @@
 #include "nn/tanh_layer.hpp"
 #include "nn/sigmoid_layer.hpp"
 #include "nn/leaky_relu_layer.hpp"
+#include "optimizer/nesterov.hpp"
 
 using namespace std;
 using namespace stensor;
@@ -157,7 +158,8 @@ int main() {
   SimpleNet net(28 * 28, 10, device_id);
   nn::CrossEntropyLoss loss("loss", -1, device_id);
 
-  stensor::optim::SGD sgd(&net, 0.001, 1e-4, 0.9);
+//  stensor::optim::SGD optimizer(&net, 0.001, 1e-4, 0.9);
+  stensor::optim::Nesterov optimizer(&net, 0.001, 1e-4, 0.9);
 
   string mnist_root("/home/wss/CLionProjects/stensor/data/mnist/");
   nn::TensorVec mnist_data(
@@ -168,7 +170,7 @@ int main() {
   for (int e = 0; e < 30; ++e) {
     float correct_count = 0;
     for (int i = 0; i < mnist_data.size(); ++i) {
-      sgd.zero_grad();
+      optimizer.zero_grad();
       nn::TensorVec in;
       nn::SharedTensor img = mnist_data[i];
       if (e == 0)
@@ -190,7 +192,7 @@ int main() {
       loss.forward(pair);
       loss.backward();
       net.backward();
-      sgd.step();
+      optimizer.step();
       correct_count += calc_acc(logit[0].get(), gt.get());
     }
     std::cout << "epoch:" << e << ", loss:" << loss.get_loss()
