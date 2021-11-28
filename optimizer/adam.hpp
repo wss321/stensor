@@ -4,7 +4,7 @@
 */
 #ifndef STENSOR_OPTIMIZER_ADAM_HPP_
 #define STENSOR_OPTIMIZER_ADAM_HPP_
-#include "optimizer.hpp"
+#include "base_optimizer.hpp"
 
 namespace stensor {
 

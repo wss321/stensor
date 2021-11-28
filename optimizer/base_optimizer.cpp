@@ -2,7 +2,7 @@
 * Copyright 2021 wss
 * Created by wss on 11月,25, 2021
 */
-#include "optimizer.hpp"
+#include "base_optimizer.hpp"
 #include "math/math_base_cpu.hpp"
 #include "math/math_base_cuda.hpp"
 

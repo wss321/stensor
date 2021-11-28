@@ -4,7 +4,7 @@
 */
 #ifndef STENSOR_OPTIMIZER_RMSPROP_HPP_
 #define STENSOR_OPTIMIZER_RMSPROP_HPP_
-#include "optimizer.hpp"
+#include "base_optimizer.hpp"
 
 namespace stensor {
 

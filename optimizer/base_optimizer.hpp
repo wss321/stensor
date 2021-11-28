@@ -2,8 +2,8 @@
 * Copyright 2021 wss
 * Created by wss on 11月,25, 2021
 */
-#ifndef STENSOR_OPTIMIZER_OPTIMIZER_HPP_
-#define STENSOR_OPTIMIZER_OPTIMIZER_HPP_
+#ifndef STENSOR_OPTIMIZER_BASE_OPTIMIZER_HPP_
+#define STENSOR_OPTIMIZER_BASE_OPTIMIZER_HPP_
 #include <vector>
 #include <memory>
 #include "nn/module.hpp"
@@ -30,4 +30,4 @@ class Optimizer {
 };
 }//namespace optim
 }//namespace stensor
-#endif //STENSOR_OPTIMIZER_OPTIMIZER_HPP_
+#endif //STENSOR_OPTIMIZER_BASE_OPTIMIZER_HPP_

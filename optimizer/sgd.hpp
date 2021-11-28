@@ -4,7 +4,7 @@
 */
 #ifndef STENSOR_OPTIMIZER_SGD_HPP_
 #define STENSOR_OPTIMIZER_SGD_HPP_
-#include "optimizer.hpp"
+#include "base_optimizer.hpp"
 
 namespace stensor {
 

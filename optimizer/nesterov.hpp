@@ -4,7 +4,7 @@
 */
 #ifndef STENSOR_OPTIMIZER_NESTEROV_HPP_
 #define STENSOR_OPTIMIZER_NESTEROV_HPP_
-#include "optimizer.hpp"
+#include "base_optimizer.hpp"
 
 namespace stensor {
 /* nesterov

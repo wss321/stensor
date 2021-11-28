@@ -5,17 +5,8 @@
 #include "public/common.hpp"
 #include "core/tensor.hpp"
 #include "core/math_tesnsor.hpp"
-#include "optimizer/sgd.hpp"
-#include "nn/linear_layer.hpp"
-#include "nn/cross_entropy_loss_layer.hpp"
-#include "nn/relu_layer.hpp"
-#include "nn/tanh_layer.hpp"
-#include "nn/sigmoid_layer.hpp"
-#include "nn/leaky_relu_layer.hpp"
-#include "optimizer/nesterov.hpp"
-#include "optimizer/adam.hpp"
-#include "optimizer/adagrad.hpp"
-#include "optimizer/rmsprop.hpp"
+#include "nn/layers.hpp"
+#include "optimizer/optimizers.hpp"
 
 using namespace std;
 using namespace stensor;
