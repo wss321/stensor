@@ -132,10 +132,12 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-      if (copy_grad && source->require_grad()&&_current_grad)
-        cpu_copy(_size, source->const_grad(), grad());
-      else
-        LOG(WARNING)<<"Copy gradient failed";
+      if (copy_grad){
+        if (!source->const_grad()&&_current_grad)
+          cpu_copy(_size, source->const_grad(), grad());
+        else
+          LOG(WARNING)<<"Copy gradient failed";
+      }
       cpu_copy(_size, source->const_data(), data());
 
       break;
@@ -143,10 +145,12 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-      if (copy_grad && source->require_grad()&&_current_grad)
-        gpu_copy(_size, source->const_grad(), grad());
-      else
-        LOG(WARNING)<<"Copy gradient failed";
+      if (copy_grad){
+        if (!source->const_grad()&&_current_grad)
+          gpu_copy(_size, source->const_grad(), grad());
+        else
+          LOG(WARNING)<<"Copy gradient failed";
+      }
       gpu_copy(_size, source->const_data(), data());
 
       break;
