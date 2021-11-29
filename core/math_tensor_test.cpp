@@ -64,11 +64,12 @@ TEST_F(MathTensorTest, MathUnary) {
 
 TEST_F(MathTensorTest, MathRandomTest) {
   Tensor::ShapeType shape1{3, 4, 5};
-  Tensor::ShapeType shape2{3, 1, 1};
+  Tensor::ShapeType shape2{9, 1, 1};
   stensor::Config::set_random_seed(123);
   Tensor *a = stensor::random(shape1);
   stensor::Config::set_random_seed(123);
   Tensor *b = stensor::random(shape1);
+  Tensor *c = stensor::random_gaussian(shape2, 0);
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(a->data_at(i), b->data_at(i));
   }

@@ -20,23 +20,25 @@ Linear::Linear(const std::string &name,
                bool bias) {
   CHECK_GT(dim_in, 0);
   CHECK_GT(dim_out, 0);
-  type_ = "Linear";
-  name_ = name;
+  this->type_ = "Linear";
+  this->name_ = name;
+  if (device > -1) this->state_ = GPU;
+  else this->state_ = CPU;
   axis_ = axis;
-  if (device > -1) state_ = GPU;
-  else state_ = CPU;
   has_bias_ = bias;
-  parameters_.resize(2);
+  if (has_bias_)
+    this->parameters_.resize(2);
+  else this->parameters_.resize(1);
   Tensor *W = stensor::random_gaussian({dim_in, dim_out}, 0, 0.1, device, true);
   W->set_name(name_ + "(" + type_ + ")" + "/W");
   W_.reset(W);
-  parameters_[0] = W_; // add parameter
+  this->parameters_[0] = W_; // add parameter
   if (has_bias_) {
 //    Tensor *b = stensor::random({1, dim_out}, -1, 1, device, true);
     Tensor *b = stensor::zeros({1, dim_out}, device, true);
     b_.reset(b);
     b_->set_name(name_ + "(" + type_ + ")" + "/bias");
-    parameters_[1] = b_;// add parameter
+    this->parameters_[1] = b_;// add parameter
   }
 }
 
@@ -49,7 +51,7 @@ TensorVec Linear::forward(TensorVec &inputs) {
   if (result_.get() == nullptr || out_shape != result_->shape()) {
     outputs_.resize(1);
     result_.reset(new Tensor(out_shape, in->device(), W_->require_grad() || in->require_grad()));
-    result_->set_name(name()+"/output");
+    result_->set_name(name() + "/output");
   }
   inputs_ = inputs;
   stensor::matmul(in.get(), W_.get(), axis_,

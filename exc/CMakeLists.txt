@@ -11,9 +11,9 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
         -gencode arch=compute_75,code=sm_75;
         -std=c++11;)
 
-add_executable(${PROJECT_NAME} mnist_train.cpp)
+add_executable(${PROJECT_NAME} mnist_train_conv2d.cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${stensor_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${stensor_SOURCE_DIR} ${SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME}
         lib::tensor
         lib::proto

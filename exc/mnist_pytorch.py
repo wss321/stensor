@@ -34,6 +34,7 @@ class Model(torch.nn.Module):
 
     def __init__(self):
         super(Model, self).__init__()
+        torch.nn.Conv2d()
         self.dense = torch.nn.Sequential(torch.nn.Linear(28 * 28, 64),
                                          torch.nn.Sigmoid(),
                                          torch.nn.Linear(64, 10),

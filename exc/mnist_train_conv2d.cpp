@@ -19,11 +19,13 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
+    nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 1, 0, false);
     nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
     nn::ReLU *act = new nn::ReLU("act");
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();
+    submodules_.push_back(std::shared_ptr<nn::Module>(conv1));
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
     submodules_.push_back(std::shared_ptr<nn::Module>(l2));
     submodules_.push_back(std::shared_ptr<nn::Module>(act));
@@ -37,7 +39,9 @@ class SimpleNet : public nn::Module {
     inputs_.clear();
     inputs_.push_back(inputs[0]);
     nn::TensorVec x;
-    x = modules["l1"]->forward(inputs_);
+    x = modules["conv1"]->forward(inputs_);
+    x[0]->reshape({x[0]->shape(0), x[0]->count(1, 4)});
+    x = modules["l1"]->forward(x);
     x = modules["act"]->forward(x);
     x = modules["l2"]->forward(x);
     return x;
@@ -46,6 +50,7 @@ class SimpleNet : public nn::Module {
     modules["l2"]->backward();
     modules["act"]->backward();
     modules["l1"]->backward();
+    modules["conv1"]->backward();
   }
  private:
   std::map<std::string, std::shared_ptr<nn::Module>> modules;
@@ -74,8 +79,8 @@ int main() {
 
 //  stensor::optim::SGD optimizer(&net, 0.001, 1e-4, 0.9);
 //  stensor::optim::AdaGrad optimizer(&net, 0.001, 1e-4, 1e-7);
-//  stensor::optim::Adam optimizer(&net, 0.001, 1e-4, 0.9, 0.999);
-  stensor::optim::RMSprop optimizer(&net, 0.001, 1e-4, 0.9);
+  stensor::optim::Adam optimizer(&net, 0.001, 1e-4, 0.9, 0.999);
+//  stensor::optim::RMSprop optimizer(&net, 0.001, 1e-4, 0.9);
 
   string mnist_root("/home/wss/CLionProjects/stensor/data/mnist/");
   nn::TensorVec mnist_data(
@@ -91,7 +96,7 @@ int main() {
       nn::SharedTensor img = mnist_data[i];
       if (e == 0)
         stensor::scale(img.get(), 1 / 255.0, img.get());
-      img->reshape({batch_size, 28 * 28});
+      img->reshape({batch_size, 1, 28, 28});
       nn::SharedTensor gt = mnist_label[i];
       gt->reshape({batch_size});
       if (device_id > -1) {

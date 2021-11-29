@@ -251,5 +251,41 @@ void cpu_rng_bernoulli(int n,
 template<typename Dtype>
 void cpu_nll(const int n, const Dtype *pred, const Dtype *ground_truth, Dtype *y);
 
+//conv
+template<typename Dtype>
+void cpu_img2col(const int n, int c, int h, int w, int stride_w, int stride_h,
+                 const Dtype *img, Dtype *col);
+
+template<typename Dtype>
+void cpu_ndimg2col(const Dtype *data_im, const int num_spatial_axes,
+                   const int *im_shape, const int *col_shape,
+                   const int *kernel_shape, const int *pad, const int *stride,
+                   const int *dilation, Dtype *data_col, const bool forced_3d = false);
+
+template<typename Dtype>
+void cpu_img2col(const Dtype *data_im, const int channels,
+                 const int height, const int width, const int kernel_h, const int kernel_w,
+                 const int pad_h, const int pad_w, const int stride_h,
+                 const int stride_w, const int dilation_h, const int dilation_w,
+                 Dtype *data_col);
+
+template<typename Dtype>
+void cpu_colgrad2grad(const Dtype *data_col, const int num_spatial_axes,
+                      const int *im_shape, const int *col_shape,
+                      const int *kernel_shape, const int *pad, const int *stride,
+                      const int *dilation, Dtype *data_im, const bool forced_3d = false);
+
+template<typename Dtype>
+void cpu_colgrad2grad(const Dtype *data_col, const int channels,
+                      const int height, const int width, const int kernel_h, const int kernel_w,
+                      const int pad_h, const int pad_w, const int stride_h,
+                      const int stride_w, const int dilation_h, const int dilation_w,
+                      Dtype *data_im);
+template<typename Dtype>
+inline void cpu_ndimg_col_core(const Dtype *data_input, const bool im2col,
+                               const int num_spatial_axes, const int *im_shape, const int *col_shape,
+                               const int *kernel_shape, const int *pad, const int *stride,
+                               const int *dilation, Dtype *data_output, const bool forced_3d);
+
 }
 #endif //STENSOR_CORE_MATH_BASE_CPU_HPP_
