@@ -52,10 +52,10 @@ class SimpleNet : public nn::Module {
     inputs_.push_back(inputs[0]);
     nn::TensorVec x;
     x = modules["conv1"]->forward(inputs_);
-//    x = modules["act1"]->forward(x);
+    x = modules["act1"]->forward(x);
     x = modules["pool1"]->forward(x);
     x = modules["conv2"]->forward(x);
-//    x = modules["act2"]->forward(x);
+    x = modules["act2"]->forward(x);
     x = modules["pool2"]->forward(x);
     x = modules["reshape"]->forward(x);
     x = modules["l1"]->forward(x);
@@ -70,10 +70,10 @@ class SimpleNet : public nn::Module {
     modules["l1"]->backward();
     modules["reshape"]->backward();
     modules["pool2"]->backward();
-//    modules["act2"]->backward();
+    modules["act2"]->backward();
     modules["conv2"]->backward();
     modules["pool1"]->backward();
-//    modules["act1"]->backward();
+    modules["act1"]->backward();
     modules["conv1"]->backward();
   }
  private:

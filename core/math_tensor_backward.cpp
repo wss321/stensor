@@ -12,6 +12,7 @@ namespace backward {
 
 //
 void add_backward(Tensor *a, Tensor *b, const Tensor *y) {
+  NOT_IMPLEMENTED;
   std::vector<int> shape_a(a->shape());
   std::vector<int> shape_b(b->shape());
   std::vector<int> shape_out = stensor::broadcast(shape_a, shape_b);

@@ -293,7 +293,7 @@ void BaseConv2d::backward_gpu() {
 //        if (inputs_[0]->grad_at(i)==0) count0++;
 //      }
 //      LOG(INFO)<<"zero rate:"<<count0/(float)inputs_[0]->size();
-    }
+//    }
   }
 }
 

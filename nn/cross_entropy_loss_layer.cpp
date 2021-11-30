@@ -86,7 +86,7 @@ void CrossEntropyLoss::backward_cpu() {
       new_order.push_back(i);
     new_order[sm->num_axes() - 1] = caxis;
     new_order[caxis] = sm->num_axes() - 1;
-    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);//TODO inplace transpose
+    Tensor *transpose_sm = stensor::transpose(sm.get(), new_order);
     data_sm = transpose_sm->const_data();
   }
 
