@@ -66,6 +66,7 @@ int calc_acc(const Tensor *logit, const Tensor *gt) {
 }
 
 int main() {
+  google::InstallFailureSignalHandler();
   stensor::Config::set_random_seed(1234);
   int batch_size = 64;
   int device_id = 0; // using GPU0

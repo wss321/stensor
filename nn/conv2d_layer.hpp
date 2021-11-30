@@ -94,6 +94,8 @@ class Conv2d : public Module {
   size_t workspaceSizeInBytes;  // size of underlying storage
   void *workspaceData;  // underlying storage
   void *workspace;  // aliases into workspaceData
+
+ DISABLE_COPY_AND_ASSIGN(Conv2d);
 };
 }//namespace nn
 

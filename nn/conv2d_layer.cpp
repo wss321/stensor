@@ -29,7 +29,6 @@ inline void setTensor4dDesc(cudnnTensorDescriptor_t *desc,
 }
 
 void Conv2d::InitCuDnn() {
-//  stream_ =
   cudnnCreate(&handle_);
   cudaStreamCreate(&stream_);
   cudnnSetStream(handle_, stream_);
@@ -62,9 +61,9 @@ void Conv2d::InitCuDnn() {
 //  fwd_algo_ = (cudnnConvolutionFwdAlgo_t)0;
 //  bwd_filter_algo_ = (cudnnConvolutionBwdFilterAlgo_t)0;
 //  bwd_data_algo_ = (cudnnConvolutionBwdDataAlgo_t)0;
-  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-  bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-  bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+//  bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+//  bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
   workspace = nullptr;
   workspaceSizeInBytes = 0;
   workspaceData = nullptr;

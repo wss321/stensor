@@ -16,9 +16,14 @@ class Linear : public Module {
                   int axis,
                   int device,
                   bool bias);
-  ~Linear() override{};
+  ~Linear() override {};
   TensorVec forward(TensorVec &inputs) override;
-  void backward() override;
+  inline void backward() override {
+    if (state_ == GPU)
+      backward_gpu();
+    else
+      backward_cpu();
+  }
  private:
   void backward_cpu();
   void backward_gpu();

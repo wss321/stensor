@@ -40,7 +40,7 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                              out_shape[1],
                              out_shape[2],
                              out_shape[3]);
-  size_t workspace_limit_bytes = 128 * 1024 * 1024;
+  size_t workspace_limit_bytes = 0;
 //   choose forward and backward algorithms + workspace(s)
 //  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
   CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(handle_,
@@ -84,30 +84,34 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
   CUDNN_CHECK(cudnnGetConvolutionBackwardDataWorkspaceSize(handle_,
                                                            filter_desc_, output_desc_, conv_desc_, input_desc_,
                                                            bwd_data_algo_, &workspace_bwd_data_sizes_));
+
   size_t max_workspace = std::max(workspace_fwd_sizes_,
                                   workspace_bwd_data_sizes_);
   max_workspace = std::max(max_workspace, workspace_bwd_filter_sizes_);
-  if (max_workspace > workspaceSizeInBytes) {
-//    DLOG(INFO) << "Reallocating workspace storage: " << max_workspace;
-    workspaceSizeInBytes = max_workspace;
-    cudaFree(workspaceData);
-    cudaError_t err = cudaMalloc(&(this->workspaceData), workspaceSizeInBytes);
-    if (err != cudaSuccess) {
-      // force zero memory path
-      workspace_fwd_sizes_ = 0;
-      workspace_bwd_filter_sizes_ = 0;
-      workspace_bwd_data_sizes_ = 0;
-      fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-      workspace = nullptr;
-      workspaceSizeInBytes = 0;
-    }
-    workspace = reinterpret_cast<char *>(workspaceData);
-  }
+  cudaMalloc(&(this->workspaceData), max_workspace);
+  workspace = reinterpret_cast<char *>(workspaceData);
+//  if (max_workspace > workspaceSizeInBytes) {
+////    DLOG(INFO) << "Reallocating workspace storage: " << max_workspace;
+//    workspaceSizeInBytes = max_workspace;
+//    cudaFree(workspaceData);
+//    cudaError_t err = cudaMalloc(&(this->workspaceData), workspaceSizeInBytes);
+//    if (err != cudaSuccess) {
+//      // force zero memory path
+//      workspace_fwd_sizes_ = 0;
+//      workspace_bwd_filter_sizes_ = 0;
+//      workspace_bwd_data_sizes_ = 0;
+//      fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+//      bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+//      bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+//      workspace = nullptr;
+//      workspaceSizeInBytes = 0;
+//    }
+//    workspace = reinterpret_cast<char *>(workspaceData);
+//  }
 }
 
 TensorVec Conv2d::forward(TensorVec &inputs) {
+  inputs_.clear();
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
   this->zero_output_grad();
   SharedTensor in = inputs[0];
@@ -179,7 +183,7 @@ void nn::Conv2d::backward() {
         dataType<float>::one,
         input_desc_, bottom_diff));
   }
-  inputs_.clear();
+
 }
 
 }

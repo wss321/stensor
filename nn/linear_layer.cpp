@@ -83,13 +83,6 @@ void Linear::backward_cpu() {
   inputs_.clear();
 }
 
-void Linear::backward() {
-  if (state_ == GPU)
-    backward_gpu();
-  else
-    backward_cpu();
-}
-
 }//namespace nn
 
 }//namespace stensor

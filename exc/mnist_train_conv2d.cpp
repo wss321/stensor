@@ -19,10 +19,10 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
-    nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::BaseConv2d *conv1 = new nn::BaseConv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, true);
     nn::ReLU *act1 = new nn::ReLU("act1", device_id, true);
     nn::Pooling2d *pool1 = new nn::Pooling2d("pool1", nn::MAXPOOL, 2, 2, device_id);
-    nn::Conv2d *conv2 = new nn::Conv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::BaseConv2d *conv2 = new nn::BaseConv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, true);
     nn::ReLU *act2 = new nn::ReLU("act2", device_id, true);
     nn::Pooling2d *pool2 = new nn::Pooling2d("pool2", nn::MAXPOOL, 2, 2, device_id);
     nn::Reshape *reshape = new nn::Reshape("reshape", {-1, 8 * 7 * 7});
@@ -51,16 +51,10 @@ class SimpleNet : public nn::Module {
     inputs_.clear();
     inputs_.push_back(inputs[0]);
     nn::TensorVec x;
-    nn::TensorVec x_reshape;
-    std::vector<int> orig_shape;
-//    long long start_t = systemtime_ms();
     x = modules["conv1"]->forward(inputs_);
-//    LOG(INFO)<<"conv1 time:"<<systemtime_ms()-start_t;
     x = modules["act1"]->forward(x);
     x = modules["pool1"]->forward(x);
-//    start_t = systemtime_ms();
     x = modules["conv2"]->forward(x);
-//    LOG(INFO)<<"conv2 time:"<<systemtime_ms()-start_t;
     x = modules["act2"]->forward(x);
     x = modules["pool2"]->forward(x);
     x = modules["reshape"]->forward(x);
@@ -101,6 +95,7 @@ int calc_acc(const Tensor *logit, const Tensor *gt) {
 }
 
 int main() {
+  google::InstallFailureSignalHandler();
   stensor::Config::set_random_seed(1234);
   int batch_size = 64;
   int device_id = 0; // using GPU0
