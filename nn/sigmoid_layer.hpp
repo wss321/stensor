@@ -11,10 +11,11 @@ namespace stensor {
 namespace nn {
 class Sigmoid : public Module {
  public:
-  explicit Sigmoid(std::string name, bool inplace = false) :
-      inplace_(inplace) {
+  explicit Sigmoid(std::string name, int device=-1){
     name_ = name;
     type_ = "Sigmoid";
+    if (device > -1) this->state_ = GPU;
+    else this->state_ = CPU;
   };
   ~Sigmoid() {};
   TensorVec forward(TensorVec &inputs);
@@ -22,7 +23,6 @@ class Sigmoid : public Module {
  private:
   void backward_cpu();
   void backward_gpu();
-  bool inplace_;
   SharedTensor result_;
  DISABLE_COPY_AND_ASSIGN(Sigmoid);
 };

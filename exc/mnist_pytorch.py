@@ -34,19 +34,29 @@ class Model(torch.nn.Module):
 
     def __init__(self):
         super(Model, self).__init__()
-        torch.nn.Conv2d()
-        self.dense = torch.nn.Sequential(torch.nn.Linear(28 * 28, 64),
-                                         torch.nn.Sigmoid(),
-                                         torch.nn.Linear(64, 10),
-                                         )
+        self.conv1 = torch.nn.Conv2d(1, 4, kernel_size=3, padding=1)
+        self.conv2 = torch.nn.Conv2d(4, 8, kernel_size=3, padding=1)
+        self.pool1 = torch.nn.MaxPool2d(2)
+        self.pool2 = torch.nn.MaxPool2d(2)
+        self.relu = torch.nn.ReLU()
+        self.l1 = torch.nn.Linear(8 * 28 * 28 // 16, 64)
+        self.l2 = torch.nn.Linear(64, 10)
 
     def forward(self, x):
-        x = self.dense(x)
+        x = self.conv1(x)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = x.view(x.size(0), -1)
+        x = self.l1(x)
+        x = self.relu(x)
+        x = self.l2(x)
+
         return x
 
 
 model = Model()
-# model = model.cuda()
+model = model.cuda()
 torch.manual_seed(1234)
 # torch.cuda.manual_seed(1234)
 cost = torch.nn.CrossEntropyLoss()
@@ -55,12 +65,13 @@ n_epochs = 30
 # model.load_state_dict(torch.load('model_parameter.pkl'))
 running_loss = 0.0
 from time import time
-data_list=[]
+
+data_list = []
 for data in data_loader_train:
     running_loss = 0.0
     X_train, y_train = data
-    # X_train = X_train.cuda()
-    # y_train = y_train.cuda()
+    X_train = X_train.cuda()
+    y_train = y_train.cuda()
     data_list.append([X_train, y_train])
 start = time()
 for epoch in range(n_epochs):
@@ -74,7 +85,7 @@ for epoch in range(n_epochs):
         # X_train = X_train.cuda()
         # y_train = y_train.cuda()
 
-        X_train = X_train.view(-1, 28 * 28)
+        X_train = X_train.view(-1, 1, 28, 28)
         X_train, y_train = Variable(X_train), Variable(y_train)
         outputs = model(X_train)
         _, pred = torch.max(outputs.data, 1)

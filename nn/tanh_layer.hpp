@@ -11,10 +11,11 @@ namespace stensor {
 namespace nn {
 class TanH : public Module {
  public:
-  explicit TanH(std::string name, bool inplace = false) :
-      inplace_(inplace) {
+  explicit TanH(std::string name, int device=-1){
     name_ = name;
     type_ = "TanH";
+    if (device > -1) this->state_ = GPU;
+    else this->state_ = CPU;
   };
   ~TanH() {};
   TensorVec forward(TensorVec &inputs);
@@ -22,7 +23,6 @@ class TanH : public Module {
  private:
   void backward_cpu();
   void backward_gpu();
-  bool inplace_;
   SharedTensor result_;
  DISABLE_COPY_AND_ASSIGN(TanH);
 };

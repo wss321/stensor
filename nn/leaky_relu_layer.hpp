@@ -10,11 +10,13 @@ namespace stensor {
 namespace nn {
 class LeakyReLU : public Module {
  public:
-  explicit LeakyReLU(std::string name, float alpha = 0.01, bool inplace = false) :
+  explicit LeakyReLU(std::string name, float alpha = 0.01, int device = -1, bool inplace = false) :
       inplace_(inplace) {
     alpha_ = alpha;
     name_ = name;
     type_ = "LeakyReLU";
+    if (device > -1) this->state_ = GPU;
+    else this->state_ = CPU;
   };
   ~LeakyReLU() {};
   TensorVec forward(TensorVec &inputs);

@@ -10,8 +10,11 @@ namespace stensor {
 namespace nn {
 class ReLU : public Module {
  public:
-  explicit ReLU(std::string name, bool inplace = false) :
-  inplace_(inplace) { name_ = name; type_ = "ReLU";};
+  explicit ReLU(std::string name, int device=-1, bool inplace = false) :
+  inplace_(inplace) { name_ = name; type_ = "ReLU";
+    if (device > -1) this->state_ = GPU;
+    else this->state_ = CPU;
+  };
   ~ReLU(){};
   TensorVec forward(TensorVec &inputs);
   void backward();

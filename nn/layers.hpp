@@ -13,4 +13,6 @@
 #include "softmax_layer.hpp"
 #include "tanh_layer.hpp"
 #include "leaky_relu_layer.hpp"
+#include "pooling2d_layer.hpp"
+
 #endif //STENSOR_NN_LAYERS_HPP_

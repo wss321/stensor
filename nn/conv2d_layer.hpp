@@ -39,16 +39,11 @@ class dataType<double> {
 class Conv2d : public Module {
  public:
   explicit Conv2d(const std::string &name,
-                  int in_channels,
-                  int out_channels,
-                  int kernel_h,
-                  int kernel_w,
-                  int stride_h,
-                  int stride_w,
-                  int padding_h,
-                  int padding_w,
-                  int dilation_h,
-                  int dilation_w,
+                  int in_channels, int out_channels,
+                  int kernel_h, int kernel_w,
+                  int stride_h, int stride_w,
+                  int padding_h, int padding_w,
+                  int dilation_h, int dilation_w,
                   int group = 1,
                   int device = 0,
                   bool bias = true);
@@ -61,21 +56,16 @@ class Conv2d : public Module {
     // B C H W
     CHECK_EQ(in_shape.size(), 4) << "Expected shape has 4 axes:[B, C, H, W]";
     int ow = (in_shape[3] - kernel_w_ + 2 * padding_w_) / stride_w_ + 1;
-    int oh = (in_shape[2] - kernel_h_ + 2 * padding_h_) / stride_w_ + 1;
+    int oh = (in_shape[2] - kernel_h_ + 2 * padding_h_) / stride_h_ + 1;
     return {in_shape[0], out_channels_, oh, ow};
   }
   void setUpConvAlg(const std::vector<int> &in_shape);
  private:
-  int in_channels_;
-  int out_channels_;
-  int kernel_h_;
-  int kernel_w_;
-  int stride_h_;
-  int stride_w_;
-  int padding_h_;
-  int padding_w_;
-  int dilation_h_;
-  int dilation_w_;
+  int in_channels_, out_channels_;
+  int kernel_h_, kernel_w_;
+  int stride_h_, stride_w_;
+  int padding_h_, padding_w_;
+  int dilation_h_, dilation_w_;
   int group_;
   int device_;
   bool bias_;

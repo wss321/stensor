@@ -20,7 +20,7 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
-    nn::ReLU *act = new nn::ReLU("act");
+    nn::ReLU *act = new nn::ReLU("act", device_id);
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();

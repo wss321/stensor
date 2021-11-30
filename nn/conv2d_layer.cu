@@ -40,14 +40,14 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                              out_shape[1],
                              out_shape[2],
                              out_shape[3]);
-  size_t workspace_limit_bytes = 8 * 1024 * 1024;
+  size_t workspace_limit_bytes = 64 * 1024 * 1024;
 //   choose forward and backward algorithms + workspace(s)
   CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(handle_,
                                                   input_desc_,
                                                   filter_desc_,
                                                   conv_desc_,
                                                   output_desc_,
-                                                  CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+                                                  CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
                                                   workspace_limit_bytes,
                                                   &fwd_algo_));
 //  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
@@ -65,7 +65,7 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
   // choose backward algorithm for filter
   CUDNN_CHECK(cudnnGetConvolutionBackwardFilterAlgorithm(handle_,
                                                          input_desc_, output_desc_, conv_desc_, filter_desc_,
-                                                         CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                         CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
                                                          workspace_limit_bytes, &bwd_filter_algo_));
 
   // get workspace for backwards filter algorithm
@@ -76,7 +76,7 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
   // choose backward algo for data
   CUDNN_CHECK(cudnnGetConvolutionBackwardDataAlgorithm(handle_,
                                                        filter_desc_, output_desc_, conv_desc_, input_desc_,
-                                                       CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+                                                       CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
                                                        workspace_limit_bytes, &bwd_data_algo_));
 
   // get workspace size

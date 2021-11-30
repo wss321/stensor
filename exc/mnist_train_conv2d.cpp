@@ -19,13 +19,19 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
-    nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 1, 0, false);
-    nn::Linear *l1 = new nn::Linear("l1", dim_in, 64, axis, device_id, true);
-    nn::ReLU *act = new nn::ReLU("act");
+    nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::Pooling2d *pool1 = new nn::Pooling2d("pool1", nn::MAXPOOL, 2, 2, device_id);
+    nn::Conv2d *conv2 = new nn::Conv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::Pooling2d *pool2 = new nn::Pooling2d("pool2", nn::MAXPOOL, 2, 2, device_id);
+    nn::Linear *l1 = new nn::Linear("l1", 8 * dim_in / 16, 64, axis, device_id, true);
+    nn::ReLU *act = new nn::ReLU("act", device_id);
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();
     submodules_.push_back(std::shared_ptr<nn::Module>(conv1));
+    submodules_.push_back(std::shared_ptr<nn::Module>(pool1));
+    submodules_.push_back(std::shared_ptr<nn::Module>(conv2));
+    submodules_.push_back(std::shared_ptr<nn::Module>(pool2));
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
     submodules_.push_back(std::shared_ptr<nn::Module>(l2));
     submodules_.push_back(std::shared_ptr<nn::Module>(act));
@@ -40,16 +46,23 @@ class SimpleNet : public nn::Module {
     inputs_.push_back(inputs[0]);
     nn::TensorVec x;
     x = modules["conv1"]->forward(inputs_);
+    x = modules["pool1"]->forward(x);
+    x = modules["conv2"]->forward(x);
+    x = modules["pool2"]->forward(x);
     x[0]->reshape({x[0]->shape(0), x[0]->count(1, 4)});
     x = modules["l1"]->forward(x);
     x = modules["act"]->forward(x);
     x = modules["l2"]->forward(x);
     return x;
   }
+
   inline void backward() override {
     modules["l2"]->backward();
     modules["act"]->backward();
     modules["l1"]->backward();
+    modules["pool2"]->backward();
+    modules["conv2"]->backward();
+    modules["pool1"]->backward();
     modules["conv1"]->backward();
   }
  private:
