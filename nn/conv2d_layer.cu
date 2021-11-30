@@ -40,8 +40,9 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                              out_shape[1],
                              out_shape[2],
                              out_shape[3]);
-  size_t workspace_limit_bytes = 64 * 1024 * 1024;
+  size_t workspace_limit_bytes = 128 * 1024 * 1024;
 //   choose forward and backward algorithms + workspace(s)
+//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
   CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(handle_,
                                                   input_desc_,
                                                   filter_desc_,
@@ -58,7 +59,7 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                                                       output_desc_,
                                                       fwd_algo_,
                                                       &workspace_fwd_sizes_));
-//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
 //  bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
 //  bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
 

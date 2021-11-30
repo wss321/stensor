@@ -53,10 +53,14 @@ class SimpleNet : public nn::Module {
     nn::TensorVec x;
     nn::TensorVec x_reshape;
     std::vector<int> orig_shape;
+//    long long start_t = systemtime_ms();
     x = modules["conv1"]->forward(inputs_);
+//    LOG(INFO)<<"conv1 time:"<<systemtime_ms()-start_t;
     x = modules["act1"]->forward(x);
     x = modules["pool1"]->forward(x);
+//    start_t = systemtime_ms();
     x = modules["conv2"]->forward(x);
+//    LOG(INFO)<<"conv2 time:"<<systemtime_ms()-start_t;
     x = modules["act2"]->forward(x);
     x = modules["pool2"]->forward(x);
     x = modules["reshape"]->forward(x);

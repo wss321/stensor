@@ -65,12 +65,30 @@ std::ostream &operator<<(std::ostream &out, std::vector<Dtype> vector) {
   out << "]";
   return out;
 }
-template std::ostream &operator<<<int>(std::ostream &out, std::vector<int> vector);
-template std::ostream &operator<<<float>(std::ostream &out, std::vector<float> vector);
-template std::ostream &operator<<<double>(std::ostream &out, std::vector<double> vector);
-template std::ostream &operator<<<uint32_t>(std::ostream &out, std::vector<uint32_t> vector);
-template std::ostream &operator<<<bool>(std::ostream &out, std::vector<bool> vector);
-template std::ostream &operator<<<std::string>(std::ostream &out, std::vector<std::string> vector);
+template std::ostream &operator
+<<<int>(
+std::ostream &out, std::vector<int>
+vector);
+template std::ostream &operator
+<<<float>(
+std::ostream &out, std::vector<float>
+vector);
+template std::ostream &operator
+<<<double>(
+std::ostream &out, std::vector<double>
+vector);
+template std::ostream &operator
+<<<uint32_t>(
+std::ostream &out, std::vector<uint32_t>
+vector);
+template std::ostream &operator
+<<<bool>(
+std::ostream &out, std::vector<bool>
+vector);
+template std::ostream &operator
+<<<std::string>(
+std::ostream &out, std::vector<std::string>
+vector);
 
 // Make sure each thread can have different values.
 static boost::thread_specific_ptr<Config> thread_instance_;
@@ -91,6 +109,7 @@ Config::Config()
   if (cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
     LOG(ERROR) << "Cannot create Cublas handle. Cublas won't be available.";
   }
+//  cudnnCreate(&cudnn_handle_);
   // Try to create a curand handler.
   if (curandCreateGenerator(&curand_generator_, CURAND_RNG_PSEUDO_DEFAULT)
       != CURAND_STATUS_SUCCESS ||

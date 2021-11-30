@@ -22,6 +22,7 @@
 #include "stensor_random.hpp"
 #include "memory_op.hpp"
 #include <boost/thread.hpp>
+//#include "cudnn.h"
 
 #ifndef GFLAGS_GFLAGS_H_
 namespace gflags = google;
@@ -64,6 +65,7 @@ class Config {
   static Config &GetInstance();
   inline static bool multiprocess() { return GetInstance().multiprocess_; }
   inline static cublasHandle_t cublas_handle() { return GetInstance().cublas_handle_; }
+//  inline static cudnnHandle_t cudnn_handle(){return  GetInstance().cudnn_handle_;}
   inline static curandGenerator_t curand_generator() {
     return GetInstance().curand_generator_;
   }
@@ -77,6 +79,7 @@ class Config {
   }
 
  protected:
+//  cudnnHandle_t cudnn_handle_;
   cublasHandle_t cublas_handle_;
   curandGenerator_t curand_generator_;
   std::shared_ptr<RNG> random_generator_;

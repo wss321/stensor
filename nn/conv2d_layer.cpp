@@ -31,6 +31,9 @@ inline void setTensor4dDesc(cudnnTensorDescriptor_t *desc,
 void Conv2d::InitCuDnn() {
 //  stream_ =
   cudnnCreate(&handle_);
+  cudaStreamCreate(&stream_);
+  cudnnSetStream(handle_, stream_);
+//  handle_ = Config::cudnn_handle();
   cudnnCreateFilterDescriptor(&filter_desc_);
   cudnnSetFilter4dDescriptor(filter_desc_,
                              CUDNN_DATA_FLOAT,

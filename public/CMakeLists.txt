@@ -5,7 +5,11 @@ find_package(Boost COMPONENTS thread REQUIRED)
 #find_package(Boost 1.54 REQUIRED COMPONENTS system thread filesystem)
 
 find_package(CUDA REQUIRED)
-
+#get_filename_component(__libpath_hist ${CUDA_CUDART_LIBRARY} PATH)
+#set(CUDNN_LIB_NAME "libcudnn.so")
+#find_library(CUDNN_LIBRARY NAMES ${CUDNN_LIB_NAME}
+#        PATHS ${CUDNN_ROOT} $ENV{CUDNN_ROOT} ${CUDNN_INCLUDE} ${__libpath_hist} ${__libpath_hist}/../lib
+#        DOC "Path to cuDNN library.")
 
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
         -gencode arch=compute_30,code=sm_30;
@@ -32,15 +36,15 @@ target_include_directories(${PROJECT_NAME}
         PUBLIC ${CUDA_INCLUDE_DIRS}
         PUBLIC ${CUBLAS_INCLUDE_DIRS}
         PUBLIC ${Boost_INCLUDE_DIRS}
+#        PUBLIC ${CUDNN_INCLUDE_DIR}
         )
 target_link_libraries(${PROJECT_NAME}
         glog::glog
-        #        ${GTEST_LIBRARIES}
-        #        ${GTEST_MAIN_LIBRARIES}
         ${CUDA_LIBRARIES}
         Boost::thread
         ${CUBLAS_LIBRARIES}
         ${CUDA_curand_LIBRARY}
+#        ${CUDNN_LIBRARY}
         )
 
 #GTEST
