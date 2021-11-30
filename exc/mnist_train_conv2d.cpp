@@ -20,11 +20,14 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::ReLU *act1 = new nn::ReLU("act1", device_id);
     nn::Pooling2d *pool1 = new nn::Pooling2d("pool1", nn::MAXPOOL, 2, 2, device_id);
     nn::Conv2d *conv2 = new nn::Conv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::ReLU *act2 = new nn::ReLU("act2", device_id);
     nn::Pooling2d *pool2 = new nn::Pooling2d("pool2", nn::MAXPOOL, 2, 2, device_id);
+    nn::Reshape *reshape = new nn::Reshape("reshape", {-1, 8 * 7 * 7});
     nn::Linear *l1 = new nn::Linear("l1", 8 * dim_in / 16, 64, axis, device_id, true);
-    nn::ReLU *act = new nn::ReLU("act", device_id);
+    nn::ReLU *act3 = new nn::ReLU("act3", device_id);
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();
@@ -34,7 +37,10 @@ class SimpleNet : public nn::Module {
     submodules_.push_back(std::shared_ptr<nn::Module>(pool2));
     submodules_.push_back(std::shared_ptr<nn::Module>(l1));
     submodules_.push_back(std::shared_ptr<nn::Module>(l2));
-    submodules_.push_back(std::shared_ptr<nn::Module>(act));
+    submodules_.push_back(std::shared_ptr<nn::Module>(act1));
+    submodules_.push_back(std::shared_ptr<nn::Module>(act2));
+    submodules_.push_back(std::shared_ptr<nn::Module>(act3));
+    submodules_.push_back(std::shared_ptr<nn::Module>(reshape));
 
     for (auto &sm: submodules_) {
       modules[sm->name()] = sm;
@@ -45,24 +51,31 @@ class SimpleNet : public nn::Module {
     inputs_.clear();
     inputs_.push_back(inputs[0]);
     nn::TensorVec x;
+    nn::TensorVec x_reshape;
+    std::vector<int> orig_shape;
     x = modules["conv1"]->forward(inputs_);
+    x = modules["act1"]->forward(x);
     x = modules["pool1"]->forward(x);
     x = modules["conv2"]->forward(x);
+    x = modules["act2"]->forward(x);
     x = modules["pool2"]->forward(x);
-    x[0]->reshape({x[0]->shape(0), x[0]->count(1, 4)});
+    x = modules["reshape"]->forward(x);
     x = modules["l1"]->forward(x);
-    x = modules["act"]->forward(x);
+    x = modules["act3"]->forward(x);
     x = modules["l2"]->forward(x);
     return x;
   }
 
   inline void backward() override {
     modules["l2"]->backward();
-    modules["act"]->backward();
+    modules["act3"]->backward();
     modules["l1"]->backward();
+    modules["reshape"]->backward();
     modules["pool2"]->backward();
+    modules["act2"]->backward();
     modules["conv2"]->backward();
     modules["pool1"]->backward();
+    modules["act1"]->backward();
     modules["conv1"]->backward();
   }
  private:

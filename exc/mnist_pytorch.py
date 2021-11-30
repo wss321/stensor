@@ -38,18 +38,22 @@ class Model(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(4, 8, kernel_size=3, padding=1)
         self.pool1 = torch.nn.MaxPool2d(2)
         self.pool2 = torch.nn.MaxPool2d(2)
-        self.relu = torch.nn.ReLU()
+        self.relu1 = torch.nn.ReLU(inplace=True)
+        self.relu2 = torch.nn.ReLU(inplace=True)
+        self.relu3 = torch.nn.ReLU(inplace=True)
         self.l1 = torch.nn.Linear(8 * 28 * 28 // 16, 64)
         self.l2 = torch.nn.Linear(64, 10)
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.relu1(x)
         x = self.pool1(x)
         x = self.conv2(x)
+        x = self.relu2(x)
         x = self.pool2(x)
         x = x.view(x.size(0), -1)
         x = self.l1(x)
-        x = self.relu(x)
+        x = self.relu3(x)
         x = self.l2(x)
 
         return x
