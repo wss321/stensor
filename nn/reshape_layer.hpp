@@ -18,8 +18,8 @@ class Reshape : public Module {
     type_ = "Reshape";
     out_shape_ = new_shape;
   };
-  ~Reshape() {};
-  inline TensorVec forward(TensorVec &inputs) {
+  ~Reshape() override {};
+  inline TensorVec forward(TensorVec &inputs) override {
     CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
     state_ = inputs[0]->state();
     in_shape_ = inputs[0]->shape();
@@ -32,7 +32,7 @@ class Reshape : public Module {
     outputs_ = inputs_;
     return outputs_;
   };
-  void backward() {
+  void backward() override {
     outputs_[0]->reshape(in_shape_);
   }
  private:

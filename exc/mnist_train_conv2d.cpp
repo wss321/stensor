@@ -20,14 +20,14 @@ class SimpleNet : public nn::Module {
     type_ = "Custom";
     name_ = "SimpleNet";
     nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
-    nn::ReLU *act1 = new nn::ReLU("act1", device_id);
+    nn::ReLU *act1 = new nn::ReLU("act1", device_id, true);
     nn::Pooling2d *pool1 = new nn::Pooling2d("pool1", nn::MAXPOOL, 2, 2, device_id);
     nn::Conv2d *conv2 = new nn::Conv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
-    nn::ReLU *act2 = new nn::ReLU("act2", device_id);
+    nn::ReLU *act2 = new nn::ReLU("act2", device_id, true);
     nn::Pooling2d *pool2 = new nn::Pooling2d("pool2", nn::MAXPOOL, 2, 2, device_id);
     nn::Reshape *reshape = new nn::Reshape("reshape", {-1, 8 * 7 * 7});
     nn::Linear *l1 = new nn::Linear("l1", 8 * dim_in / 16, 64, axis, device_id, true);
-    nn::ReLU *act3 = new nn::ReLU("act3", device_id);
+    nn::ReLU *act3 = new nn::ReLU("act3", device_id, true);
     nn::Linear *l2 = new nn::Linear("l2", 64, num_classes, axis, device_id, true);
 
     submodules_.clear();

@@ -4,6 +4,8 @@
 */
 #ifndef STENSOR_NN_LEAKY_RELU_LAYER_HPP_
 #define STENSOR_NN_LEAKY_RELU_LAYER_HPP_
+#include <utility>
+
 #include "module.hpp"
 namespace stensor {
 
@@ -13,14 +15,14 @@ class LeakyReLU : public Module {
   explicit LeakyReLU(std::string name, float alpha = 0.01, int device = -1, bool inplace = false) :
       inplace_(inplace) {
     alpha_ = alpha;
-    name_ = name;
+    name_ = std::move(name);
     type_ = "LeakyReLU";
     if (device > -1) this->state_ = GPU;
     else this->state_ = CPU;
   };
-  ~LeakyReLU() {};
-  TensorVec forward(TensorVec &inputs);
-  void backward();
+  ~LeakyReLU() override {};
+  TensorVec forward(TensorVec &inputs) override;
+  void backward() override;
  private:
   void backward_cpu();
   void backward_gpu();

@@ -27,9 +27,9 @@ class Pooling2d : public Module {
     if (stride_h_ <= 0) stride_h_ = kernel_h_;
     if (stride_w_ <= 0) stride_w_ = kernel_w_;
   };
-  ~Pooling2d() {};
-  TensorVec forward(TensorVec &inputs);
-  void backward();
+  ~Pooling2d() override = default;
+  TensorVec forward(TensorVec &inputs) override;
+  void backward() override;
  private:
   void forward_cpu();
   void forward_gpu();
@@ -59,9 +59,9 @@ class Pooling2d : public Module {
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
   int padding_w_, padding_h_;
-  int channels_;
-  int height_, width_;
-  int pooled_height_, pooled_width_;
+  int channels_{};
+  int height_{}, width_{};
+  int pooled_height_{}, pooled_width_{};
   PoolType pool_type_;
   SharedTensor result_;
   SharedTensor max_idx_;

@@ -12,7 +12,8 @@ TensorVec ReLU::forward(TensorVec &inputs) {
   CHECK_EQ(inputs.size(), 1) << "Only support one input tensor now";
   this->zero_output_grad();
   SharedTensor in = inputs[0];
-  if (result_.get() == nullptr || in->shape() != result_->shape()) {
+  if (inplace_) result_ = in;
+  else if (result_.get() == nullptr || in->shape() != result_->shape()) {
     outputs_.resize(1);
     result_.reset(new Tensor(in->shape(), in->device(), in->require_grad()));
     result_->set_name(name() + "/output");

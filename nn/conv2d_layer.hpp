@@ -48,8 +48,8 @@ class Conv2d : public Module {
                   int device = 0,
                   bool bias = true);
   ~Conv2d() override;
-  TensorVec forward(TensorVec &inputs);
-  void backward();
+  TensorVec forward(TensorVec &inputs) override;
+  void backward() override;
  private:
   void InitCuDnn();
   inline std::vector<int> calc_out_shape(const std::vector<int> &in_shape) {

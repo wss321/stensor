@@ -6,7 +6,7 @@
 #define STENSOR_NN_RELU_LAYER_HPP_
 #include "module.hpp"
 namespace stensor {
-//TODO:inplace
+
 namespace nn {
 class ReLU : public Module {
  public:
@@ -15,9 +15,9 @@ class ReLU : public Module {
     if (device > -1) this->state_ = GPU;
     else this->state_ = CPU;
   };
-  ~ReLU(){};
-  TensorVec forward(TensorVec &inputs);
-  void backward();
+  ~ReLU() override{};
+  TensorVec forward(TensorVec &inputs) override;
+  void backward() override;
  private:
   void backward_cpu();
   void backward_gpu();

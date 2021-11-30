@@ -16,12 +16,10 @@ class Linear : public Module {
                   int axis,
                   int device,
                   bool bias);
-  ~Linear(){};
-  TensorVec forward(TensorVec &inputs);
-  void backward();
+  ~Linear() override{};
+  TensorVec forward(TensorVec &inputs) override;
+  void backward() override;
  private:
-//  TensorVec forward_cpu(TensorVec &inputs);
-//  TensorVec forward_gpu(TensorVec &inputs);
   void backward_cpu();
   void backward_gpu();
   SharedTensor W_;

@@ -15,15 +15,15 @@ class CrossEntropyLoss : public Module {
   explicit CrossEntropyLoss(const std::string &name,
                             int axis,
                             int device);
-  ~CrossEntropyLoss() {};
-  TensorVec forward(TensorVec &inputs);
-  inline void backward() {
+  ~CrossEntropyLoss() override {};
+  TensorVec forward(TensorVec &inputs) override;
+  inline void backward() override {
     if (state_ == GPU)
       backward_gpu();
     else
       backward_cpu();
   }
-  inline float get_loss() { return loss_; }
+  inline float get_loss() const { return loss_; }
  private:
   inline void zero_temp_grad() {
     if (softmax_out_.get() && softmax_out_->require_grad())
