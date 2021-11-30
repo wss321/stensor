@@ -19,7 +19,7 @@ class BaseConv2d : public Module {
                       int group = 1,
                       int device = 0,
                       bool bias = true);
-  ~BaseConv2d() override {};
+  ~BaseConv2d() override = default;;
   inline TensorVec forward(TensorVec &inputs) override {
     if (state_ == GPU)
       return forward_gpu(inputs);
@@ -59,17 +59,15 @@ class BaseConv2d : public Module {
   SharedTensor result_;
   SharedTensor col_buf_;
   SharedTensor bias_multiplier_;
-  int num_kernels_im2col_;
-  int num_kernels_col2im_;
   int conv_out_channels_;
-  int conv_out_spatial_dim_;
-  int out_spatial_dim_;
-  int out_dim_;
-  int in_dim_;
+  int conv_out_spatial_dim_{};
+  int out_spatial_dim_{};
+  int out_dim_{};
+  int in_dim_{};
   int kernel_dim_;
   int weight_offset_;
-  int col_offset_;
-  int output_offset_;
+  int col_offset_{};
+  int output_offset_{};
  DISABLE_COPY_AND_ASSIGN(BaseConv2d);
 };
 

@@ -59,6 +59,7 @@ TensorVec BaseConv2d::forward_cpu(TensorVec &inputs) {
     result_->set_name(name() + "/output");
     outputs_[0] = result_;
     std::vector<int> col_shape(2);
+    int batch_size=in->shape(0);
     col_shape[0] = group_ * kernel_->count(1, kernel_->num_axes());
     col_shape[1] = out_shape[2] * out_shape[3];
     col_buf_.reset(new Tensor(col_shape, in->device(), false));
@@ -124,6 +125,9 @@ void BaseConv2d::backward_cpu() {
   if (kernel_->require_grad() || inputs_[0]->require_grad()) {
     const float *top_diff = result_->const_grad();
     const float *bottom_data = inputs_[0]->const_data();
+    float *bottom_diff= nullptr;
+    if (inputs_[0]->require_grad())
+      bottom_diff = inputs_[0]->grad();
     for (int n = 0; n < result_->shape(0); ++n) {
       float *col_buff = col_buf_->data();
       cpu_img2col(bottom_data,
@@ -136,15 +140,14 @@ void BaseConv2d::backward_cpu() {
                   col_buff);
       if (kernel_->require_grad())
         for (int g = 0; g < group_; ++g) {
-          cpu_gemm(false, false, conv_out_channels_ / group_,
+          cpu_gemm(false, true, conv_out_channels_ / group_,
                    kernel_dim_, conv_out_spatial_dim_,
                    (float) 1., top_diff + output_offset_ * g, col_buff + col_offset_ * g,
                    (float) 1., weight_diff + weight_offset_ * g);
         }
       if (inputs_[0]->require_grad()) {
-        float *bottom_diff = inputs_[0]->grad();
         for (int g = 0; g < group_; ++g) {
-          cpu_gemm(false, false, kernel_dim_,
+          cpu_gemm(true, false, kernel_dim_,
                    conv_out_spatial_dim_, conv_out_channels_ / group_,
                    (float) 1., weights + weight_offset_ * g, top_diff + output_offset_ * g,
                    (float) 0., col_buff + col_offset_ * g);
@@ -157,6 +160,7 @@ void BaseConv2d::backward_cpu() {
                          stride_h_, stride_w_,
                          dilation_h_, dilation_w_,
                          bottom_diff);
+        bottom_diff += in_dim_;
       }
       top_diff += out_dim_;
       bottom_data += in_dim_;
@@ -241,6 +245,9 @@ void BaseConv2d::backward_gpu() {
   if (kernel_->require_grad() || inputs_[0]->require_grad()) {
     const float *top_diff = result_->const_grad();
     const float *bottom_data = inputs_[0]->const_data();
+    float *bottom_diff= nullptr;
+    if (inputs_[0]->require_grad())
+      bottom_diff = inputs_[0]->grad();
     for (int n = 0; n < result_->shape(0); ++n) {
       float *col_buff = col_buf_->data();
       gpu_img2col(bottom_data,
@@ -253,15 +260,14 @@ void BaseConv2d::backward_gpu() {
                   col_buff);
       if (kernel_->require_grad())
         for (int g = 0; g < group_; ++g) {
-          gpu_gemm(false, false, conv_out_channels_ / group_,
+          gpu_gemm(false, true, conv_out_channels_ / group_,
                    kernel_dim_, conv_out_spatial_dim_,
                    (float) 1., top_diff + output_offset_ * g, col_buff + col_offset_ * g,
                    (float) 1., weight_diff + weight_offset_ * g);
         }
       if (inputs_[0]->require_grad()) {
-        float *bottom_diff = inputs_[0]->grad();
         for (int g = 0; g < group_; ++g) {
-          gpu_gemm(false, false, kernel_dim_,
+          gpu_gemm(true, false, kernel_dim_,
                    conv_out_spatial_dim_, conv_out_channels_ / group_,
                    (float) 1., weights + weight_offset_ * g, top_diff + output_offset_ * g,
                    (float) 0., col_buff + col_offset_ * g);
@@ -274,10 +280,20 @@ void BaseConv2d::backward_gpu() {
                          stride_h_, stride_w_,
                          dilation_h_, dilation_w_,
                          bottom_diff);
+        bottom_diff += in_dim_;
       }
       top_diff += out_dim_;
       bottom_data += in_dim_;
     }//n
+//    cudaDeviceSynchronize();
+//    if (inputs_[0]->require_grad()){
+//      float count0=0;
+//      std::cout<<inputs_[0]->grad_string();
+//      for (int i = 0; i < inputs_[0]->size(); ++i) {
+//        if (inputs_[0]->grad_at(i)==0) count0++;
+//      }
+//      LOG(INFO)<<"zero rate:"<<count0/(float)inputs_[0]->size();
+    }
   }
 }
 
