@@ -2,19 +2,47 @@ syntax = "proto3";
 
 package stensor;
 
-message TensorProto{
-    enum Operation{
-        PROD = 0;
-        SUM = 1;
-        MAX = 2;
-    }
-    repeated float data=1[packed = true];
-    repeated float grad=2[packed = true];
-    repeated int32 shape=3;
-    repeated string neighbors=4;
-    repeated Operation operations=5;
+message TensorFloat{
+  repeated float data = 1[packed = true];
+  repeated float grad = 2[packed = true];
+  repeated int32 shape = 3;
+  bool require_grad = 4;
+  string name = 5;
+  int32 size = 6;
+}
 
-    bool require_grad=6;
-    string name=7;
-    int32 size=8;
+message TensorDouble{
+  repeated double data = 1[packed = true];
+  repeated double grad = 2[packed = true];
+  repeated int32 shape = 3;
+  bool require_grad = 4;
+  string name = 5;
+  int32 size = 6;
+}
+
+message TensorInt{
+  repeated int32 data = 1[packed = true];
+  repeated int32 grad = 2[packed = true];
+  repeated int32 shape = 3;
+  bool require_grad = 4;
+  string name = 5;
+  int32 size = 6;
+}
+
+message TensorUInt{
+  repeated uint32 data = 1[packed = true];
+  repeated uint32 grad = 2[packed = true];
+  repeated int32 shape = 3;
+  bool require_grad = 4;
+  string name = 5;
+  int32 size = 6;
+}
+
+message TensorBool{
+  repeated bool data = 1[packed = true];
+  repeated bool grad = 2[packed = true];
+  repeated int32 shape = 3;
+  bool require_grad = 4;
+  string name = 5;
+  int32 size = 6;
 }

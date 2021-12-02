@@ -27,12 +27,13 @@ __global__ void transpose_kernel(
   }
 }
 
+template<typename Dtype>
 void transpose_gpu(const std::vector<int> shape,
                     const std::vector<int> &stride_x_cpu,
                     const std::vector<int> &stride_y_cpu,
                     const std::vector<int> &order,
-                    const float *x,
-                    float *y) {
+                    const Dtype *x,
+                   Dtype *y) {
   int num_axis = order.size();
   int stride_x[num_axis];
   int stride_y[num_axis];
@@ -49,7 +50,7 @@ void transpose_gpu(const std::vector<int> shape,
   int *stride_x_gpu;
   int *stride_y_gpu;
   int *order_gpu;
-  uint32_t size = num_axis * sizeof(float);
+  uint32_t size = num_axis * sizeof(Dtype);
   MallocGPU((void **) &stride_x_gpu, size);
   MallocGPU((void **) &stride_y_gpu, size);
   MallocGPU((void **) &order_gpu, size);
@@ -57,7 +58,7 @@ void transpose_gpu(const std::vector<int> shape,
   stensor::gpu_copy(num_axis, stride_x, stride_x_gpu);
   stensor::gpu_copy(num_axis, stride_y, stride_y_gpu);
   stensor::gpu_copy(num_axis, order_arr, order_gpu);
-  transpose_kernel<float><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
+  transpose_kernel<Dtype><<<GET_BLOCKS(N), CUDA_NUM_THREADS>>>(
       x,
       stride_x_gpu, stride_y_gpu, order_gpu, num_axis, N,
       y

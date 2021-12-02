@@ -5,6 +5,7 @@
 
 #include "transpose.hpp"
 namespace stensor {
+
 inline int indTranspose(int indY, const std::vector<int> &strideY, const std::vector<int> strideX,
                         const std::vector<int> &ordersY2X) {
   int indX = 0;
@@ -16,7 +17,9 @@ inline int indTranspose(int indY, const std::vector<int> &strideY, const std::ve
   }
   return indX;
 }
-Tensor *transpose(Tensor *tensor, std::vector<int> order) {
+
+template<typename Dtype>
+Tensor<Dtype>*transpose(Tensor<Dtype> *tensor, std::vector<int> order) {
   CHECK_GT(tensor->size(), 0) << "None of data";
   int num_axis = tensor->num_axes();
   CHECK_EQ(order.size(), num_axis);
@@ -39,9 +42,9 @@ Tensor *transpose(Tensor *tensor, std::vector<int> order) {
     set.insert(canonical_axis[i]);
   }
 
-  Tensor *new_tensor = new Tensor(new_shape, tensor->device(), tensor->require_grad());
+  Tensor<Dtype> *new_tensor = new Tensor<Dtype>(new_shape, tensor->device(), tensor->require_grad());
   if (tensor->state() == CPU) {
-    Tensor &out = (*new_tensor);
+    Tensor<Dtype> &out = (*new_tensor);
     for (int iy = 0; iy < new_tensor->size(); ++iy) {
       int ix = indTranspose(iy, stride_y, stride_x, order);
       out[iy] = tensor->data_at(ix);

@@ -10,8 +10,8 @@ namespace stensor {
 
 namespace backward {
 
-//
-void add_backward(Tensor *a, Tensor *b, const Tensor *y) {
+template<typename Dtype>
+void add_backward(Tensor<Dtype> *a, Tensor<Dtype> *b, const Tensor<Dtype> *y) {
   NOT_IMPLEMENTED;
   std::vector<int> shape_a(a->shape());
   std::vector<int> shape_b(b->shape());
@@ -29,7 +29,8 @@ void add_backward(Tensor *a, Tensor *b, const Tensor *y) {
   }
 }
 //y=ab
-void matmul_backward(Tensor *a, Tensor *b, const Tensor *y,
+template<typename Dtype>
+void matmul_backward(Tensor<Dtype> *a, Tensor<Dtype> *b, const Tensor<Dtype> *y,
                      int axis, bool transA, bool transB) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK_EQ(y->device(), b->device()) << "tensors must be at same device";

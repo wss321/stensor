@@ -14,16 +14,17 @@ CHECK(expect == got)\
 << "Expected " << expect\
 << ", but got " << got\
 
-Tensor *sigmoid(const Tensor *in, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *sigmoid(const Tensor<Dtype> *in, Tensor<Dtype> *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in->shape(),in->device(), in->require_grad());
+    out = new Tensor<Dtype> *(in->shape(),in->device(), in->require_grad());
 
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
   }
-  const float *in_data;
-  float *out_data;
+  const Dtype *in_data;
+  Dtype *out_data;
   if (!grad_op) {
     in_data = in->const_data();
     out_data = out->data();
@@ -39,16 +40,20 @@ Tensor *sigmoid(const Tensor *in, Tensor *out, bool grad_op) {
   }
   return out;
 }
+template Tensor<float> *sigmoid<float>(const Tensor<float> *tensor, Tensor<float> *out, bool grad_op);
+template Tensor<double> *sigmoid<double>(const Tensor<double> *tensor, Tensor<double> *out, bool grad_op);
+
 #define IMPLEMENT_TENSOR_UNARY_FUNC(name) \
-Tensor *name(const Tensor *in, Tensor *out, bool grad_op) {\
+template<typename Dtype>                  \
+Tensor<Dtype> *name(const Tensor<Dtype> *in, Tensor<Dtype> *out, bool grad_op) {\
   if (out == nullptr)\
-    out = new Tensor(in->shape(),in->device(), in->require_grad());\
+    out = new  Tensor<Dtype> *(in->shape(),in->device(), in->require_grad());\
   else{\
     CHECK_EQ(in->device(), out->device())<< "tensors must be at same device";\
     CHECK_SHAPE(in->shape(), out->shape());\
   }\
-  const float *in_data;\
-  float *out_data;\
+  const Dtype *in_data;\
+  Dtype *out_data;\
   if (!grad_op) {\
     in_data = in->const_data();\
     out_data = out->data();\
@@ -64,6 +69,7 @@ Tensor *name(const Tensor *in, Tensor *out, bool grad_op) {\
   }\
   return out;\
 }
+
 IMPLEMENT_TENSOR_UNARY_FUNC(abs);
 IMPLEMENT_TENSOR_UNARY_FUNC(log);
 IMPLEMENT_TENSOR_UNARY_FUNC(tanh);
@@ -76,15 +82,16 @@ IMPLEMENT_TENSOR_UNARY_FUNC(sqrt);
 IMPLEMENT_TENSOR_UNARY_FUNC(square);
 IMPLEMENT_TENSOR_UNARY_FUNC(exp);
 
-Tensor *clamp(const Tensor *in, float minVal, float maxVal, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *clamp(const Tensor<Dtype> *in, float minVal, float maxVal, Tensor<Dtype> *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in->shape(),in->device(), in->require_grad());
+    out = new  Tensor<Dtype> *(in->shape(),in->device(), in->require_grad());
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
   }
-  const float *in_data;
-  float *out_data;
+  const Dtype *in_data;
+  Dtype *out_data;
   if (!grad_op) {
     in_data = in->const_data();
     out_data = out->data();
@@ -101,7 +108,8 @@ Tensor *clamp(const Tensor *in, float minVal, float maxVal, Tensor *out, bool gr
   return out;
 }
 
-Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *repeat(const Tensor<Dtype> *in, int axis, int num, Tensor<Dtype> *out, bool grad_op) {
   axis = in->canonical_axis_index(axis);
   CHECK_EQ(in->shape(axis), 1) << "The shape of the repeat axis must be 1";
   CHECK_GT(num, 0);
@@ -112,13 +120,13 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
   int count_col = in->count(axis, num_axis);
 
   if (out == nullptr)
-    out = new Tensor(new_shape, in->device(), in->require_grad());
+    out = new  Tensor<Dtype> *(new_shape, in->device(), in->require_grad());
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(new_shape, out->shape());
   }
-  const float *in_data;
-  float *out_data;
+  const Dtype *in_data;
+  Dtype *out_data;
   if (!grad_op) {
     in_data = in->const_data();
     out_data = out->data();
@@ -130,8 +138,8 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
   switch (in->state()) {
     case CPU:
       for (int i = 0; i < count_row; ++i) {
-        const float *head_in = &in_data[i * count_col];
-        float *head_out = &out_data[i * count_col * num];
+        const Dtype *head_in = &in_data[i * count_col];
+        Dtype *head_out = &out_data[i * count_col * num];
         for (int j = 0; j < num; ++j) {
           cpu_copy(count_col, head_in, head_out);
           head_out += count_col;
@@ -140,8 +148,8 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
       break;
     case GPU:
       for (int i = 0; i < count_row; ++i) {
-        const float *head_in = &in_data[i * count_col];
-        float *head_out = &out_data[i * count_col * num];
+        const Dtype *head_in = &in_data[i * count_col];
+        Dtype *head_out = &out_data[i * count_col * num];
         for (int j = 0; j < num; ++j) {
           gpu_copy(count_col, head_in, head_out);
           head_out += count_col;
@@ -153,19 +161,20 @@ Tensor *repeat(const Tensor *in, int axis, int num, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *softmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *softmax(const Tensor<Dtype> *in, int axis, Tensor<Dtype> *out, bool grad_op) {
   int caxis = in->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
   else
-    out = new Tensor(in->shape(), in->device(), in->require_grad());
+    out = new  Tensor<Dtype> *(in->shape(), in->device(), in->require_grad());
 
   int M = in->count(0, caxis);
   int N = in->count(caxis + 1, in->num_axes());
   int D = in->shape(caxis);
   CHECK_EQ(in->size(), out->size());
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = in->const_data();
@@ -182,7 +191,8 @@ Tensor *softmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *argmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *argmax(const Tensor<Dtype> *in, int axis, Tensor<Dtype> *out, bool grad_op) {
   int caxis = in->canonical_axis_index(axis);
   std::vector<int> new_shape(in->shape());
   new_shape[caxis] = 1;
@@ -190,12 +200,12 @@ Tensor *argmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(new_shape, out->shape());
   } else
-    out = new Tensor(new_shape, in->device(), in->require_grad());
+    out = new  Tensor<Dtype> *(new_shape, in->device(), in->require_grad());
   int M = in->count(0, caxis);
   int N = in->count(caxis + 1, in->num_axes());
   int D = in->shape(caxis);
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = in->const_data();
@@ -212,17 +222,18 @@ Tensor *argmax(const Tensor *in, int axis, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *one_hot(const Tensor *in, int num_class, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *one_hot(const Tensor<Dtype> *in, int num_class, Tensor<Dtype> *out, bool grad_op) {
   std::vector<int> out_shape(in->shape());
   out_shape.push_back(num_class);
   if (out != nullptr) {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(out_shape, out->shape());
   } else
-    out = new Tensor(out_shape, in->device(), in->require_grad());
+    out = new  Tensor<Dtype> *(out_shape, in->device(), in->require_grad());
   int M = in->size();
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = in->const_data();
@@ -240,9 +251,9 @@ Tensor *one_hot(const Tensor *in, int num_class, Tensor *out, bool grad_op) {
 }
 
 /* self-op end*/
-
-void set(Tensor *in, float val, bool grad_op) {
-  Tensor::Dtype *data;
+template<typename Dtype>
+void set(Tensor<Dtype> *in, float val, bool grad_op) {
+  Dtype * data;
   if (!grad_op)data = in->data();
   else data = in->grad();
   switch (in->state()) {
@@ -253,15 +264,16 @@ void set(Tensor *in, float val, bool grad_op) {
   }
 }
 
-Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *add(const Tensor<Dtype> *in, float val, Tensor<Dtype> *out, bool grad_op) {
   if (out == nullptr)
-    out = new Tensor(in->shape(),in->device(), in->require_grad());
+    out = new Tensor<Dtype> *(in->shape(),in->device(), in->require_grad());
   else {
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(in->shape(), out->shape());
   }
-  const float *in_data;
-  float *out_data;
+  const Dtype *in_data;
+  Dtype *out_data;
   if (!grad_op) {
     in_data = in->const_data();
     out_data = out->data();
@@ -277,17 +289,20 @@ Tensor *add(const Tensor *in, float val, Tensor *out, bool grad_op) {
   }
   return out;
 }
+//template<> Tensor<float> *add<float>(const Tensor<float> *in, float val, Tensor<float> *out, bool grad_op);
+//template<> Tensor<double> *add<double>(const Tensor<double> *in, float val, Tensor<double> *out, bool grad_op);
 
-#define IMPLEMENT_TENSOR_SCALAR_FUNC(name, base_math_func)\
-Tensor *name(const Tensor *in, float val, Tensor *out, bool grad_op) {\
+#define IMPLEMENT_TENSOR_SCALAR_FUNC(name, base_math_func) \
+template<typename Dtype>                                   \
+Tensor<Dtype> *name(const Tensor<Dtype> *in, float val, Tensor<Dtype> *out, bool grad_op) {\
   if (out == nullptr)\
-    out = new Tensor(in->shape(),in->device(), in->require_grad());\
+    out = new  Tensor<Dtype> *(in->shape(),in->device(), in->require_grad());\
   else{\
     CHECK_EQ(in->device(), out->device()) << "tensors must be at same device";\
     CHECK_SHAPE(in->shape(), out->shape());\
   }\
-  const float *in_data;\
-  float *out_data;\
+  const Dtype *in_data;\
+  Dtype *out_data;\
   if (!grad_op) {\
     in_data = in->const_data();\
     out_data = out->data();\
@@ -310,16 +325,17 @@ IMPLEMENT_TENSOR_SCALAR_FUNC(pow, pow_scalar);
 // Tensor - Tensor
 
 #define IMPLEMENT_BINARY_FUNC_PP(name) \
-Tensor *name(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){\
+template<typename Dtype>               \
+Tensor<Dtype> *name(const Tensor<Dtype> *a, const Tensor<Dtype> *b, Tensor<Dtype> *out, bool grad_op){\
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";\
   bool require_grad = (a->require_grad() || b->require_grad());\
   std::vector<int> shape_a(a->shape());\
   std::vector<int> shape_b(b->shape());\
   std::vector<int> shape_out;\
 \
-  float *out_data = nullptr;\
-  const float *in_data_a = nullptr;\
-  const float *in_data_b = nullptr;\
+  Dtype *out_data = nullptr;\
+  const Dtype *in_data_a = nullptr;\
+  const Dtype *in_data_b = nullptr;\
   bool broadcast = false;\
   if (a->shape_equal(b))\
     shape_out = shape_a;\
@@ -328,7 +344,7 @@ Tensor *name(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op){\
     shape_out = stensor::broadcast(shape_a, shape_b);\
   }\
   if (out== nullptr)\
-    out = new Tensor(shape_out, a->device(), require_grad);\
+    out = new  Tensor<Dtype> *(shape_out, a->device(), require_grad);\
   else {\
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";\
     CHECK_SHAPE(shape_out, out->shape());\
@@ -372,16 +388,17 @@ IMPLEMENT_BINARY_FUNC_PP(mul);
 IMPLEMENT_BINARY_FUNC_PP(div);
 IMPLEMENT_BINARY_FUNC_PP(pow);
 
-Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *add(const Tensor<Dtype> *a, const Tensor<Dtype> *b, Tensor<Dtype> *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   bool require_grad = (a->require_grad() || b->require_grad());
   std::vector<int> shape_a(a->shape());
   std::vector<int> shape_b(b->shape());
   std::vector<int> shape_out;
 
-  float *out_data = nullptr;
-  const float *in_data_a = nullptr;
-  const float *in_data_b = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data_a = nullptr;
+  const Dtype *in_data_b = nullptr;
   bool broadcast = false;
   if (a->shape_equal(b))
     shape_out = shape_a;
@@ -390,7 +407,7 @@ Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
     shape_out = stensor::broadcast(shape_a, shape_b);
   }
   if (out == nullptr)
-    out = new Tensor(shape_out, a->device(), require_grad);
+    out = new  Tensor<Dtype> *(shape_out, a->device(), require_grad);
   else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(shape_out, out->shape());
@@ -428,8 +445,9 @@ Tensor *add(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool transB, float beta,
-               Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *matmul(const Tensor<Dtype> *a, const Tensor<Dtype> *b, int axis, bool transA, bool transB, float beta,
+               Tensor<Dtype> *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   // inference shape
   int start_axis_a = a->canonical_axis_index(axis);
@@ -451,14 +469,14 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
 
   CHECK_EQ(Na, Mb) << "Shape mismatch";
   if (out == nullptr)
-    out = new Tensor(out_shape, a->device(), require_grad);
+    out = new  Tensor<Dtype> *(out_shape, a->device(), require_grad);
   else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(out_shape, out->shape());
   }
-  float *out_data = nullptr;
-  const float *in_data_a = nullptr;
-  const float *in_data_b = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data_a = nullptr;
+  const Dtype *in_data_b = nullptr;
   if (!grad_op) {
     in_data_a = a->const_data();
     in_data_b = b->const_data();
@@ -484,19 +502,20 @@ Tensor *matmul(const Tensor *a, const Tensor *b, int axis, bool transA, bool tra
   return out;
 }
 
-Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *maximum(const Tensor<Dtype> *a, const Tensor<Dtype> *b, Tensor<Dtype> *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   if (out == nullptr)
-    out = new Tensor(a->shape(), a->device(), require_grad);
+    out = new  Tensor<Dtype> *(a->shape(), a->device(), require_grad);
   else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(a->shape(), out->shape());
   }
-  float *out_data = nullptr;
-  const float *in_data_a = nullptr;
-  const float *in_data_b = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data_a = nullptr;
+  const Dtype *in_data_b = nullptr;
   if (!grad_op) {
     in_data_a = a->const_data();
     in_data_b = b->const_data();
@@ -520,19 +539,20 @@ Tensor *maximum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *minimum(const Tensor<Dtype> *a, const Tensor<Dtype> *b, Tensor<Dtype> *out, bool grad_op) {
   CHECK_EQ(a->device(), b->device()) << "tensors must be at same device";
   CHECK(a->shape_equal(b)) << "tensors must be at same shape";
   bool require_grad = (a->require_grad() || b->require_grad());
   if (out == nullptr)
-    out = new Tensor(a->shape(), a->device(), require_grad);
+    out = new  Tensor<Dtype> *(a->shape(), a->device(), require_grad);
   else {
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(a->shape(), out->shape());
   }
-  float *out_data = nullptr;
-  const float *in_data_a = nullptr;
-  const float *in_data_b = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data_a = nullptr;
+  const Dtype *in_data_b = nullptr;
   if (!grad_op) {
     in_data_a = a->const_data();
     in_data_b = b->const_data();
@@ -556,7 +576,8 @@ Tensor *minimum(const Tensor *a, const Tensor *b, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out) {
+template<typename Dtype>
+Tensor<Dtype> *concat(const std::vector<Tensor<Dtype> *> &inputs, int axis, Tensor<Dtype> *out) {
   CHECK_GE(inputs.size(), 1);
   int caxis = inputs[0]->canonical_axis_index(axis);
   std::vector<int> shape_ref(inputs[0]->shape());
@@ -580,15 +601,15 @@ Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out) {
   }
   shape_ref[caxis] = new_dim;
   if (out == nullptr)
-    out = new Tensor(shape_ref, inputs[0]->device(), require_grad);
+    out = new  Tensor<Dtype> *(shape_ref, inputs[0]->device(), require_grad);
   else {
     CHECK_EQ(inputs[0]->device(), out->device()) << "tensors must be at same device";
     CHECK_SHAPE(shape_ref, out->shape());
   }
   int M = inputs[0]->count(0, caxis);
 
-  float *out_data = out->data();
-  float *out_grad = nullptr;
+  Dtype *out_data = out->data();
+  Dtype *out_grad = nullptr;
   if (out->require_grad())
     out_grad = out->grad();
   switch (inputs[0]->state()) {
@@ -633,26 +654,26 @@ Tensor *concat(const std::vector<Tensor *> &inputs, int axis, Tensor *out) {
 /* math of Tensor end */
 
 /* Tensor Generator*/
-
-Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id, bool require_grad) {
-  Tensor *new_t = new Tensor(shape, device_id, require_grad);
+template<typename Dtype>
+Tensor<Dtype> *random(const std::vector<int> &shape, float a, float b, int device_id, bool require_grad) {
+  Tensor<Dtype> *new_t = new  Tensor<Dtype> *(shape, device_id, require_grad);
   switch (new_t->state()) {
     case CPU:
-      cpu_rng_uniform<Tensor::Dtype>(new_t->size(),
-                                     Tensor::Dtype(a),
-                                     Tensor::Dtype(b),
+      cpu_rng_uniform<Tensor<Dtype>::Dtype>(new_t->size(),
+                                     Tensor<Dtype>::Dtype(a),
+                                     Tensor<Dtype>::Dtype(b),
                                      new_t->data());
       break;
     case GPU:
-      gpu_rng_uniform<Tensor::Dtype>(new_t->size(),
-                                     Tensor::Dtype(a),
-                                     Tensor::Dtype(b),
+      gpu_rng_uniform<Tensor<Dtype>::Dtype>(new_t->size(),
+                                     Tensor<Dtype>::Dtype(a),
+                                     Tensor<Dtype>::Dtype(b),
                                      new_t->data());
       break;
     default:
-      cpu_rng_uniform<Tensor::Dtype>(new_t->size(),
-                                     Tensor::Dtype(a),
-                                     Tensor::Dtype(b),
+      cpu_rng_uniform<Tensor<Dtype>::Dtype>(new_t->size(),
+                                     Tensor<Dtype>::Dtype(a),
+                                     Tensor<Dtype>::Dtype(b),
                                      new_t->data());
       break;
   }
@@ -660,25 +681,26 @@ Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id, 
   return new_t;
 }
 
-Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id, bool require_grad) {
-  Tensor *new_t = new Tensor(shape, device_id, require_grad);
+template<typename Dtype>
+Tensor<Dtype> *random_gaussian(const std::vector<int> &shape, float mu, float sigma, int device_id, bool require_grad) {
+  Tensor<Dtype> *new_t = new  Tensor<Dtype> *(shape, device_id, require_grad);
   switch (new_t->state()) {
     case CPU:
-      cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
-                                      Tensor::Dtype(mu),
-                                      Tensor::Dtype(sigma),
+      cpu_rng_gaussian<Tensor<Dtype>::Dtype>(new_t->size(),
+                                      Tensor<Dtype>::Dtype(mu),
+                                      Tensor<Dtype>::Dtype(sigma),
                                       new_t->data());
       break;
     case GPU:
-      gpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
-                                      Tensor::Dtype(mu),
-                                      Tensor::Dtype(sigma),
+      gpu_rng_gaussian<Tensor<Dtype>::Dtype>(new_t->size(),
+                                      Tensor<Dtype>::Dtype(mu),
+                                      Tensor<Dtype>::Dtype(sigma),
                                       new_t->data());
       break;
     default:
-      cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
-                                      Tensor::Dtype(mu),
-                                      Tensor::Dtype(sigma),
+      cpu_rng_gaussian<Tensor<Dtype>::Dtype>(new_t->size(),
+                                      Tensor<Dtype>::Dtype(mu),
+                                      Tensor<Dtype>::Dtype(sigma),
                                       new_t->data());
       break;
   }
@@ -686,22 +708,23 @@ Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, i
 }
 
 // reduction sum of axis
-Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *sum(const Tensor<Dtype> *a, int axis, Tensor<Dtype> *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
   else {
     std::vector<int> new_shape(a->shape());
     new_shape[caxis] = 1;
-    out = new Tensor(new_shape, a->device(), a->require_grad());
+    out = new  Tensor<Dtype> *(new_shape, a->device(), a->require_grad());
   }
 
   int M = a->count(0, caxis);
   int N = a->count(caxis + 1, a->num_axes());
   int D = a->shape(caxis);
   CHECK_EQ(M * N, out->size());
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = a->const_data();
@@ -723,22 +746,23 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *mean(const Tensor<Dtype> *a, int axis, Tensor<Dtype> *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
   else {
     std::vector<int> new_shape(a->shape());
     new_shape[caxis] = 1;
-    out = new Tensor(new_shape, a->device(), a->require_grad());
+    out = new  Tensor<Dtype> *(new_shape, a->device(), a->require_grad());
   }
 
   int M = a->count(0, caxis);
   int N = a->count(caxis + 1, a->num_axes());
   int D = a->shape(caxis);
   CHECK_EQ(M * N, out->size());
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = a->const_data();
@@ -755,23 +779,24 @@ Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   return out;
 }
 
-Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+template<typename Dtype>
+Tensor<Dtype> *asum(const Tensor<Dtype> *a, int axis, Tensor<Dtype> *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
   else {
     std::vector<int> new_shape(a->shape());
     new_shape[caxis] = 1;
-    out = new Tensor(new_shape, a->device(), a->require_grad());
+    out = new  Tensor<Dtype> *(new_shape, a->device(), a->require_grad());
   }
 
   int M = a->count(0, caxis);
   int N = a->count(caxis + 1, a->num_axes());
   int D = a->shape(caxis);
   CHECK_EQ(M * N, out->size());
-  Tensor *sum_multiplier = stensor::ones({D}, a->device(), false);
-  float *out_data = nullptr;
-  const float *in_data = nullptr;
+  Tensor<Dtype> *sum_multiplier = stensor::ones({D}, a->device(), false);
+  Dtype *out_data = nullptr;
+  const Dtype *in_data = nullptr;
   if (!grad_op) {
     out_data = out->data();
     in_data = a->const_data();

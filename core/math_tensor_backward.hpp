@@ -10,10 +10,11 @@
 namespace stensor{
 
 namespace backward{
-
-void matmul_backward(Tensor *a, Tensor *b, const Tensor *y, int axis = -1, bool transA = false, bool transB = false);
+template<typename Dtype>
+void matmul_backward(Tensor<Dtype> *a, Tensor<Dtype> *b, const Tensor<Dtype> *y, int axis = -1, bool transA = false, bool transB = false);
 // y = a + b
-void add_backward(Tensor *a, Tensor *b, const Tensor *y);
+template<typename Dtype>
+void add_backward(Tensor<Dtype> *a, Tensor<Dtype> *b, const Tensor<Dtype> *y);
 
 }
 

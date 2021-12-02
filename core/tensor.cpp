@@ -5,7 +5,8 @@
 
 namespace stensor {
 
-void Tensor::update_state() {
+template<typename Dtype>
+void Tensor<Dtype>::update_state() {
   if (_data) {
     if (_data->gpu_data()) {
       _current_data = static_cast<Dtype *>(_data->gpu_data());
@@ -31,7 +32,8 @@ void Tensor::update_state() {
   } else _current_grad = nullptr;
 }
 
-void Tensor::to_cpu() {
+template<typename Dtype>
+void Tensor<Dtype>::to_cpu() {
   if (_capacity != 0) {
     if (!_data->cpu_data())
       _data->alloc_cpu();
@@ -49,7 +51,8 @@ void Tensor::to_cpu() {
   update_state();
 }
 
-void Tensor::to_gpu() {
+template<typename Dtype>
+void Tensor<Dtype>::to_gpu() {
   if (_capacity != 0) {
     if (!_data->gpu_data())
       _data->alloc_gpu();
@@ -67,11 +70,13 @@ void Tensor::to_gpu() {
   update_state();
 }
 
-void Tensor::copy_from(const Tensor &source, bool copy_grad, bool reset) {
+template<typename Dtype>
+void Tensor<Dtype>::copy_from(const Tensor<Dtype> &source, bool copy_grad, bool reset) {
   copy_from(&source, copy_grad, reset);
 }
 
-void Tensor::copy_data_from(const Tensor *other, bool reset) {
+template<typename Dtype>
+void Tensor<Dtype>::copy_data_from(const Tensor<Dtype> *other, bool reset) {
   if (other->size() != _size) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
@@ -95,7 +100,8 @@ void Tensor::copy_data_from(const Tensor *other, bool reset) {
   }
 }
 
-void Tensor::copy_grad_from(const Tensor *other, bool reset) {
+template<typename Dtype>
+void Tensor<Dtype>::copy_grad_from(const Tensor<Dtype> *other, bool reset) {
   if (other->size() != _size) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
@@ -119,7 +125,8 @@ void Tensor::copy_grad_from(const Tensor *other, bool reset) {
   }
 }
 
-void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
+template<typename Dtype>
+void Tensor<Dtype>::copy_from(const Tensor<Dtype> *source, bool copy_grad, bool reset) {
   if (source->size() != _size) {
     if (!reset)
       LOG(FATAL) << "Trying to copy tensor of different sizes."
@@ -132,11 +139,11 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::GPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "CPU" << " vs " << "GPU:" << source->device();
-      if (copy_grad){
-        if (!source->const_grad()&&_current_grad)
+      if (copy_grad) {
+        if (!source->const_grad() && _current_grad)
           cpu_copy(_size, source->const_grad(), grad());
         else
-          LOG(WARNING)<<"Copy gradient failed";
+          LOG(WARNING) << "Copy gradient failed";
       }
       cpu_copy(_size, source->const_data(), data());
 
@@ -145,11 +152,11 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
       if (source->state() == stensor::CPU)
         LOG(FATAL) << "Trying to copy tensor of different sizes."
                    << "GPU:" << device() << " vs " << "CPU";
-      if (copy_grad){
-        if (!source->const_grad()&&_current_grad)
+      if (copy_grad) {
+        if (!source->const_grad() && _current_grad)
           gpu_copy(_size, source->const_grad(), grad());
         else
-          LOG(WARNING)<<"Copy gradient failed";
+          LOG(WARNING) << "Copy gradient failed";
       }
       gpu_copy(_size, source->const_data(), data());
 
@@ -158,7 +165,8 @@ void Tensor::copy_from(const Tensor *source, bool copy_grad, bool reset) {
   }
 }
 
-void Tensor::Reset(const ShapeType &shape, int device_id) {
+template<typename Dtype>
+void Tensor<Dtype>::Reset(const ShapeType &shape, int device_id) {
   CHECK_LE(shape.size(), kMaxTensorAxes);
   _size = 1;
   _shape.resize(shape.size());
@@ -183,7 +191,8 @@ void Tensor::Reset(const ShapeType &shape, int device_id) {
     zero_grad();
 }
 
-void Tensor::reshape(const ShapeType &shape) {
+template<typename Dtype>
+void Tensor<Dtype>::reshape(const ShapeType &shape) {
   CHECK_LE(shape.size(), kMaxTensorAxes);
   int new_size = 1;
   for (int i = 0; i < shape.size(); ++i) {
@@ -201,117 +210,102 @@ void Tensor::reshape(const ShapeType &shape) {
 
 }
 
-//bool Tensor::shape_equal(const Tensor &other) const {
+//template<typename Dtype>
+//bool Tensor<Dtype>::shape_equal(const TensorProto *other) const {
 //  ShapeType shapeOther;
-//  stensor::RepeatTypeToVector(other.shape(), shapeOther);
+//  stensor::RepeatTypeToVector(other->shape(), shapeOther);
 //  if (_shape.size() != shapeOther.size()) return false;
 //  for (int i = 0; i < _shape.size(); ++i) {
 //    if (_shape[i] != shapeOther[i]) return false;
 //  }
 //  return true;
 //}
-//
-bool Tensor::shape_equal(const TensorProto *other) const {
-  ShapeType shapeOther;
-  stensor::RepeatTypeToVector(other->shape(), shapeOther);
-  if (_shape.size() != shapeOther.size()) return false;
-  for (int i = 0; i < _shape.size(); ++i) {
-    if (_shape[i] != shapeOther[i]) return false;
-  }
-  return true;
+
+#define INITIAL_TO_PROTO(protoTp) \
+template<typename Dtype> \
+void Tensor<Dtype>::to_proto(protoTp *proto, bool write_grad) const { \
+  proto->clear_shape(); \
+  for (int i = 0; i < _shape.size(); ++i) {\
+    proto->add_shape(_shape[i]);\
+  }\
+  proto->clear_data();\
+  proto->clear_grad();\
+  const Dtype *data_vec = const_data();\
+  for (int i = 0; i < _size; ++i) {\
+    proto->add_data(data_vec[i]);\
+  }\
+  if (write_grad) {\
+    const Dtype *grad_vec = const_grad();\
+    for (int i = 0; i < _size; ++i) {\
+      proto->add_grad(grad_vec[i]);\
+    }\
+  }\
+  proto->set_size(_size);\
+  proto->set_name(_name);\
+  proto->set_require_grad(_require_grad);\
+}
+INITIAL_TO_PROTO(TensorFloat);
+INITIAL_TO_PROTO(TensorDouble);
+INITIAL_TO_PROTO(TensorInt);
+INITIAL_TO_PROTO(TensorUInt);
+INITIAL_TO_PROTO(TensorBool);
+
+#define INITIAL_FROM_PROTO(Dtype, protoTp) \
+template<>\
+void Tensor<Dtype>::from_proto(const protoTp &proto, bool reset) {\
+  if (reset) {\
+    std::vector<int> new_shape;\
+    stensor::RepeatTypeToVector(proto.shape(), new_shape);\
+    Reset(new_shape);\
+    _size = proto.size();\
+    _require_grad = proto.require_grad();\
+    _name = proto.name();\
+  } else {\
+    CHECK_EQ(_size, proto.size());\
+    CHECK_EQ(_name, proto.name());  \
+    std::vector<int> shapeOther;\
+    stensor::RepeatTypeToVector(proto.shape(), shapeOther);\
+    CHECK(shape()==shapeOther) << "shape mismatch.";\
+  }\
+  switch (state()) {\
+    case GPU:\
+      if (proto.data_size() > 0) {\
+        CHECK_EQ(_size, proto.data_size()) << "data size mismatch.";\
+        stensor::gpu_copy<Dtype>(_size, proto.data().data(), data());\
+      }\
+      if (proto.grad_size() > 0) {\
+        CHECK_EQ(_size, proto.grad_size()) << "gradiant size mismatch.";\
+        stensor::gpu_copy<Dtype>(_size, proto.grad().data(), grad());\
+      }\
+      break;\
+    case CPU:\
+      if (proto.data_size() > 0) {\
+        CHECK_EQ(_size, proto.data_size()) << "data size mismatch.";\
+        stensor::cpu_copy<Dtype>(_size, proto.data().data(), data());\
+      }\
+      if (proto.grad_size() > 0) {\
+        CHECK_EQ(_size, proto.grad_size()) << "gradiant size mismatch.";\
+        stensor::cpu_copy<Dtype>(_size, proto.grad().data(), grad());\
+      }\
+      break;\
+  }\
 }
 
-void Tensor::to_proto(TensorProto *proto, bool write_grad) const {
-  proto->clear_shape();
-  // 1. shape
-  for (int i = 0; i < _shape.size(); ++i) {
-    proto->add_shape(_shape[i]);
-  }
-  proto->clear_data();
-  proto->clear_grad();
-  // 2. data
-  const float *data_vec = const_data();
-  for (int i = 0; i < _size; ++i) {
-    proto->add_data(data_vec[i]);
-  }
-  // 3. grad
-  if (write_grad) {
-    const float *grad_vec = const_grad();
-    for (int i = 0; i < _size; ++i) {
-      proto->add_grad(grad_vec[i]);
-    }
-  }
-  // 4. size & name & isparam
-  proto->set_size(_size);
-  proto->set_name(_name);
-  proto->set_require_grad(_require_grad);
-  // 5. neighbor & operations
-  proto->clear_neighbors();
-  proto->clear_operations();
-}
+INITIAL_FROM_PROTO(float, TensorFloat);
+INITIAL_FROM_PROTO(double,TensorDouble);
+INITIAL_FROM_PROTO(int, TensorInt);
+INITIAL_FROM_PROTO(unsigned int, TensorUInt);
+INITIAL_FROM_PROTO(bool, TensorBool);
 
-void Tensor::from_proto(const TensorProto &proto, bool reset) {
-  // 1. reshape
-  if (reset) {
-    Tensor::ShapeType new_shape;
-    stensor::RepeatTypeToVector(proto.shape(), new_shape);
-    Reset(new_shape);
-    _size = proto.size();
-    _require_grad = proto.require_grad();
-    _name = proto.name();
-  } else {
-    CHECK_EQ(_size, proto.size());
-    CHECK_EQ(_name, proto.name());
-    CHECK(shape_equal(&proto)) << "shape mismatch.";
-  }
-  // 2. copy data
-  switch (state()) {
-    case GPU:
-      if (proto.data_size() > 0) {
-        CHECK_EQ(_size, proto.data_size()) << "data size mismatch.";
-        stensor::gpu_copy(_size, proto.data().data(), data());
-      }
-      // 3. copy grad
-      if (proto.grad_size() > 0) {
-        CHECK_EQ(_size, proto.grad_size()) << "gradiant size mismatch.";
-        stensor::gpu_copy(_size, proto.grad().data(), grad());
-      }
-      break;
-    case CPU:
-      if (proto.data_size() > 0) {
-        CHECK_EQ(_size, proto.data_size()) << "data size mismatch.";
-        stensor::cpu_copy(_size, proto.data().data(), data());
-      }
-      if (proto.grad_size() > 0) {
-        CHECK_EQ(_size, proto.grad_size()) << "gradiant size mismatch.";
-        stensor::cpu_copy(_size, proto.grad().data(), grad());
-      }
-      break;
-  }
-}
-
-//template<typename Dtype>
-//std::string memoryTostringSimplified(const Dtype *data,
-//                           const Tensor::ShapeType shape){
-//  std::ostringstream out;
-//  int dim = shape.size();
-//  int count = 1;
-//  for (int i = 0; i < shape.size(); ++i) count *= shape[i];
-//
-//  for (int i = 0; i < dim; ++i) {
-//    out << "[";
-//  }
-//
-//}
 template<typename Dtype>
 std::string memoryTostring(const Dtype *data,
-                           const Tensor::ShapeType shape,
+                           const std::vector<int> shape,
                            bool simplified = true);
 
 //TODO:simplified print
 template<typename Dtype>
 std::string memoryTostring(const Dtype *data,
-                           const Tensor::ShapeType shape,
+                           const std::vector<int> shape,
                            bool simplified) {
   std::ostringstream out;
   int dim = shape.size();
@@ -342,45 +336,57 @@ std::string memoryTostring(const Dtype *data,
   }
   return out.str();
 }
-
-std::string Tensor::data_string() const {
+template<typename Dtype>
+std::string Tensor<Dtype>::data_string() const {
   check_data();
   std::ostringstream out;
-  const Tensor::ShapeType shape = this->shape();
+  const std::vector<int> shape = this->shape();
   out << memoryTostring<Tensor::Dtype>(const_data(), shape);
   out << this->shape_string();
   return out.str();
 }
 
-std::string Tensor::grad_string() const {
+template<typename Dtype>
+std::string Tensor<Dtype>::grad_string() const {
   CHECK(has_grad()) << "Tensor does not have gradient";
   std::ostringstream out;
-  const Tensor::ShapeType shape = this->shape();
+  const std::vector<int> shape = this->shape();
   out << memoryTostring<Tensor::Dtype>(const_grad(), shape);
-  out << shape_string()<<std::endl;
+  out << shape_string() << std::endl;
   return out.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const Tensor *tensor) {
+template<typename Dtype>
+std::ostream &operator<<(std::ostream &out, const Tensor<Dtype> *tensor) {
   out << tensor->data_string();
   return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
-  return stensor::operator<<(out, &tensor);
+template std::ostream &operator<<<float> (std::ostream &out, const Tensor<float> *tensor);
+template std::ostream &operator<<<double> (std::ostream &out, const Tensor<double> *tensor);
+template std::ostream &operator<<<int> (std::ostream &out, const Tensor<int> *tensor);
+template std::ostream &operator<<<unsigned int> (std::ostream &out, const Tensor<unsigned int> *tensor);
+template std::ostream &operator<<<bool> (std::ostream &out, const Tensor<bool> *tensor);
+
+template<typename Dtype>
+inline std::ostream &operator<<(std::ostream &out, const Tensor<Dtype> &tensor) {
+  return stensor::operator<<<Dtype>(out, &tensor);
 }
+template std::ostream &operator<<<float> (std::ostream &out, const Tensor<float> &tensor);
+template std::ostream &operator<<<double> (std::ostream &out, const Tensor<double> &tensor);
+template std::ostream &operator<<<int> (std::ostream &out, const Tensor<int> &tensor);
+template std::ostream &operator<<<unsigned int> (std::ostream &out, const Tensor<unsigned int> &tensor);
+template std::ostream &operator<<<bool> (std::ostream &out, const Tensor<bool> &tensor);
 
-
-Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
+template<typename Dtype>
+Dtype &Tensor<Dtype>::operator[](std::vector<int> indices) {
   CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
   Tensor::ShapeType canonicalIndex(num_axes(), 0);
   for (int i = 0; i < num_axes(); ++i) {
     if (indices[i] < 0) {
-//      CHECK_GE(indices[i], shape(i));
       canonicalIndex[i] = indices[i] + shape(i);
     } else canonicalIndex[i] = indices[i];
   }
-
   int out = 1;
   for (int i = 0; i < indices.size(); ++i) {
     out *= static_cast<int>(canonicalIndex[i] + 1);
@@ -388,35 +394,93 @@ Tensor::Dtype &Tensor::operator[](std::vector<int> indices) {
   return data()[out - 1];
 }
 
-//Tensor::Dtype& Tensor::operator[](std::vector<uint32_t> indices) {
-//  CHECK_EQ(indices.size(), num_axes()) << "indices size must be equal with num axes";
-//  int out = 1;
-//  for (int i = 0; i < indices.size(); ++i) {
-//    out *= static_cast<int>(indices[i] + 1);
-//  }
-//  return data()[out - 1];
-//}
-
 /* Tensor Generator end*/
 /* save and load*/
-void save(const Tensor *tensor, const std::string &path) {
-  TensorProto proto;
-  tensor->to_proto(&proto);
-  std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
-  bool success = proto.SerializeToOstream(&output);
-  CHECK(success) << "Failed to save tensor to " << path;
-}
-Tensor *load(const std::string &path) {
-  TensorProto proto;
-  std::fstream input(path, std::ios::in | std::ios::binary);
-  bool success = proto.ParseFromIstream(&input);
-  CHECK(success) << "Failed to load tensor from " << path;
-  Tensor *new_tensor = new Tensor();
-  new_tensor->from_proto(proto);
-  return new_tensor;
+
+template<typename Dtype>
+void save(const Tensor<Dtype> *tensor, const std::string &path) {
+  if (typeid(Dtype) == typeid(float)) {
+    TensorFloat proto;
+    tensor->to_proto(&proto);
+    std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+    bool success = proto.SerializeToOstream(&output);
+    CHECK(success) << "Failed to save tensor to " << path;
+  } else if (typeid(Dtype) == typeid(double)) {
+    TensorDouble proto;
+    tensor->to_proto(&proto);
+    std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+    bool success = proto.SerializeToOstream(&output);
+    CHECK(success) << "Failed to save tensor to " << path;
+  } else if (typeid(Dtype) == typeid(int)) {
+    TensorInt proto;
+    tensor->to_proto(&proto);
+    std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+    bool success = proto.SerializeToOstream(&output);
+    CHECK(success) << "Failed to save tensor to " << path;
+  } else if (typeid(Dtype) == typeid(unsigned int)) {
+    TensorUInt proto;
+    tensor->to_proto(&proto);
+    std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+    bool success = proto.SerializeToOstream(&output);
+    CHECK(success) << "Failed to save tensor to " << path;
+  } else if (typeid(Dtype) == typeid(bool)) {
+    TensorBool proto;
+    tensor->to_proto(&proto);
+    std::fstream output(path, std::ios::out | std::ios::trunc | std::ios::binary);
+    bool success = proto.SerializeToOstream(&output);
+    CHECK(success) << "Failed to save tensor to " << path;
+  } else
+    LOG(FATAL) << "Unsupported type:" << typeid(Dtype).name();
 }
 
-void Tensor::zero_data() {
+template<typename Dtype>
+Tensor<Dtype> *load(const std::string &path) {
+  if (typeid(Dtype) == typeid(float)) {
+    TensorFloat proto;
+    std::fstream input(path, std::ios::in | std::ios::binary);
+    bool success = proto.ParseFromIstream(&input);
+    CHECK(success) << "Failed to load tensor from " << path;
+    Tensor<Dtype> *new_tensor = new Tensor<Dtype>();
+    new_tensor->from_proto(proto);
+    return new_tensor;
+  } else if (typeid(Dtype) == typeid(double)) {
+    TensorDouble proto;
+    std::fstream input(path, std::ios::in | std::ios::binary);
+    bool success = proto.ParseFromIstream(&input);
+    CHECK(success) << "Failed to load tensor from " << path;
+    Tensor<Dtype> *new_tensor = new Tensor<Dtype>();
+    new_tensor->from_proto(proto);
+    return new_tensor;
+  } else if (typeid(Dtype) == typeid(int)) {
+    TensorInt proto;
+    std::fstream input(path, std::ios::in | std::ios::binary);
+    bool success = proto.ParseFromIstream(&input);
+    CHECK(success) << "Failed to load tensor from " << path;
+    Tensor<Dtype> *new_tensor = new Tensor<Dtype>();
+    new_tensor->from_proto(proto);
+    return new_tensor;
+  } else if (typeid(Dtype) == typeid(unsigned int)) {
+    TensorUInt proto;
+    std::fstream input(path, std::ios::in | std::ios::binary);
+    bool success = proto.ParseFromIstream(&input);
+    CHECK(success) << "Failed to load tensor from " << path;
+    Tensor<Dtype> *new_tensor = new Tensor<Dtype>();
+    new_tensor->from_proto(proto);
+    return new_tensor;
+  } else if (typeid(Dtype) == typeid(bool)) {
+    TensorBool proto;
+    std::fstream input(path, std::ios::in | std::ios::binary);
+    bool success = proto.ParseFromIstream(&input);
+    CHECK(success) << "Failed to load tensor from " << path;
+    Tensor<Dtype> *new_tensor = new Tensor<Dtype>();
+    new_tensor->from_proto(proto);
+    return new_tensor;
+  } else
+    LOG(FATAL) << "Unsupported type:" << typeid(Dtype).name();
+}
+
+template<typename Dtype>
+void Tensor<Dtype>::zero_data() {
   switch (state()) {
     case CPU:stensor::cpu_set<Tensor::Dtype>(_size, 0, data());
       break;
@@ -424,7 +488,9 @@ void Tensor::zero_data() {
       break;
   }
 }
-void Tensor::zero_grad() {
+
+template<typename Dtype>
+void Tensor<Dtype>::zero_grad() {
   switch (state()) {
     case CPU:stensor::cpu_set<Tensor::Dtype>(_size, 0, grad());
       break;

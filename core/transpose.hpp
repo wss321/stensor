@@ -7,7 +7,8 @@
 #include "tensor.hpp"
 
 namespace stensor {
-Tensor *transpose(Tensor *tensor, std::vector<int> order);
+template<typename Dtype>
+Tensor<Dtype> *transpose(Tensor<Dtype> *tensor, std::vector<int> order);
 void transpose_gpu(const std::vector<int> shape,
                    const std::vector<int> &stride_x_cpu,
                    const std::vector<int> &stride_y_cpu,

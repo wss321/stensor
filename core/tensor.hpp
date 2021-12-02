@@ -11,15 +11,12 @@ namespace stensor {
 
 const int kMaxTensorAxes = MAX_AXES;
 
+template<typename dtype>
 class Tensor {
  public:
   typedef std::vector<int> ShapeType;
-  typedef float Dtype;
-  typedef TensorProto_Operation OpType;
+  typedef dtype Dtype;
   typedef shared_ptr<SynMem> SharedPtr;
-  typedef struct { int start;int end; } PairType;
-  typedef std::vector<PairType> PairIndexType;
-  typedef std::vector<std::string> CdNameType;
  private:
   SharedPtr _data;
   SharedPtr _grad;
@@ -92,7 +89,7 @@ class Tensor {
 
   // shape operations
   void reshape(const ShapeType &shape);
-  inline void reshape_like(const Tensor &other) { reshape(other.shape()); }
+  inline void reshape_like(const Tensor<Dtype> &other) { reshape(other.shape()); }
 
   inline void flatten() { reshape(ShapeType{_size}); }
 
@@ -138,8 +135,8 @@ class Tensor {
   void to_cpu();
   void to_gpu();
 
-  inline bool shape_equal(const Tensor *other) const{ return other->shape()==_shape;}
-  bool shape_equal(const TensorProto *other) const;
+  inline bool shape_equal(const Tensor<Dtype> *other) const{ return other->shape()==_shape;}
+//  bool shape_equal(const TensorProto *other) const;
 
   inline int num_axes() const { return _shape.size(); }
   inline Dtype data_at(int index) const {
@@ -191,22 +188,28 @@ class Tensor {
     return count;
   }
 
-  void copy_from(const Tensor &source, bool copy_grad = false,
+  void copy_from(const Tensor<Dtype> &source, bool copy_grad = false,
                  bool reset = false);
-  void copy_from(const Tensor *source, bool copy_grad = false,
+  void copy_from(const Tensor<Dtype> *source, bool copy_grad = false,
                  bool reset = false);
 
   inline bool require_grad() const {
     return _require_grad;
   }
 
-//  const std::pair<Tensor *, std::string> neighbors() const;
-  void from_proto(const TensorProto &proto, bool reset = true);
-  void to_proto(TensorProto *proto, bool write_grad = false) const;
+  void from_proto(const TensorFloat &proto, bool reset = true);
+  void from_proto(const TensorDouble &proto, bool reset = true);
+  void from_proto(const TensorInt &proto, bool reset = true);
+  void from_proto(const TensorUInt &proto, bool reset = true);
+  void from_proto(const TensorBool &proto, bool reset = true);
+
+  void to_proto(TensorFloat *proto, bool write_grad = false) const;
+  void to_proto(TensorDouble *proto, bool write_grad = false) const;
+  void to_proto(TensorInt *proto, bool write_grad = false) const;
+  void to_proto(TensorUInt *proto, bool write_grad = false) const;
+  void to_proto(TensorBool *proto, bool write_grad = false) const;
 
   Dtype &operator[](std::vector<int> indices); // get data
-//  Dtype &operator[](std::vector<uint32_t> indices);
-  Tensor &operator[](PairIndexType start_end_indices); // slice
   Dtype &operator[](int index) {
     if (index < 0) {
       DCHECK_GE(size() + index, 0);
@@ -223,19 +226,33 @@ class Tensor {
   void zero_data();
   void zero_grad();
 
-  void copy_data_from(const Tensor *other, bool reset = false);
-  void copy_grad_from(const Tensor *other, bool reset = false);
-  inline std::string name(){return _name;}
+  void copy_data_from(const Tensor<Dtype> *other, bool reset = false);
+  void copy_grad_from(const Tensor<Dtype> *other, bool reset = false);
+  inline std::string name() { return _name; }
  DISABLE_COPY_AND_ASSIGN(Tensor);
 };
 
-std::ostream &operator<<(std::ostream &out, const Tensor &tensor);
-std::ostream &operator<<(std::ostream &out, const Tensor *tensor);
+template class Tensor<int>;
+template class Tensor<unsigned int>;
+template class Tensor<float>;
+template class Tensor<double>;
+template class Tensor<bool>;
+
+template<typename Dtype>
+inline std::ostream &operator<<(std::ostream &out, const Tensor<Dtype> &tensor);
+
+template<typename Dtype>
+std::ostream &operator<<(std::ostream &out, const Tensor<Dtype> *tensor);
 
 /* save and load*/
-void save(const Tensor *tensor, const std::string &path);
-inline void save(const Tensor &tensor, const std::string &path) { save(&tensor, path); }
-Tensor *load(const std::string &path);
+template<typename Dtype>
+void save(const Tensor<Dtype> *tensor, const std::string &path);
+
+template<typename Dtype>
+inline void save(const Tensor<Dtype> &tensor, const std::string &path) { save(&tensor, path); }
+
+template<typename Dtype>
+Tensor<Dtype> *load(const std::string &path);
 /* save and load end*/
 
 }//namespace stensor
