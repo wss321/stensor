@@ -9,18 +9,17 @@ namespace nn {
 
 float dataType<float>::oneval = 1.0;
 float dataType<float>::zeroval = 0.0;
-const void* dataType<float>::one =
+const void *dataType<float>::one =
     static_cast<void *>(&dataType<float>::oneval);
-const void* dataType<float>::zero =
+const void *dataType<float>::zero =
     static_cast<void *>(&dataType<float>::zeroval);
 
 double dataType<double>::oneval = 1.0;
 double dataType<double>::zeroval = 0.0;
-const void* dataType<double>::one =
+const void *dataType<double>::one =
     static_cast<void *>(&dataType<double>::oneval);
-const void* dataType<double>::zero =
+const void *dataType<double>::zero =
     static_cast<void *>(&dataType<double>::zeroval);
-
 
 void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
   std::vector<int> out_shape = calc_out_shape(in_shape);
@@ -40,18 +39,11 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                              out_shape[1],
                              out_shape[2],
                              out_shape[3]);
-  size_t workspace_limit_bytes = 0;
+//  size_t workspace_limit_bytes = 0;
+  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+  bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+  bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
 //   choose forward and backward algorithms + workspace(s)
-//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
-  CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(handle_,
-                                                  input_desc_,
-                                                  filter_desc_,
-                                                  conv_desc_,
-                                                  output_desc_,
-                                                  CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
-                                                  workspace_limit_bytes,
-                                                  &fwd_algo_));
-//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
   CUDNN_CHECK(cudnnGetConvolutionForwardWorkspaceSize(handle_,
                                                       input_desc_,
                                                       filter_desc_,
@@ -59,26 +51,24 @@ void Conv2d::setUpConvAlg(const std::vector<int> &in_shape) {
                                                       output_desc_,
                                                       fwd_algo_,
                                                       &workspace_fwd_sizes_));
-//  fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
-//  bwd_filter_algo_ = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-//  bwd_data_algo_ = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
 
-  // choose backward algorithm for filter
-  CUDNN_CHECK(cudnnGetConvolutionBackwardFilterAlgorithm(handle_,
-                                                         input_desc_, output_desc_, conv_desc_, filter_desc_,
-                                                         CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
-                                                         workspace_limit_bytes, &bwd_filter_algo_));
+
+//  // choose backward algorithm for filter
+//  CUDNN_CHECK(cudnnGetConvolutionBackwardFilterAlgorithm(handle_,
+//                                                         input_desc_, output_desc_, conv_desc_, filter_desc_,
+//                                                         CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+//                                                         workspace_limit_bytes, &bwd_filter_algo_));
 
   // get workspace for backwards filter algorithm
   CUDNN_CHECK(cudnnGetConvolutionBackwardFilterWorkspaceSize(handle_,
                                                              input_desc_, output_desc_, conv_desc_, filter_desc_,
                                                              bwd_filter_algo_, &workspace_bwd_filter_sizes_));
-
-  // choose backward algo for data
-  CUDNN_CHECK(cudnnGetConvolutionBackwardDataAlgorithm(handle_,
-                                                       filter_desc_, output_desc_, conv_desc_, input_desc_,
-                                                       CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-                                                       workspace_limit_bytes, &bwd_data_algo_));
+//
+//  // choose backward algo for data
+//  CUDNN_CHECK(cudnnGetConvolutionBackwardDataAlgorithm(handle_,
+//                                                       filter_desc_, output_desc_, conv_desc_, input_desc_,
+//                                                       CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+//                                                       workspace_limit_bytes, &bwd_data_algo_));
 
   // get workspace size
   CUDNN_CHECK(cudnnGetConvolutionBackwardDataWorkspaceSize(handle_,

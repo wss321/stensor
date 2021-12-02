@@ -65,7 +65,7 @@ torch.manual_seed(1234)
 # torch.cuda.manual_seed(1234)
 cost = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), 0.001)
-n_epochs = 30
+n_epochs = 10
 # model.load_state_dict(torch.load('model_parameter.pkl'))
 running_loss = 0.0
 from time import time

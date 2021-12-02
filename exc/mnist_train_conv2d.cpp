@@ -19,10 +19,10 @@ class SimpleNet : public nn::Module {
     state_ = device_id > -1 ? GPU : CPU;
     type_ = "Custom";
     name_ = "SimpleNet";
-    nn::BaseConv2d *conv1 = new nn::BaseConv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::Conv2d *conv1 = new nn::Conv2d("conv1", 1, 4, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
     nn::ReLU *act1 = new nn::ReLU("act1", device_id, true);
     nn::Pooling2d *pool1 = new nn::Pooling2d("pool1", nn::MAXPOOL, 2, 2, device_id);
-    nn::BaseConv2d *conv2 = new nn::BaseConv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
+    nn::Conv2d *conv2 = new nn::Conv2d("conv2", 4, 8, 3, 3, 1, 1, 1, 1, 1, 1, 1, device_id, false);
     nn::ReLU *act2 = new nn::ReLU("act2", device_id, true);
     nn::Pooling2d *pool2 = new nn::Pooling2d("pool2", nn::MAXPOOL, 2, 2, device_id);
     nn::Reshape *reshape = new nn::Reshape("reshape", {-1, 8 * 7 * 7});
@@ -113,7 +113,7 @@ int main() {
   nn::TensorVec mnist_label(
       read_Mnist_Label2Tensor(mnist_root + "train-labels-idx1-ubyte", batch_size));
   long long start_t = systemtime_ms();
-  for (int e = 0; e < 30; ++e) {
+  for (int e = 0; e < 10; ++e) {
     float correct_count = 0;
     for (int i = 0; i < mnist_data.size(); ++i) {
       optimizer.zero_grad();
