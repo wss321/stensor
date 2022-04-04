@@ -21,7 +21,7 @@ std::vector<Dshape> broadcast(std::vector<Dshape> &shape1, std::vector<Dshape> &
     p2 = &shape1;
   }
   std::vector<Dshape> out_shape(p1->size());
-  int diff = std::abs(p1->size() - p2->size());
+  int diff = std::abs((int)(p1->size() - p2->size()));
   for (int i = 0; i < diff; ++i) {
     out_shape[i] = (*p1)[i];
   }

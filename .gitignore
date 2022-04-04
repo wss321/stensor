@@ -2,3 +2,5 @@
 build_debug
 .git
 output
+build
+cmake-build-debug
