@@ -4,6 +4,7 @@
 */
 
 #include "transpose.hpp"
+
 namespace stensor {
 inline int indTranspose(int indY, const std::vector<int> &strideY, const std::vector<int> strideX,
                         const std::vector<int> &ordersY2X) {

@@ -3,18 +3,11 @@ syntax = "proto3";
 package stensor;
 
 message TensorProto{
-    enum Operation{
-        PROD = 0;
-        SUM = 1;
-        MAX = 2;
-    }
     repeated float data=1[packed = true];
     repeated float grad=2[packed = true];
     repeated int32 shape=3;
     repeated string neighbors=4;
-    repeated Operation operations=5;
-
-    bool require_grad=6;
-    string name=7;
-    int32 size=8;
+    bool require_grad=5;
+    string name=6;
+    int32 size=7;
 }

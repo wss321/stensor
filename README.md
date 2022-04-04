@@ -9,7 +9,7 @@ STensor is a tiny C++ library for pytorch-like deep learning framework.
 5. ProtoBuffer
 6. CUDA
 7. OpenBlas
-
+8. Boost/thread
 ## Component
 ### common
 ### math
@@ -17,3 +17,16 @@ STensor is a tiny C++ library for pytorch-like deep learning framework.
 ### proto
 ### memory_op
 ### random
+
+# MNIST Demo
+## get dataset
+```bash
+cd data/mnist
+sh ./get_mnist.sh
+cd ../..
+```
+## run
+```bash
+cd <builddir>/exc
+./mnist_train
+```

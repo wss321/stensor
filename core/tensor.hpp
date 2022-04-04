@@ -15,11 +15,9 @@ class Tensor {
  public:
   typedef std::vector<int> ShapeType;
   typedef float Dtype;
-  typedef TensorProto_Operation OpType;
   typedef shared_ptr<SynMem> SharedPtr;
   typedef struct { int start;int end; } PairType;
   typedef std::vector<PairType> PairIndexType;
-  typedef std::vector<std::string> CdNameType;
  private:
   SharedPtr _data;
   SharedPtr _grad;
