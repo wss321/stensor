@@ -247,7 +247,6 @@ void Tensor::to_proto(TensorProto *proto, bool write_grad) const {
   proto->set_require_grad(_require_grad);
   // 5. neighbor & operations
   proto->clear_neighbors();
-  proto->clear_operations();
 }
 
 void Tensor::from_proto(const TensorProto &proto, bool reset) {
