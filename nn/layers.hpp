@@ -16,5 +16,7 @@
 #include "pooling2d_layer.hpp"
 #include "reshape_layer.hpp"
 #include "base_conv2d_layer.hpp"
+#include "maxpool2d_layer.hpp"
+#include "avgpool2d_layer.hpp"
 
 #endif //STENSOR_NN_LAYERS_HPP_
