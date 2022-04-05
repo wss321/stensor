@@ -202,7 +202,7 @@ template void cpu_reduce_mean<float>(const int M, const int D, const int N, cons
 template void cpu_reduce_mean<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
-void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased) {
   const Dtype *in_data = x;
   Dtype *out_data = y;
   for (int m = 0; m < M; ++m) {
@@ -216,18 +216,19 @@ void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype
       for (int d = 0; d < D; ++d) {
         var += (in_data[d * N + n]-mean) * (in_data[d * N + n]- mean);
       }
-      if (beta == 0) *out_data = var / D;
-      else *out_data = var / D + beta * (*out_data);
+      var /= unbiased ? (D - 1):D;
+      if (beta == 0) *out_data = var;
+      else *out_data = var + beta * (*out_data);
       out_data++;
     }
     in_data += D * N;
   }
 }
-template void cpu_reduce_var<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
-template void cpu_reduce_var<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+template void cpu_reduce_var<float>(const int M, const int D, const int N, const float *x, float beta, float *y, bool unbiased);
+template void cpu_reduce_var<double>(const int M, const int D, const int N, const double *x, double beta, double *y, bool unbiased);
 
 template<typename Dtype>
-void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased) {
   const Dtype *in_data = x;
   Dtype *out_data = y;
   for (int m = 0; m < M; ++m) {
@@ -241,7 +242,7 @@ void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype
       for (int d = 0; d < D; ++d) {
         var += (in_data[d * N + n]-mean) * (in_data[d * N + n]- mean);
       }
-      var /= D;
+      var /= unbiased ? (D - 1):D;
       if (beta == 0) *out_data = std::sqrt(var);
       else *out_data = std::sqrt(var) + beta * (*out_data);
       out_data++;
@@ -249,8 +250,8 @@ void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype
     in_data += D * N;
   }
 }
-template void cpu_reduce_std<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
-template void cpu_reduce_std<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+template void cpu_reduce_std<float>(const int M, const int D, const int N, const float *x, float beta, float *y, bool unbiased);
+template void cpu_reduce_std<double>(const int M, const int D, const int N, const double *x, double beta, double *y, bool unbiased);
 
 template<typename Dtype>
 void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {

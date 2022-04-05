@@ -69,11 +69,11 @@ void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtyp
 
 // x:MxDxN -> y:Mx1xN (variance at the second axis)
 template<typename Dtype>
-void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased);
 
 // x:MxDxN -> y:Mx1xN (Standard Deviation at the second axis)
 template<typename Dtype>
-void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased);
 
 // x:MxDxN -> y:Mx1xN (asum at the second axis)
 template<typename Dtype>

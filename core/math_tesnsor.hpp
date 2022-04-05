@@ -6,6 +6,7 @@
 #define STENSOR_CORE_MATH_TESNSOR_HPP_
 #include "public/common.hpp"
 #include "tensor.hpp"
+#include "transpose.hpp"
 
 namespace stensor {
 
@@ -109,11 +110,17 @@ inline Tensor *ones_like(Tensor *other, bool require_grad = false) {
 /* Tensor Generator end*/
 
 /*reduction*/
-Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
-Tensor *mean(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
-Tensor *var(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
-Tensor *std(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
-Tensor *asum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
+Tensor *sum(const Tensor *a, int dim, Tensor *out = nullptr, bool grad_op = false);
+Tensor *mean(const Tensor *a, int dim, Tensor *out = nullptr, bool grad_op = false);
+Tensor *var(const Tensor *a, int dim, Tensor *out = nullptr, bool grad_op = false, bool unbiased = true);
+Tensor *std(const Tensor *a, int dim, Tensor *out = nullptr, bool grad_op = false, bool unbiased = true);
+Tensor *asum(const Tensor *a, int dim, Tensor *out = nullptr, bool grad_op = false);
+
+Tensor *sum(const Tensor *a, std::vector<int> dim, Tensor *out = nullptr, bool grad_op = false);
+Tensor *mean(const Tensor *a, std::vector<int> dim, Tensor *out = nullptr, bool grad_op = false);
+Tensor *var(const Tensor *a, std::vector<int> dim, Tensor *out = nullptr, bool grad_op = false, bool unbiased = true);
+Tensor *std(const Tensor *a, std::vector<int> dim, Tensor *out = nullptr, bool grad_op = false, bool unbiased = true);
+Tensor *asum(const Tensor *a, std::vector<int> dim, Tensor *out = nullptr, bool grad_op = false);
 }
 
 #endif //STENSOR_CORE_MATH_TESNSOR_HPP_

@@ -16,7 +16,7 @@ inline int indTranspose(int indY, const std::vector<int> &strideY, const std::ve
   }
   return indX;
 }
-Tensor *transpose(Tensor *tensor, std::vector<int> order) {
+Tensor *transpose(const Tensor *tensor, std::vector<int> order) {
   CHECK_GT(tensor->size(), 0) << "None of data";
   int num_axis = tensor->num_axes();
   CHECK_EQ(order.size(), num_axis);
@@ -51,7 +51,7 @@ Tensor *transpose(Tensor *tensor, std::vector<int> order) {
                   stride_x,
                   stride_y,
                   order,
-                  tensor->data(),
+                  tensor->const_data(),
                   new_tensor->data());
   }
 

@@ -18,6 +18,5 @@
 #include "base_conv2d_layer.hpp"
 #include "maxpool2d_layer.hpp"
 #include "avgpool2d_layer.hpp"
-#include "batchnorm2d_layer.hpp"
 
 #endif //STENSOR_NN_LAYERS_HPP_

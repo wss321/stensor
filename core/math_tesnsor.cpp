@@ -726,6 +726,64 @@ Tensor *sum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   }
   return out;
 }
+Tensor *sum(const Tensor *a, std::vector<int> dim, Tensor *out, bool grad_op) {
+  // 把要缩减的维度排在最后->累积得到D
+  // 把不缩减的维度排在最前>累积得到M
+  // 然后transpose
+  // reshape成MxDx1
+  // 调用单一维度缩减操作函数，在第一个维度上缩减
+  // 把结果reshape成原本的结果shape
+  CHECK_GT(dim.size(), 0) << "num of dim must greater than 0";
+  if (dim.size()==1) return stensor::sum(a, dim[0], out, grad_op);
+
+  std::vector<int> new_shape(a->shape());
+  std::unordered_set<int> shape_set;
+  std::unordered_set<int> no_reduce_dim; //不进行操作的维度
+  for (int i = 0; i < a->num_axes(); ++i) {
+    no_reduce_dim.insert(i);
+  }
+  int D = 1; // 操作维度的总元素个数
+  for(int i=0;i<dim.size();++i) {
+    int d = dim[i];
+    int caxis = a->canonical_axis_index(d);
+    dim[i] = caxis;
+    if (shape_set.find(caxis)!=shape_set.end())
+      LOG(FATAL)<< "dim duplicated";
+    shape_set.insert(caxis);
+    CHECK_GE(d, 0)<< "dim must be greater than 0";
+    CHECK_LT(d, a->num_axes())<< "dim must be less than num_axes";
+    new_shape[d] = 1;
+    D *= a->shape(caxis);
+    no_reduce_dim.erase(caxis);
+  }
+  int M = a->size() / D; // 不进行操作的总元素个数
+  int N = 1;
+  std::vector<int> front_dim;
+  auto iter = no_reduce_dim.begin();
+  while(iter!=no_reduce_dim.end()) {
+    front_dim.push_back(*iter);
+    iter++;
+  }
+  std::sort(front_dim.begin(), front_dim.end());
+  std::sort(dim.begin(), dim.end());
+  // transpose
+  std::vector<int> new_order(a->num_axes());
+  for (int i = 0; i < front_dim.size(); ++i) {
+    new_order[i] = front_dim[i];
+  }
+  for (int i = front_dim.size(); i < new_order.size(); ++i) {
+    new_order[i] = dim[i-front_dim.size()];
+  }
+  Tensor *a_t = stensor::transpose(a, new_order);
+  std::cout<<a->shape_string();
+  std::cout<<a_t->shape_string();
+  a_t->reshape({M, D, N});
+  out = stensor::sum(a_t, 1, out, grad_op);
+  delete a_t;
+  // reshape back
+  out->reshape(new_shape);
+  return out;
+}
 
 Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
@@ -758,7 +816,61 @@ Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   }
   return out;
 }
-Tensor *var(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+
+Tensor *mean(const Tensor *a, std::vector<int> dim, Tensor *out, bool grad_op) {
+  CHECK_GT(dim.size(), 0) << "num of dim must greater than 0";
+  if (dim.size()==1) return stensor::mean(a, dim[0], out, grad_op);
+
+  std::vector<int> new_shape(a->shape());
+  std::unordered_set<int> shape_set;
+  std::unordered_set<int> no_reduce_dim; //不进行操作的维度
+  for (int i = 0; i < a->num_axes(); ++i) {
+    no_reduce_dim.insert(i);
+  }
+  int D = 1; // 操作维度的总元素个数
+  for(int i=0;i<dim.size();++i) {
+    int d = dim[i];
+    int caxis = a->canonical_axis_index(d);
+    dim[i] = caxis;
+    if (shape_set.find(caxis)!=shape_set.end())
+      LOG(FATAL)<< "dim duplicated";
+    shape_set.insert(caxis);
+    CHECK_GE(d, 0)<< "dim must be greater than 0";
+    CHECK_LT(d, a->num_axes())<< "dim must be less than num_axes";
+    new_shape[d] = 1;
+    D *= a->shape(caxis);
+    no_reduce_dim.erase(caxis);
+  }
+  int M = a->size() / D; // 不进行操作的总元素个数
+  int N = 1;
+  std::vector<int> front_dim;
+  auto iter = no_reduce_dim.begin();
+  while(iter!=no_reduce_dim.end()) {
+    front_dim.push_back(*iter);
+    iter++;
+  }
+  std::sort(front_dim.begin(), front_dim.end());
+  std::sort(dim.begin(), dim.end());
+  // transpose
+  std::vector<int> new_order(a->num_axes());
+  for (int i = 0; i < front_dim.size(); ++i) {
+    new_order[i] = front_dim[i];
+  }
+  for (int i = front_dim.size(); i < new_order.size(); ++i) {
+    new_order[i] = dim[i-front_dim.size()];
+  }
+  Tensor *a_t = stensor::transpose(a, new_order);
+  std::cout<<a->shape_string();
+  std::cout<<a_t->shape_string();
+  a_t->reshape({M, D, N});
+  out = stensor::mean(a_t, 1, out, grad_op);
+  delete a_t;
+  // reshape back
+  out->reshape(new_shape);
+  return out;
+}
+
+Tensor *var(const Tensor *a, int axis, Tensor *out, bool grad_op, bool unbiased) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
@@ -782,15 +894,68 @@ Tensor *var(const Tensor *a, int axis, Tensor *out, bool grad_op) {
     in_data = a->const_grad();
   }
   switch (a->state()) {
-    case CPU:cpu_reduce_var(M, D, N, in_data, 0.0f, out_data);
+    case CPU:cpu_reduce_var(M, D, N, in_data, 0.0f, out_data, unbiased);
       break;
-    case GPU:gpu_reduce_var(M, D, N, in_data, 0.0f, out_data);
+    case GPU:gpu_reduce_var(M, D, N, in_data, 0.0f, out_data, unbiased);
       break;
   }
   return out;
 }
 
-Tensor *std(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+Tensor *var(const Tensor *a, std::vector<int> dim, Tensor *out, bool grad_op, bool unbiased) {
+  CHECK_GT(dim.size(), 0) << "num of dim must greater than 0";
+  if (dim.size()==1) return stensor::var(a, dim[0], out, grad_op, unbiased);
+
+  std::vector<int> new_shape(a->shape());
+  std::unordered_set<int> shape_set;
+  std::unordered_set<int> no_reduce_dim; //不进行操作的维度
+  for (int i = 0; i < a->num_axes(); ++i) {
+    no_reduce_dim.insert(i);
+  }
+  int D = 1; // 操作维度的总元素个数
+  for(int i=0;i<dim.size();++i) {
+    int d = dim[i];
+    int caxis = a->canonical_axis_index(d);
+    dim[i] = caxis;
+    if (shape_set.find(caxis)!=shape_set.end())
+      LOG(FATAL)<< "dim duplicated";
+    shape_set.insert(caxis);
+    CHECK_GE(d, 0)<< "dim must be greater than 0";
+    CHECK_LT(d, a->num_axes())<< "dim must be less than num_axes";
+    new_shape[d] = 1;
+    D *= a->shape(caxis);
+    no_reduce_dim.erase(caxis);
+  }
+  int M = a->size() / D; // 不进行操作的总元素个数
+  int N = 1;
+  std::vector<int> front_dim;
+  auto iter = no_reduce_dim.begin();
+  while(iter!=no_reduce_dim.end()) {
+    front_dim.push_back(*iter);
+    iter++;
+  }
+  std::sort(front_dim.begin(), front_dim.end());
+  std::sort(dim.begin(), dim.end());
+  // transpose
+  std::vector<int> new_order(a->num_axes());
+  for (int i = 0; i < front_dim.size(); ++i) {
+    new_order[i] = front_dim[i];
+  }
+  for (int i = front_dim.size(); i < new_order.size(); ++i) {
+    new_order[i] = dim[i-front_dim.size()];
+  }
+  Tensor *a_t = stensor::transpose(a, new_order);
+  std::cout<<a->shape_string();
+  std::cout<<a_t->shape_string();
+  a_t->reshape({M, D, N});
+  out = stensor::var(a_t, 1, out, grad_op, unbiased);
+  delete a_t;
+  // reshape back
+  out->reshape(new_shape);
+  return out;
+}
+
+Tensor *std(const Tensor *a, int axis, Tensor *out, bool grad_op, bool unbiased) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
     CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
@@ -814,13 +979,67 @@ Tensor *std(const Tensor *a, int axis, Tensor *out, bool grad_op) {
     in_data = a->const_grad();
   }
   switch (a->state()) {
-    case CPU:cpu_reduce_std(M, D, N, in_data, 0.0f, out_data);
+    case CPU:cpu_reduce_std(M, D, N, in_data, 0.0f, out_data, unbiased);
       break;
-    case GPU:gpu_reduce_std(M, D, N, in_data, 0.0f, out_data);
+    case GPU:gpu_reduce_std(M, D, N, in_data, 0.0f, out_data, unbiased);
       break;
   }
   return out;
 }
+
+Tensor *std(const Tensor *a, std::vector<int> dim, Tensor *out, bool grad_op, bool unbiased) {
+  CHECK_GT(dim.size(), 0) << "num of dim must greater than 0";
+  if (dim.size()==1) return stensor::std(a, dim[0], out, grad_op, unbiased);
+
+  std::vector<int> new_shape(a->shape());
+  std::unordered_set<int> shape_set;
+  std::unordered_set<int> no_reduce_dim; //不进行操作的维度
+  for (int i = 0; i < a->num_axes(); ++i) {
+    no_reduce_dim.insert(i);
+  }
+  int D = 1; // 操作维度的总元素个数
+  for(int i=0;i<dim.size();++i) {
+    int d = dim[i];
+    int caxis = a->canonical_axis_index(d);
+    dim[i] = caxis;
+    if (shape_set.find(caxis)!=shape_set.end())
+      LOG(FATAL)<< "dim duplicated";
+    shape_set.insert(caxis);
+    CHECK_GE(d, 0)<< "dim must be greater than 0";
+    CHECK_LT(d, a->num_axes())<< "dim must be less than num_axes";
+    new_shape[d] = 1;
+    D *= a->shape(caxis);
+    no_reduce_dim.erase(caxis);
+  }
+  int M = a->size() / D; // 不进行操作的总元素个数
+  int N = 1;
+  std::vector<int> front_dim;
+  auto iter = no_reduce_dim.begin();
+  while(iter!=no_reduce_dim.end()) {
+    front_dim.push_back(*iter);
+    iter++;
+  }
+  std::sort(front_dim.begin(), front_dim.end());
+  std::sort(dim.begin(), dim.end());
+  // transpose
+  std::vector<int> new_order(a->num_axes());
+  for (int i = 0; i < front_dim.size(); ++i) {
+    new_order[i] = front_dim[i];
+  }
+  for (int i = front_dim.size(); i < new_order.size(); ++i) {
+    new_order[i] = dim[i-front_dim.size()];
+  }
+  Tensor *a_t = stensor::transpose(a, new_order);
+  std::cout<<a->shape_string();
+  std::cout<<a_t->shape_string();
+  a_t->reshape({M, D, N});
+  out = stensor::std(a_t, 1, out, grad_op, unbiased);
+  delete a_t;
+  // reshape back
+  out->reshape(new_shape);
+  return out;
+}
+
 Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
@@ -853,4 +1072,57 @@ Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   }
   return out;
 }
+Tensor *asum(const Tensor *a, std::vector<int> dim, Tensor *out, bool grad_op) {
+  CHECK_GT(dim.size(), 0) << "num of dim must greater than 0";
+  if (dim.size()==1) return stensor::asum(a, dim[0], out, grad_op);
+
+  std::vector<int> new_shape(a->shape());
+  std::unordered_set<int> shape_set;
+  std::unordered_set<int> no_reduce_dim; //不进行操作的维度
+  for (int i = 0; i < a->num_axes(); ++i) {
+    no_reduce_dim.insert(i);
+  }
+  int D = 1; // 操作维度的总元素个数
+  for(int i=0;i<dim.size();++i) {
+    int d = dim[i];
+    int caxis = a->canonical_axis_index(d);
+    dim[i] = caxis;
+    if (shape_set.find(caxis)!=shape_set.end())
+      LOG(FATAL)<< "dim duplicated";
+    shape_set.insert(caxis);
+    CHECK_GE(d, 0)<< "dim must be greater than 0";
+    CHECK_LT(d, a->num_axes())<< "dim must be less than num_axes";
+    new_shape[d] = 1;
+    D *= a->shape(caxis);
+    no_reduce_dim.erase(caxis);
+  }
+  int M = a->size() / D; // 不进行操作的总元素个数
+  int N = 1;
+  std::vector<int> front_dim;
+  auto iter = no_reduce_dim.begin();
+  while(iter!=no_reduce_dim.end()) {
+    front_dim.push_back(*iter);
+    iter++;
+  }
+  std::sort(front_dim.begin(), front_dim.end());
+  std::sort(dim.begin(), dim.end());
+  // transpose
+  std::vector<int> new_order(a->num_axes());
+  for (int i = 0; i < front_dim.size(); ++i) {
+    new_order[i] = front_dim[i];
+  }
+  for (int i = front_dim.size(); i < new_order.size(); ++i) {
+    new_order[i] = dim[i-front_dim.size()];
+  }
+  Tensor *a_t = stensor::transpose(a, new_order);
+  std::cout<<a->shape_string();
+  std::cout<<a_t->shape_string();
+  a_t->reshape({M, D, N});
+  out = stensor::asum(a_t, 1, out, grad_op);
+  delete a_t;
+  // reshape back
+  out->reshape(new_shape);
+  return out;
+}
+
 }//namespace stensor

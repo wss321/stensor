@@ -73,10 +73,10 @@ template<typename Dtype>
 void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
 
 template<typename Dtype>
-void gpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+void gpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased);
 
 template<typename Dtype>
-void gpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);
+void gpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y, bool unbiased);
 
 template<typename Dtype>
 void gpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y);

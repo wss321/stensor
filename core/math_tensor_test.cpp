@@ -12,7 +12,8 @@
 #include <gtest/gtest.h>
 
 namespace stensor {
-class MathTensorTest : public ::testing::Test {};
+class MathTensorTest : public ::testing::Test {
+};
 TEST_F(MathTensorTest, Gennerator) {
   Tensor tensor(Tensor::ShapeType{3, 4});
   std::cout << *stensor::zeros_like(&tensor) << std::endl;
@@ -407,6 +408,25 @@ TEST_F(MathTensorTest, std) {
     if (i>10000) break;
     EXPECT_EQ(e->data_at(i), 0);
   }
+  delete d;
+  delete e;
+}
+
+TEST_F(MathTensorTest, std_dim) {
+  google::InstallFailureSignalHandler();
+  Tensor::ShapeType shape1{2, 2, 3};
+//  Tensor *d = stensor::random(shape1, -1);
+  Tensor *d = stensor::ones(shape1, 0);
+  for (int i = 0; i < d->size(); ++i) {
+    d->data()[i] = i;
+  }
+  Tensor *e = stensor::std(d, {1, 2}, nullptr, false, true);
+  std::cout << d->data_string() << std::endl;
+  std::cout << e->data_string() << std::endl;
+//  for (int i = 0; i < e->size(); ++i) {
+//    if (i>10000) break;
+//    EXPECT_EQ(e->data_at(i), 0);
+//  }
   delete d;
   delete e;
 }

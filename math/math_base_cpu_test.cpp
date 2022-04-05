@@ -149,13 +149,13 @@ TEST_F(CPUMathTest, ReduceTest) {
   }
   std::cout<<std::endl;
 
-  stensor::cpu_reduce_var(M, D, N, g1, 0.0f, g2);
+  stensor::cpu_reduce_var(M, D, N, g1, 0.0f, g2, true);
   for (int i = 0; i < M*N; ++i) {
     std::cout<<g2[i]<<", ";
   }
   std::cout<<std::endl;
 
-  stensor::cpu_reduce_std(M, D, N, g1, 0.0f, g2);
+  stensor::cpu_reduce_std(M, D, N, g1, 0.0f, g2, true);
   for (int i = 0; i < M*N; ++i) {
     std::cout<<g2[i]<<", ";
   }
