@@ -198,9 +198,59 @@ void cpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtyp
     in_data += D * N;
   }
 }
-template void cpu_reduce_mean<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
 template void cpu_reduce_mean<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
 template void cpu_reduce_mean<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+void cpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype sum = 0;
+      for (int d = 0; d < D; ++d) {
+        sum += in_data[d * N + n];
+      }
+      Dtype mean = sum / D;
+      Dtype var = 0;
+      for (int d = 0; d < D; ++d) {
+        var += (in_data[d * N + n]-mean) * (in_data[d * N + n]- mean);
+      }
+      if (beta == 0) *out_data = var / D;
+      else *out_data = var / D + beta * (*out_data);
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+template void cpu_reduce_var<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_reduce_var<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+void cpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  const Dtype *in_data = x;
+  Dtype *out_data = y;
+  for (int m = 0; m < M; ++m) {
+    for (int n = 0; n < N; ++n) {
+      Dtype sum = 0;
+      for (int d = 0; d < D; ++d) {
+        sum += in_data[d * N + n];
+      }
+      Dtype mean = sum / D;
+      Dtype var = 0;
+      for (int d = 0; d < D; ++d) {
+        var += (in_data[d * N + n]-mean) * (in_data[d * N + n]- mean);
+      }
+      var /= D;
+      if (beta == 0) *out_data = std::sqrt(var);
+      else *out_data = std::sqrt(var) + beta * (*out_data);
+      out_data++;
+    }
+    in_data += D * N;
+  }
+}
+template void cpu_reduce_std<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void cpu_reduce_std<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
 void cpu_reduce_asum(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {

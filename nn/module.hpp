@@ -72,6 +72,12 @@ class Module {
         outputs_[i]->zero_grad();
     }
   }
+  virtual void train(){
+    is_training_ = true;
+  }
+  virtual void eval(){
+    is_training_ = false;
+  }
  protected:
   std::string name_;
   std::string type_;
@@ -80,6 +86,7 @@ class Module {
   TensorVec inputs_;
   TensorVec outputs_;
   std::vector<std::shared_ptr<Module>> submodules_;
+  bool is_training_ = true;
  DISABLE_COPY_AND_ASSIGN(Module);
 };
 }//namespace nn

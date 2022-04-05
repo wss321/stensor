@@ -360,13 +360,9 @@ std::string Tensor::grad_string() const {
   return out.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const Tensor *tensor) {
-  out << tensor->data_string();
-  return out;
-}
-
 std::ostream &operator<<(std::ostream &out, const Tensor &tensor) {
-  return stensor::operator<<(out, &tensor);
+  out << tensor.data_string();
+  return out;
 }
 
 

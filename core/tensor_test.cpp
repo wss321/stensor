@@ -62,7 +62,7 @@ TEST_F(TensorTest, SaveAndLoad) {
 TEST_F(TensorTest, ZeroDataGrad) {
   stensor::Config::set_random_seed(1024);
   Tensor* a = stensor::random({3, 4}, 0, 1, -1, true);
-  std::cout<<a;
+  std::cout<<*a;
   Tensor& b(*a);
   a->zero_data();
   for (int i = 0; i < a->size(); ++i) {
@@ -92,13 +92,13 @@ TEST_F(TensorTest, FreeTest) {
 TEST_F(TensorTest, ElementAsinment) {
   stensor::Config::set_random_seed(1024);
   Tensor* a = stensor::random({3, 4}, 0, 1, 0, true);
-  std::cout<<a;
+  std::cout<<*a;
   a->zero_data();
   (*a)[0] = 1;
-  std::cout<<a;
+  std::cout<<*a;
   a->to_cpu();
   (*a)[2] = 1;
-  std::cout<<a;
+  std::cout<<*a;
   delete a;
 }
 

@@ -228,7 +228,6 @@ namespace stensor {
     };
 
     std::ostream &operator<<(std::ostream &out, const Tensor &tensor);
-    std::ostream &operator<<(std::ostream &out, const Tensor *tensor);
 
 /* save and load*/
     void save(const Tensor *tensor, const std::string &path);

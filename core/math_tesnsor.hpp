@@ -111,6 +111,8 @@ inline Tensor *ones_like(Tensor *other, bool require_grad = false) {
 /*reduction*/
 Tensor *sum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
 Tensor *mean(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
+Tensor *var(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
+Tensor *std(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
 Tensor *asum(const Tensor *a, int axis, Tensor *out = nullptr, bool grad_op = false);
 }
 

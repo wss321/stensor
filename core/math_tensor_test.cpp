@@ -15,44 +15,44 @@ namespace stensor {
 class MathTensorTest : public ::testing::Test {};
 TEST_F(MathTensorTest, Gennerator) {
   Tensor tensor(Tensor::ShapeType{3, 4});
-  std::cout << stensor::zeros_like(&tensor) << std::endl;
-  std::cout << stensor::ones_like(&tensor) << std::endl;
-  std::cout << stensor::constants_like(&tensor, 5) << std::endl;
-  std::cout << stensor::ones(std::vector<int>{5, 8}) << std::endl;
-  std::cout << stensor::zeros(std::vector<int>{1, 3}) << std::endl;
-  std::cout << stensor::random(std::vector<int>{1, 3}) << std::endl;
-  std::cout << stensor::random_gaussian(std::vector<int>{1, 3}) << std::endl;
+  std::cout << *stensor::zeros_like(&tensor) << std::endl;
+  std::cout << *stensor::ones_like(&tensor) << std::endl;
+  std::cout << *stensor::constants_like(&tensor, 5) << std::endl;
+  std::cout << *stensor::ones(std::vector<int>{5, 8}) << std::endl;
+  std::cout << *stensor::zeros(std::vector<int>{1, 3}) << std::endl;
+  std::cout << *stensor::random(std::vector<int>{1, 3}) << std::endl;
+  std::cout << *stensor::random_gaussian(std::vector<int>{1, 3}) << std::endl;
 }
 
 TEST_F(MathTensorTest, MathUnary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
-//  std::cout << "\ta:\n" << a;
-//  std::cout << "\tb:\n" << b;
+//  std::cout << "\ta:\n" << *a;
+//  std::cout << "\tb:\n" << *b;
   auto c = stensor::add(a, b);
-//  std::cout << "\ta+b:\n" << c;
+//  std::cout << "\ta+b:\n" << *c;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(c->data_at(i), a->data_at(i) + b->data_at(i));
   }
   auto d = stensor::exp(a);
-//  std::cout << "\texp:\n" << d;
+//  std::cout << "\texp:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), std::exp(a->data_at(i)));
   }
 
   d = stensor::pow(a, 0.0);
-//  std::cout << "\tpow:\n" << d;
+//  std::cout << "\tpow:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), std::pow(a->data_at(i), 0));
   }
   d = stensor::mul(a, b);
-//  std::cout << "\tmul:\n" << d;
+//  std::cout << "\tmul:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) * b->data_at(i));
   }
   d = stensor::div(a, b);
-//  std::cout << "\tdiv:\n" << d;
+//  std::cout << "\tdiv:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) / b->data_at(i));
   }
@@ -79,28 +79,28 @@ TEST_F(MathTensorTest, MathBinary) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::random(shape1);
-  std::cout << "\ta:\n" << a;
-  std::cout << "\tb:\n" << b;
+  std::cout << "\ta:\n" << *a;
+  std::cout << "\tb:\n" << *b;
 
   auto d = stensor::add(a, b);
-  std::cout << "\tadd:\n" << d;
+  std::cout << "\tadd:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) + b->data_at(i));
   }
 
   d = stensor::mul(a, b);
-  std::cout << "\tmul:\n" << d;
+  std::cout << "\tmul:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) * b->data_at(i));
   }
   d = stensor::div(a, b);
-  std::cout << "\tdiv:\n" << d;
+  std::cout << "\tdiv:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) / b->data_at(i));
   }
 
   d = stensor::sub(a, b);
-  std::cout << "\tsub:\n" << d;
+  std::cout << "\tsub:\n" << *d;
   for (int i = 0; i < a->size(); ++i) {
     EXPECT_EQ(d->data_at(i), a->data_at(i) - b->data_at(i));
   }
@@ -118,19 +118,19 @@ TEST_F(MathTensorTest, MathCPUBroadCast) {
   Tensor *a = stensor::ones(shape1);
   Tensor *b = stensor::constants(shape2, 2);
 
-  std::cout << "\ta:\n" << a;
-  std::cout << "\tb:\n" << b;
+  std::cout << "\ta:\n" << *a;
+  std::cout << "\tb:\n" << *b;
   auto c = stensor::add(a, b);
-  std::cout << "\ta+b:\n" << c;
+  std::cout << "\ta+b:\n" << *c;
   EXPECT_EQ(c->shape(), shape3);
   c = stensor::sub(a, b);
-  std::cout << "\ta-b:\n" << c;
+  std::cout << "\ta-b:\n" << *c;
   EXPECT_EQ(c->shape(), shape3);
   c = stensor::mul(a, b);
-  std::cout << "\ta*b:\n" << c;
+  std::cout << "\ta*b:\n" << *c;
   EXPECT_EQ(c->shape(), shape3);
   c = stensor::div(a, b);
-  std::cout << "\ta/b:\n" << c;
+  std::cout << "\ta/b:\n" << *c;
   EXPECT_EQ(c->shape(), shape3);
 }
 
@@ -145,16 +145,16 @@ TEST_F(MathTensorTest, MathGPUBroadCast) {
   a->to_gpu();
   b->to_gpu();
   EXPECT_EQ(a->device(), 0);
-  std::cout << "\ta:\n" << a;
-  std::cout << "\tb:\n" << b;
+  std::cout << "\ta:\n" << *a;
+  std::cout << "\tb:\n" << *b;
   Tensor *c = stensor::add(a, b);
-  std::cout << "\tgpu:c=a+b:\n" << c;
+  std::cout << "\tgpu:c=a+b:\n" << *c;
   Tensor *d = stensor::sub(a, b);
-  std::cout << "\tgpu:c=a-b:\n" << d;
+  std::cout << "\tgpu:c=a-b:\n" << *d;
   Tensor *e = stensor::mul(a, b);
-  std::cout << "\tgpu:c=a*b:\n" << e;
+  std::cout << "\tgpu:c=a*b:\n" << *e;
   Tensor *f = stensor::div(a, b);
-  std::cout << "\tgpu:c=a/b:\n" << f;
+  std::cout << "\tgpu:c=a/b:\n" << *f;
   delete a;
   delete b;
   delete c;
@@ -202,9 +202,9 @@ TEST_F(MathTensorTest, MathGPUBroadCastSpeed) {
 TEST_F(MathTensorTest, ActivateFunc) {
   Tensor::ShapeType shape1{3, 4};
   Tensor *a = stensor::random(shape1, -1.0f, 1.0f, -1);
-  std::cout << "\ta:\n" << a;
+  std::cout << "\ta:\n" << *a;
   auto d = stensor::sigmoid(a);
-//  std::cout << "\tsigmoid:\n" << d;
+//  std::cout << "\tsigmoid:\n" << *d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -213,7 +213,7 @@ TEST_F(MathTensorTest, ActivateFunc) {
   delete d;
 
   d = stensor::tanh(a);
-//  std::cout << "\ttanh:\n" << d;
+//  std::cout << "\ttanh:\n" << *d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -221,7 +221,7 @@ TEST_F(MathTensorTest, ActivateFunc) {
   }
   delete d;
   d = stensor::relu(a);
-//  std::cout << "\trelu:\n" << d;
+//  std::cout << "\trelu:\n" << *d;
   for (int index = 0; index < a->size(); ++index) {
     float x = a->data_at(index);
     float y = d->data_at(index);
@@ -299,16 +299,16 @@ TEST_F(MathTensorTest, Repeat) {
   Tensor::ShapeType shape1{2, 1, 2};
   Tensor *a = stensor::random(shape1);
   Tensor *b = stensor::repeat(a, 1, 4);
-  std::cout << a;
-  std::cout << b;
+  std::cout << *a;
+  std::cout << *b;
 
   delete a;
   delete b;
 
   Tensor *c = stensor::random(shape1, 0);
   Tensor *d = stensor::repeat(c, 1, 4);
-  std::cout << c;
-  std::cout << d;
+  std::cout << *c;
+  std::cout << *d;
 
   delete c;
   delete d;
@@ -379,6 +379,38 @@ TEST_F(MathTensorTest, mean) {
   delete e;
 }
 
+TEST_F(MathTensorTest, var) {
+  Tensor::ShapeType shape1{500, 20, 400};
+//  Tensor *d = stensor::random(shape1, -1);
+  int axis = 1;
+  Tensor *d = stensor::ones(shape1, -1);
+  Tensor *e = stensor::var(d, axis);
+  std::cout << d->shape_string() << std::endl;
+  std::cout << e->shape_string() << std::endl;
+  for (int i = 0; i < e->size(); ++i) {
+    if (i>10000) break;
+    EXPECT_EQ(e->data_at(i), 0);
+  }
+  delete d;
+  delete e;
+}
+
+TEST_F(MathTensorTest, std) {
+  Tensor::ShapeType shape1{500, 20, 400};
+//  Tensor *d = stensor::random(shape1, -1);
+  int axis = 1;
+  Tensor *d = stensor::ones(shape1, -1);
+  Tensor *e = stensor::std(d, axis);
+  std::cout << d->shape_string() << std::endl;
+  std::cout << e->shape_string() << std::endl;
+  for (int i = 0; i < e->size(); ++i) {
+    if (i>10000) break;
+    EXPECT_EQ(e->data_at(i), 0);
+  }
+  delete d;
+  delete e;
+}
+
 TEST_F(MathTensorTest, asum) {
   Tensor::ShapeType shape1{500, 20, 400};
 //  Tensor *d = stensor::random(shape1, -1);
@@ -434,15 +466,15 @@ TEST_F(MathTensorTest, Softmax) {
   std::cout << e->shape_string() << std::endl;
   LOG(INFO) << "GPU softmax operation time:" << systemtime_ms() - start << "ms";
   cudaDeviceSynchronize();
-  std::cout<<e;
+  std::cout<<*e;
 
   a->to_cpu();
   start = systemtime_ms();
   e = stensor::softmax(a, axis);
   std::cout << e->shape_string() << std::endl;
-//  std::cout<<e;
+//  std::cout<<*e;
   LOG(INFO) << "CPU softmax operation time:" << systemtime_ms() - start << "ms";
-  //  std::cout << e << std::endl;
+  //  std::cout << *e << std::endl;
 
   delete a;
   delete e;
@@ -457,13 +489,13 @@ TEST_F(MathTensorTest, OneHot) {
   for (int i = 0; i < a->size(); ++i) {
     (*a)[i] = float(i);
   }
-  std::cout << a << std::endl;
+  std::cout << *a << std::endl;
   Tensor *e = stensor::one_hot(a, 10);
-  std::cout << e << std::endl;
+  std::cout << *e << std::endl;
 
   a->to_cpu();
   e = stensor::one_hot(a, 10);
-  std::cout << e << std::endl;
+  std::cout << *e << std::endl;
 
 
   delete a;
@@ -477,19 +509,19 @@ TEST_F(MathTensorTest, Argmax) {
 
   Tensor *a = stensor::random(shape1, device);
   cudaDeviceSynchronize();
-  std::cout<<a;
+  std::cout<<*a;
   long long start = systemtime_ms();
   Tensor *e = stensor::argmax(a, axis);
   std::cout << e->shape_string() << std::endl;
   LOG(INFO) << "GPU softmax operation time:" << systemtime_ms() - start << "ms";
   cudaDeviceSynchronize();
-  std::cout<<e;
+  std::cout<<*e;
 
   a->to_cpu();
   start = systemtime_ms();
   e = stensor::argmax(a, axis);
   std::cout << e->shape_string() << std::endl;
-  std::cout<<e;
+  std::cout<<*e;
   LOG(INFO) << "CPU softmax operation time:" << systemtime_ms() - start << "ms";
   //  std::cout << e << std::endl;
 

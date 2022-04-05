@@ -272,4 +272,52 @@ TEST_F(GPUMathTest, CompTest) {
 
 }
 
+TEST_F(GPUMathTest, ReduceTest) {
+  int M = 4, D = 10, N = 2;
+  int size1 = M*D*N;
+  int size2 = M*N;
+
+
+  SynMem A(size1 * sizeof(float));
+  SynMem B(size2 * sizeof(float));
+  A.alloc_gpu();
+  B.alloc_gpu();
+
+  float *g1 = (float *) A.gpu_data();
+  float *g2 = (float *) B.gpu_data();
+  for (int i = 0; i < size1; ++i) {
+    g1[i] = i%D;
+    std::cout<<g1[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::gpu_reduce_mean(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::gpu_reduce_var(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::gpu_reduce_std(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+//  const float *g1c = (const float *) A.cpu_data();
+//  const float *g2c = (const float *) B.cpu_data();
+//
+//  stensor::gpu_rng_uniform<float>(size1, -1.0, 1.0, g1);
+//  stensor::gpu_rng_uniform<float>(size2, 0.0, 1.0, g2);
+//
+//  A.copy_gpu_to_cpu();
+//  B.copy_gpu_to_cpu();
+
+
+}
 }

@@ -125,8 +125,41 @@ TEST_F(CPUMathTest, CompTest) {
   for (int i = 0; i < size1; ++i) {
     EXPECT_EQ(std::min(g1[i], g2[i]), g3[i]);
   }
+}
 
+TEST_F(CPUMathTest, ReduceTest) {
+  int M = 4, D = 10, N = 2;
+  int size1 = M*D*N;
+  int size2 = M*N;
 
+  SynMem A(size1 * sizeof(float));
+  SynMem B(size2 * sizeof(float));
+
+  float *g1 = (float *) A.cpu_data();
+  float *g2 = (float *) B.cpu_data();
+  for (int i = 0; i < size1; ++i) {
+    g1[i] = i%D;
+    std::cout<<g1[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::cpu_reduce_mean(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::cpu_reduce_var(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
+
+  stensor::cpu_reduce_std(M, D, N, g1, 0.0f, g2);
+  for (int i = 0; i < M*N; ++i) {
+    std::cout<<g2[i]<<", ";
+  }
+  std::cout<<std::endl;
 
 }
 

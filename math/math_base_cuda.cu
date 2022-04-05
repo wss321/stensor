@@ -126,9 +126,66 @@ void gpu_reduce_mean(const int M, const int D, const int N, const Dtype *x, Dtyp
   cudaDeviceSynchronize();
 }
 
-template void gpu_reduce_mean<int>(const int M, const int D, const int N, const int *x, int beta, int *y);
 template void gpu_reduce_mean<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
 template void gpu_reduce_mean<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+__global__ void reduce_var_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    Dtype sum = 0;
+    for (int d = 0; d < D; ++d) {
+      sum += x[m * D * N + d * N + n];
+    }
+    Dtype mean = sum / D;
+    Dtype var = 0;
+    for (int d = 0; d < D; ++d) {
+      Dtype tmp = (x[m * D * N + d * N + n] - mean);
+      var += tmp * tmp;
+    }
+    if (beta == 0) y[index] = var / D;
+    else y[index] = var / D + beta * y[index];
+  }
+}
+template<typename Dtype>
+void gpu_reduce_var(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  reduce_var_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  CUDA_POST_KERNEL_CHECK;
+  cudaDeviceSynchronize();
+}
+
+template void gpu_reduce_var<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void gpu_reduce_var<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
+
+template<typename Dtype>
+__global__ void reduce_std_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  CUDA_KERNEL_LOOP(index, M * N) {
+    int n = index % N;
+    int m = index / N;
+    Dtype sum = 0;
+    for (int d = 0; d < D; ++d) {
+      sum += x[m * D * N + d * N + n];
+    }
+    Dtype mean = sum / D;
+    Dtype var = 0;
+    for (int d = 0; d < D; ++d) {
+      Dtype tmp = (x[m * D * N + d * N + n] - mean);
+      var += tmp * tmp;
+    }
+    if (beta == 0) y[index] = sqrt((double) var / D);
+    else y[index] = sqrt((double)var / D) + beta * y[index];
+  }
+}
+template<typename Dtype>
+void gpu_reduce_std(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {
+  reduce_std_kernel < Dtype ><<<GET_BLOCKS(M * N), CUDA_NUM_THREADS>>>(M, D, N, x, beta, y);
+  CUDA_POST_KERNEL_CHECK;
+  cudaDeviceSynchronize();
+}
+
+template void gpu_reduce_std<float>(const int M, const int D, const int N, const float *x, float beta, float *y);
+template void gpu_reduce_std<double>(const int M, const int D, const int N, const double *x, double beta, double *y);
 
 template<typename Dtype>
 __global__ void reduce_asum_kernel(const int M, const int D, const int N, const Dtype *x, Dtype beta, Dtype *y) {

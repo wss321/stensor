@@ -662,6 +662,7 @@ Tensor *random(const Tensor::ShapeType &shape, float a, float b, int device_id, 
 
 Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, int device_id, bool require_grad) {
   Tensor *new_t = new Tensor(shape, device_id, require_grad);
+  int size = new_t->size();
   switch (new_t->state()) {
     case CPU:
       cpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
@@ -670,7 +671,10 @@ Tensor *random_gaussian(const Tensor::ShapeType &shape, float mu, float sigma, i
                                       new_t->data());
       break;
     case GPU:
-      gpu_rng_gaussian<Tensor::Dtype>(new_t->size(),
+      if (size%2!=0) {
+        size += 1;
+      }
+      gpu_rng_gaussian<Tensor::Dtype>(size,
                                       Tensor::Dtype(mu),
                                       Tensor::Dtype(sigma),
                                       new_t->data());
@@ -754,7 +758,69 @@ Tensor *mean(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   }
   return out;
 }
+Tensor *var(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+  int caxis = a->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  else {
+    std::vector<int> new_shape(a->shape());
+    new_shape[caxis] = 1;
+    out = new Tensor(new_shape, a->device(), a->require_grad());
+  }
 
+  int M = a->count(0, caxis);
+  int N = a->count(caxis + 1, a->num_axes());
+  int D = a->shape(caxis);
+  CHECK_EQ(M * N, out->size());
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = a->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = a->const_grad();
+  }
+  switch (a->state()) {
+    case CPU:cpu_reduce_var(M, D, N, in_data, 0.0f, out_data);
+      break;
+    case GPU:gpu_reduce_var(M, D, N, in_data, 0.0f, out_data);
+      break;
+  }
+  return out;
+}
+
+Tensor *std(const Tensor *a, int axis, Tensor *out, bool grad_op) {
+  int caxis = a->canonical_axis_index(axis);
+  if (out != nullptr)
+    CHECK_EQ(a->device(), out->device()) << "tensors must be at same device";
+  else {
+    std::vector<int> new_shape(a->shape());
+    new_shape[caxis] = 1;
+    out = new Tensor(new_shape, a->device(), a->require_grad());
+  }
+
+  int M = a->count(0, caxis);
+  int N = a->count(caxis + 1, a->num_axes());
+  int D = a->shape(caxis);
+  CHECK_EQ(M * N, out->size());
+  float *out_data = nullptr;
+  const float *in_data = nullptr;
+  if (!grad_op) {
+    out_data = out->data();
+    in_data = a->const_data();
+  } else {
+    out_data = out->grad();
+    in_data = a->const_grad();
+  }
+  switch (a->state()) {
+    case CPU:cpu_reduce_std(M, D, N, in_data, 0.0f, out_data);
+      break;
+    case GPU:gpu_reduce_std(M, D, N, in_data, 0.0f, out_data);
+      break;
+  }
+  return out;
+}
 Tensor *asum(const Tensor *a, int axis, Tensor *out, bool grad_op) {
   int caxis = a->canonical_axis_index(axis);
   if (out != nullptr)
